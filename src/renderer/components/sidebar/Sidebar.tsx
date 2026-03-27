@@ -1,4 +1,8 @@
-import type { Tab, Space } from '@shared/types'
+import type { Tab, Space, PinnedPage } from '@shared/types'
+import { SpaceSwitcher } from './SpaceSwitcher'
+import { PinnedPages } from './PinnedPages'
+import { TabList } from './TabList'
+import { SidebarMini } from './SidebarMini'
 
 interface SidebarProps {
   spaces: Space[]
@@ -9,6 +13,11 @@ interface SidebarProps {
   onSwitchTab: (tabId: string) => void
   onCloseTab: (tabId: string) => void
   onNewTab: () => void
+  onPinTab: (tab: Tab) => void
+  onUnpin: (url: string) => void
+  onReorderPins: (pages: PinnedPage[]) => void
+  onClickPin: (url: string) => void
+  onOpenPinInNewTab: (url: string) => void
 }
 
 export function Sidebar({
@@ -20,20 +29,29 @@ export function Sidebar({
   onSwitchTab,
   onCloseTab,
   onNewTab,
+  onPinTab,
+  onUnpin,
+  onReorderPins,
+  onClickPin,
+  onOpenPinInNewTab,
 }: SidebarProps) {
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
   const tabs = activeSpace?.tabs ?? []
   const pinnedPages = activeSpace?.pinnedPages ?? []
 
   if (!expanded) {
-    return <SidebarMini
-      spaces={spaces}
-      activeSpaceId={activeSpaceId}
-      tabs={tabs}
-      pinnedPages={pinnedPages}
-      onSwitchSpace={onSwitchSpace}
-      onSwitchTab={onSwitchTab}
-    />
+    return (
+      <SidebarMini
+        spaces={spaces}
+        activeSpaceId={activeSpaceId}
+        tabs={tabs}
+        pinnedPages={pinnedPages}
+        activeTabId={activeTabId}
+        onSwitchSpace={onSwitchSpace}
+        onSwitchTab={onSwitchTab}
+        onClickPin={onClickPin}
+      />
+    )
   }
 
   return (
@@ -53,14 +71,16 @@ export function Sidebar({
         <div className="flex gap-1.5">
           <button
             onClick={onNewTab}
-            className="w-5 h-5 rounded flex items-center justify-center text-xs cursor-pointer"
+            className="w-5 h-5 rounded flex items-center justify-center text-xs cursor-pointer hover:bg-white/10"
             style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+            title="New tab (Ctrl+T)"
           >
             +
           </button>
           <button
-            className="w-5 h-5 rounded flex items-center justify-center text-[10px] cursor-pointer"
+            className="w-5 h-5 rounded flex items-center justify-center text-[10px] cursor-pointer hover:bg-white/10"
             style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+            title="Settings"
           >
             ⚙
           </button>
@@ -68,94 +88,29 @@ export function Sidebar({
       </div>
 
       {/* Space Switcher */}
-      <div className="flex gap-1 px-2.5 pb-2">
-        {spaces.map(space => (
-          <button
-            key={space.id}
-            onClick={() => onSwitchSpace(space.id)}
-            className="px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer"
-            style={{
-              background: space.id === activeSpaceId ? space.color : 'var(--bg-hover)',
-              color: space.id === activeSpaceId ? 'white' : 'var(--text-secondary)',
-            }}
-          >
-            {space.name}
-          </button>
-        ))}
-      </div>
+      <SpaceSwitcher
+        spaces={spaces}
+        activeSpaceId={activeSpaceId}
+        onSwitchSpace={onSwitchSpace}
+      />
 
       {/* Pinned Pages */}
-      {pinnedPages.length > 0 && (
-        <div className="px-2.5 py-1.5">
-          <div
-            className="text-[10px] font-semibold uppercase tracking-widest px-1 pb-1.5"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            📌 Pinned
-          </div>
-          <div className="flex flex-col gap-0.5">
-            {pinnedPages.map((page, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer"
-                style={{ background: 'rgba(124,58,237,0.15)' }}
-              >
-                <div
-                  className="w-4 h-4 rounded-sm flex items-center justify-center text-[9px]"
-                  style={{ background: 'var(--green)' }}
-                >
-                  {page.title.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-xs truncate" style={{ color: 'var(--text-primary)' }}>
-                  {page.title}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <PinnedPages
+        pages={pinnedPages}
+        onReorder={onReorderPins}
+        onUnpin={onUnpin}
+        onOpenInNewTab={onOpenPinInNewTab}
+        onClickPin={onClickPin}
+      />
 
-      {/* Active Tabs */}
-      <div className="flex-1 overflow-y-auto px-2.5 py-1.5">
-        <div
-          className="text-[10px] font-semibold uppercase tracking-widest px-1 pb-1.5"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          Today
-        </div>
-        <div className="flex flex-col gap-0.5">
-          {tabs.map(tab => (
-            <div
-              key={tab.id}
-              onClick={() => onSwitchTab(tab.id)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer group"
-              style={{
-                background: tab.id === activeTabId ? 'rgba(255,255,255,0.08)' : 'transparent',
-              }}
-            >
-              <div
-                className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px] flex-shrink-0"
-                style={{ background: 'var(--orange)' }}
-              >
-                {tab.title.charAt(0).toUpperCase()}
-              </div>
-              <span
-                className="text-xs truncate flex-1"
-                style={{ color: tab.id === activeTabId ? 'var(--text-primary)' : 'var(--text-secondary)' }}
-              >
-                {tab.title}
-              </span>
-              <button
-                onClick={(e) => { e.stopPropagation(); onCloseTab(tab.id) }}
-                className="hidden group-hover:flex w-4 h-4 rounded items-center justify-center text-[10px] cursor-pointer"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Tab List */}
+      <TabList
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onSwitchTab={onSwitchTab}
+        onCloseTab={onCloseTab}
+        onPinTab={onPinTab}
+      />
 
       {/* Footer */}
       <div
@@ -170,88 +125,6 @@ export function Sidebar({
         </div>
         <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Hafiz</span>
       </div>
-    </div>
-  )
-}
-
-// Minimized sidebar
-function SidebarMini({
-  spaces,
-  activeSpaceId,
-  tabs,
-  pinnedPages,
-  onSwitchSpace,
-  onSwitchTab,
-}: {
-  spaces: Space[]
-  activeSpaceId: string
-  tabs: Tab[]
-  pinnedPages: { title: string; faviconUrl: string }[]
-  onSwitchSpace: (id: string) => void
-  onSwitchTab: (id: string) => void
-}) {
-  return (
-    <div
-      className="h-full flex flex-col items-center py-2.5 gap-1 flex-shrink-0"
-      style={{
-        width: 48,
-        background: 'var(--bg-sidebar)',
-        borderRight: '1px solid var(--border)',
-      }}
-    >
-      <span className="text-[10px] font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>N</span>
-
-      {/* Space dots */}
-      <div className="flex gap-[3px] mb-2">
-        {spaces.map(space => (
-          <div
-            key={space.id}
-            onClick={() => onSwitchSpace(space.id)}
-            className="w-1.5 h-1.5 rounded-full cursor-pointer"
-            style={{
-              background: space.id === activeSpaceId ? space.color : 'rgba(255,255,255,0.15)',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Pinned icons */}
-      {pinnedPages.map((page, i) => (
-        <div
-          key={i}
-          className="w-7 h-7 rounded-md flex items-center justify-center cursor-pointer"
-          style={{ background: 'rgba(124,58,237,0.15)' }}
-          title={page.title}
-        >
-          <div
-            className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px]"
-            style={{ background: 'var(--green)' }}
-          >
-            {page.title.charAt(0).toUpperCase()}
-          </div>
-        </div>
-      ))}
-
-      {/* Separator */}
-      <div className="w-5 my-1" style={{ borderTop: '1px solid var(--border)' }} />
-
-      {/* Tab icons */}
-      {tabs.map(tab => (
-        <div
-          key={tab.id}
-          onClick={() => onSwitchTab(tab.id)}
-          className="w-7 h-7 rounded-md flex items-center justify-center cursor-pointer"
-          style={{ background: tab.isActive ? 'rgba(255,255,255,0.08)' : 'transparent' }}
-          title={tab.title}
-        >
-          <div
-            className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px]"
-            style={{ background: 'var(--orange)' }}
-          >
-            {tab.title.charAt(0).toUpperCase()}
-          </div>
-        </div>
-      ))}
     </div>
   )
 }
