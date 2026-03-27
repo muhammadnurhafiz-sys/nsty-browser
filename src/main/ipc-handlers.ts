@@ -1,10 +1,13 @@
 import { ipcMain } from 'electron'
 import { TabManager } from './tab-manager'
 import { WindowManager } from './window-manager'
+import { ClaudeClient } from './ai/claude-client'
+import { extractPageContext } from './ai/page-context'
 
 export function registerIpcHandlers(
   tabManager: TabManager,
   windowManager: WindowManager,
+  claudeClient?: ClaudeClient,
 ): void {
   // Tab management
   ipcMain.on('tab:create', (_event, url: string, spaceId: string) => {
@@ -64,5 +67,26 @@ export function registerIpcHandlers(
 
   ipcMain.handle('layout:info', () => {
     return windowManager.getLayoutInfo()
+  })
+
+  // AI messages
+  ipcMain.on('ai:send', async (_event, message: string, conversationId: string | null) => {
+    if (!claudeClient) return
+
+    // Extract page context from active tab
+    const activeView = tabManager.getActiveView()
+    const pageContext = await extractPageContext(activeView)
+
+    // Send to Claude (streaming handled inside client)
+    await claudeClient.sendMessage(message, conversationId, pageContext, 'sonnet')
+  })
+
+  // AI API key setup
+  ipcMain.on('ai:setApiKey', (_event, apiKey: string) => {
+    claudeClient?.setApiKey(apiKey)
+  })
+
+  ipcMain.handle('ai:isReady', () => {
+    return claudeClient?.isReady() ?? false
   })
 }

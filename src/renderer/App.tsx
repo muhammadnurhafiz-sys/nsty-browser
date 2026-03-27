@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { TopBar } from './components/topbar/TopBar'
+import { AiPanel } from './components/ai/AiPanel'
 import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
+import { useAi } from './hooks/useAi'
 
 export function App() {
   const {
@@ -22,6 +24,7 @@ export function App() {
   } = useSpaces()
 
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
+  const { messages: aiMessages, streamingContent, isStreaming, model: aiModel, isOpen: aiOpen, sendMessage: sendAiMessage, changeModel: changeAiModel, closePanel: closeAiPanel } = useAi()
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
 
   const currentUrl = activeTab?.url ?? ''
@@ -117,6 +120,18 @@ export function App() {
           )}
         </div>
       </div>
+
+      {/* AI Panel */}
+      <AiPanel
+        isOpen={aiOpen}
+        messages={aiMessages}
+        streamingContent={streamingContent}
+        isStreaming={isStreaming}
+        model={aiModel}
+        onSend={sendAiMessage}
+        onModelChange={changeAiModel}
+        onClose={closeAiPanel}
+      />
     </div>
   )
 }

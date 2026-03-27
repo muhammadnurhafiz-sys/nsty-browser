@@ -7,11 +7,13 @@ import { ShieldEngine } from './shield/engine'
 import { setupInterceptor } from './shield/interceptor'
 import { scheduleFilterUpdates } from './shield/filter-lists'
 import { closeDatabase } from './store/database'
+import { ClaudeClient } from './ai/claude-client'
 
 let mainWindow: BrowserWindow | null = null
 let tabManager: TabManager | null = null
 let windowManager: WindowManager | null = null
 let shieldEngine: ShieldEngine | null = null
+let claudeClient: ClaudeClient | null = null
 
 const isDev = !app.isPackaged
 
@@ -40,7 +42,12 @@ function createWindow(): void {
 
   tabManager = new TabManager(mainWindow)
   windowManager = new WindowManager(mainWindow, tabManager)
-  registerIpcHandlers(tabManager, windowManager)
+
+  // Initialize Claude AI client
+  claudeClient = new ClaudeClient(mainWindow)
+  claudeClient.initialize()
+
+  registerIpcHandlers(tabManager, windowManager, claudeClient)
 
   // Initialize shield (ad blocker)
   shieldEngine = new ShieldEngine()
