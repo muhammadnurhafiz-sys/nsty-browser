@@ -14,8 +14,6 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
   const handleSaveApiKey = () => {
     if (!apiKey.trim()) return
-    // @ts-expect-error - custom IPC
-    window.nsty?.sendAiMessage && window.nsty
     // Send to main process to encrypt and save
     const event = new CustomEvent('settings:saveApiKey', { detail: apiKey })
     window.dispatchEvent(event)

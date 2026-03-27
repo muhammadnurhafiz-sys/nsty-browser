@@ -46,6 +46,13 @@ const api = {
     return () => ipcRenderer.removeListener('ai:stream:end', listener)
   },
 
+  // New tab shortcut
+  onNewTabShortcut: (callback: () => void) => {
+    const listener = () => callback()
+    ipcRenderer.on('shortcut:newTab', listener)
+    return () => ipcRenderer.removeListener('shortcut:newTab', listener)
+  },
+
   // History
   onHistoryToggle: (callback: () => void) => {
     const listener = () => callback()

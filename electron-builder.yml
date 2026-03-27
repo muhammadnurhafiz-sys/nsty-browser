@@ -6,6 +6,8 @@ directories:
 
 publish:
   - provider: github
+    owner: hafiz
+    repo: nsty-browser
 
 files:
   - dist/**/*

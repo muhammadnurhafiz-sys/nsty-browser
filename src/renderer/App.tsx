@@ -52,14 +52,13 @@ export function App() {
     })
   }, [])
 
-  // Listen for new tab shortcut
+  // Listen for new tab shortcut from main process
   useEffect(() => {
-    if (!window.nsty) return
-    // @ts-expect-error custom IPC event
-    const handler = () => handleNewTab()
-    window.addEventListener('shortcut:newTab', handler)
-    return () => window.removeEventListener('shortcut:newTab', handler)
-  }, [])
+    if (!window.nsty?.onNewTabShortcut) return
+    return window.nsty.onNewTabShortcut(() => {
+      handleNewTab()
+    })
+  }, [handleNewTab])
 
   const handleNewTab = useCallback(() => {
     createTab('https://www.google.com')
