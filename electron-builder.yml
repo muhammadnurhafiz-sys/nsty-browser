@@ -6,7 +6,7 @@ directories:
 
 publish:
   - provider: github
-    owner: hafiz
+    owner: muhammadnurhafiz-sys
     repo: nsty-browser
 
 files:
