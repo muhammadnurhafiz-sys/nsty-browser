@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { TopBar } from './components/topbar/TopBar'
 import { AiPanel } from './components/ai/AiPanel'
+import { HistoryPanel } from './components/history/HistoryPanel'
+import { SettingsPanel } from './components/settings/SettingsPanel'
 import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
 import { useAi } from './hooks/useAi'
@@ -26,6 +28,8 @@ export function App() {
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
   const { messages: aiMessages, streamingContent, isStreaming, model: aiModel, isOpen: aiOpen, sendMessage: sendAiMessage, changeModel: changeAiModel, closePanel: closeAiPanel } = useAi()
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const currentUrl = activeTab?.url ?? ''
 
@@ -131,6 +135,19 @@ export function App() {
         onSend={sendAiMessage}
         onModelChange={changeAiModel}
         onClose={closeAiPanel}
+      />
+
+      {/* History Panel */}
+      <HistoryPanel
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onNavigate={handleNavigate}
+      />
+
+      {/* Settings Panel */}
+      <SettingsPanel
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
       />
     </div>
   )

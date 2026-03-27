@@ -103,6 +103,10 @@ function createWindow(): void {
     mainWindow?.webContents.send('shortcut:focusAddressBar')
   })
 
+  globalShortcut.register('CommandOrControl+Shift+H', () => {
+    mainWindow?.webContents.send('shortcut:toggleHistory')
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
     tabManager = null
