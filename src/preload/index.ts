@@ -46,6 +46,20 @@ const api = {
     return () => ipcRenderer.removeListener('ai:stream:end', listener)
   },
 
+  // History
+  onHistoryToggle: (callback: () => void) => {
+    const listener = () => callback()
+    ipcRenderer.on('shortcut:toggleHistory', listener)
+    return () => ipcRenderer.removeListener('shortcut:toggleHistory', listener)
+  },
+
+  // Address bar focus
+  onFocusAddressBar: (callback: () => void) => {
+    const listener = () => callback()
+    ipcRenderer.on('shortcut:focusAddressBar', listener)
+    return () => ipcRenderer.removeListener('shortcut:focusAddressBar', listener)
+  },
+
   // Sidebar
   toggleSidebar: () => ipcRenderer.send('sidebar:toggle'),
   onSidebarToggle: (callback: (expanded: boolean) => void) => {
@@ -61,6 +75,25 @@ const api = {
     ipcRenderer.on('ai:toggled', listener)
     return () => ipcRenderer.removeListener('ai:toggled', listener)
   },
+
+  // Auto-update
+  onUpdateAvailable: (callback: (info: { version: string; releaseNotes: string }) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, info: { version: string; releaseNotes: string }) => callback(info)
+    ipcRenderer.on('update:available', listener)
+    return () => ipcRenderer.removeListener('update:available', listener)
+  },
+  onUpdateProgress: (callback: (progress: { percent: number }) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: { percent: number }) => callback(progress)
+    ipcRenderer.on('update:progress', listener)
+    return () => ipcRenderer.removeListener('update:progress', listener)
+  },
+  onUpdateDownloaded: (callback: () => void) => {
+    const listener = () => callback()
+    ipcRenderer.on('update:downloaded', listener)
+    return () => ipcRenderer.removeListener('update:downloaded', listener)
+  },
+  downloadUpdate: () => ipcRenderer.send('update:download'),
+  installUpdate: () => ipcRenderer.send('update:install'),
 
   // Session
   getSpaces: () => ipcRenderer.invoke('session:getSpaces'),

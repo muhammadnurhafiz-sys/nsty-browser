@@ -3,6 +3,7 @@ import { TabManager } from './tab-manager'
 import { WindowManager } from './window-manager'
 import { ClaudeClient } from './ai/claude-client'
 import { extractPageContext } from './ai/page-context'
+import { downloadUpdate, installUpdate } from './updater'
 
 export function registerIpcHandlers(
   tabManager: TabManager,
@@ -88,5 +89,14 @@ export function registerIpcHandlers(
 
   ipcMain.handle('ai:isReady', () => {
     return claudeClient?.isReady() ?? false
+  })
+
+  // Auto-update
+  ipcMain.on('update:download', () => {
+    downloadUpdate()
+  })
+
+  ipcMain.on('update:install', () => {
+    installUpdate()
   })
 }

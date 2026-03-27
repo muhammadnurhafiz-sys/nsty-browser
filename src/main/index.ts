@@ -8,6 +8,7 @@ import { setupInterceptor } from './shield/interceptor'
 import { scheduleFilterUpdates } from './shield/filter-lists'
 import { closeDatabase } from './store/database'
 import { ClaudeClient } from './ai/claude-client'
+import { setupAutoUpdater } from './updater'
 
 let mainWindow: BrowserWindow | null = null
 let tabManager: TabManager | null = null
@@ -26,12 +27,13 @@ function createWindow(): void {
     frame: false,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     titleBarOverlay: process.platform === 'darwin' ? undefined : {
-      color: '#1a1a2e',
+      color: '#111113',
       symbolColor: '#94a3b8',
       height: 42,
     },
     trafficLightPosition: process.platform === 'darwin' ? { x: 12, y: 12 } : undefined,
-    backgroundColor: '#1a1a2e',
+    icon: path.join(__dirname, '../../resources/icons/icon.png'),
+    backgroundColor: '#111113',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -62,6 +64,11 @@ function createWindow(): void {
   }).catch((err) => {
     console.error('[Nsty] Failed to initialize shield:', err)
   })
+
+  // Auto-updater (production only)
+  if (!isDev) {
+    setupAutoUpdater(mainWindow)
+  }
 
   // Load renderer
   if (isDev) {

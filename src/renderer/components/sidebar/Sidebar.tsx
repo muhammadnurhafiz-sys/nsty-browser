@@ -1,4 +1,4 @@
-import type { Tab, Space, PinnedPage } from '@shared/types'
+import type { Tab, Space, PinnedPage, UserProfile } from '@shared/types'
 import { SpaceSwitcher } from './SpaceSwitcher'
 import { PinnedPages } from './PinnedPages'
 import { TabList } from './TabList'
@@ -18,6 +18,9 @@ interface SidebarProps {
   onReorderPins: (pages: PinnedPage[]) => void
   onClickPin: (url: string) => void
   onOpenPinInNewTab: (url: string) => void
+  onOpenSettings: () => void
+  onToggleSidebar: () => void
+  userProfile: UserProfile
 }
 
 export function Sidebar({
@@ -34,6 +37,9 @@ export function Sidebar({
   onReorderPins,
   onClickPin,
   onOpenPinInNewTab,
+  onOpenSettings,
+  onToggleSidebar,
+  userProfile,
 }: SidebarProps) {
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
   const tabs = activeSpace?.tabs ?? []
@@ -50,13 +56,14 @@ export function Sidebar({
         onSwitchSpace={onSwitchSpace}
         onSwitchTab={onSwitchTab}
         onClickPin={onClickPin}
+        onToggleSidebar={onToggleSidebar}
       />
     )
   }
 
   return (
     <div
-      className="h-full flex flex-col flex-shrink-0"
+      className="sidebar-container h-full flex flex-col flex-shrink-0"
       style={{
         width: 240,
         background: 'var(--bg-sidebar)',
@@ -64,25 +71,34 @@ export function Sidebar({
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3.5 pt-3 pb-2">
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <span className="text-[13px] font-semibold tracking-wider" style={{ color: 'var(--text-primary)' }}>
           NSTY
         </span>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1">
           <button
             onClick={onNewTab}
-            className="w-5 h-5 rounded flex items-center justify-center text-xs cursor-pointer hover:bg-white/10"
-            style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-xs cursor-pointer hover:bg-white/10"
+            style={{ color: 'var(--text-secondary)' }}
             title="New tab (Ctrl+T)"
           >
             +
           </button>
           <button
-            className="w-5 h-5 rounded flex items-center justify-center text-[10px] cursor-pointer hover:bg-white/10"
-            style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+            onClick={onOpenSettings}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] cursor-pointer hover:bg-white/10"
+            style={{ color: 'var(--text-secondary)' }}
             title="Settings"
           >
             ⚙
+          </button>
+          <button
+            onClick={onToggleSidebar}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] cursor-pointer hover:bg-white/10"
+            style={{ color: 'var(--text-secondary)' }}
+            title="Collapse sidebar (Ctrl+\)"
+          >
+            «
           </button>
         </div>
       </div>
@@ -112,18 +128,35 @@ export function Sidebar({
         onPinTab={onPinTab}
       />
 
-      {/* Footer */}
+      {/* Footer — User Profile */}
       <div
-        className="flex items-center gap-2 px-2.5 py-2"
+        className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-white/[0.04]"
         style={{ borderTop: '1px solid var(--border)' }}
       >
-        <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold"
-          style={{ background: 'var(--accent)', color: 'white' }}
-        >
-          H
+        {userProfile.avatarUrl ? (
+          <img
+            src={userProfile.avatarUrl}
+            className="w-7 h-7 rounded-full object-cover"
+            alt={userProfile.name}
+          />
+        ) : (
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
+            style={{ background: 'var(--accent)', color: 'white' }}
+          >
+            {userProfile.name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="flex flex-col min-w-0">
+          <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
+            {userProfile.name}
+          </span>
+          {userProfile.provider === 'google' && (
+            <span className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+              {userProfile.email}
+            </span>
+          )}
         </div>
-        <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Hafiz</span>
       </div>
     </div>
   )

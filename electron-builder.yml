@@ -4,6 +4,9 @@ directories:
   output: release
   buildResources: resources
 
+publish:
+  - provider: github
+
 files:
   - dist/**/*
   - resources/**/*

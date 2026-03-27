@@ -33,9 +33,10 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <div
-      className="h-[42px] flex items-center px-3 gap-2"
+      className="flex items-center px-3 gap-2"
       style={{
-        background: '#1e1e3a',
+        height: 'var(--topbar-height)',
+        background: 'var(--bg-surface)',
         borderBottom: '1px solid var(--border)',
         WebkitAppRegion: 'drag',
       } as React.CSSProperties}
@@ -44,24 +45,24 @@ export function TopBar({
       <div className="flex gap-1" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <button
           onClick={onBack}
-          className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-sm cursor-pointer hover:brightness-125"
-          style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
           title="Back"
         >
           ←
         </button>
         <button
           onClick={onForward}
-          className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-sm cursor-pointer hover:brightness-125"
-          style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
           title="Forward"
         >
           →
         </button>
         <button
           onClick={onReload}
-          className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-sm cursor-pointer hover:brightness-125"
-          style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
           title="Reload"
         >
           ↻
@@ -77,9 +78,9 @@ export function TopBar({
       <div className="relative" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <button
           onClick={onToggleShieldPopup}
-          className="w-7 h-7 rounded-md flex items-center justify-center text-sm cursor-pointer"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
           style={{
-            background: shieldCount > 0 ? 'rgba(124,58,237,0.2)' : 'var(--bg-hover)',
+            background: shieldCount > 0 ? 'var(--accent-subtle)' : 'transparent',
           }}
           title={`Nsty Shield — ${shieldCount} blocked`}
         >
@@ -96,9 +97,9 @@ export function TopBar({
       {/* Claude AI toggle */}
       <button
         onClick={onToggleAi}
-        className="w-7 h-7 rounded-md flex items-center justify-center text-[13px] cursor-pointer"
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] cursor-pointer hover:bg-white/10"
         style={{
-          background: 'rgba(251,146,60,0.2)',
+          background: 'rgba(251,146,60,0.15)',
           WebkitAppRegion: 'no-drag',
         } as React.CSSProperties}
         title="Toggle Claude AI panel"

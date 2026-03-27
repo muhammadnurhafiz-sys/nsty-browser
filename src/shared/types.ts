@@ -62,6 +62,14 @@ export interface ShieldStatsEvent {
   stats: ShieldStats
 }
 
+export interface UserProfile {
+  id: string
+  name: string
+  email: string
+  avatarUrl: string | null
+  provider: 'local' | 'google'
+}
+
 export type IpcChannels = {
   'tab:create': (url: string, spaceId: string) => void
   'tab:close': (tabId: string) => void

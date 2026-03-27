@@ -4,9 +4,11 @@ import { TopBar } from './components/topbar/TopBar'
 import { AiPanel } from './components/ai/AiPanel'
 import { HistoryPanel } from './components/history/HistoryPanel'
 import { SettingsPanel } from './components/settings/SettingsPanel'
+import { UpdateNotification } from './components/UpdateNotification'
 import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
 import { useAi } from './hooks/useAi'
+import { useUserProfile } from './hooks/useUserProfile'
 
 export function App() {
   const {
@@ -27,6 +29,7 @@ export function App() {
 
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
   const { messages: aiMessages, streamingContent, isStreaming, model: aiModel, isOpen: aiOpen, sendMessage: sendAiMessage, changeModel: changeAiModel, closePanel: closeAiPanel } = useAi()
+  const { profile: userProfile } = useUserProfile()
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -38,6 +41,14 @@ export function App() {
     if (!window.nsty) return
     return window.nsty.onSidebarToggle((expanded) => {
       setSidebarExpanded(expanded)
+    })
+  }, [])
+
+  // Listen for history toggle from main process
+  useEffect(() => {
+    if (!window.nsty?.onHistoryToggle) return
+    return window.nsty.onHistoryToggle(() => {
+      setHistoryOpen(prev => !prev)
     })
   }, [])
 
@@ -60,6 +71,10 @@ export function App() {
 
   const handleToggleAi = useCallback(() => {
     window.nsty?.toggleAiPanel()
+  }, [])
+
+  const handleToggleSidebar = useCallback(() => {
+    window.nsty?.toggleSidebar()
   }, [])
 
   // Create initial tab if none exist
@@ -87,6 +102,9 @@ export function App() {
         onReorderPins={reorderPins}
         onClickPin={clickPin}
         onOpenPinInNewTab={openPinInNewTab}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onToggleSidebar={handleToggleSidebar}
+        userProfile={userProfile}
       />
 
       {/* Main content area */}
@@ -108,7 +126,7 @@ export function App() {
         />
 
         {/* Content area - BrowserViews are rendered here by Electron */}
-        <div className="flex-1" style={{ background: '#0f172a' }}>
+        <div className="flex-1" style={{ background: 'var(--bg-primary)' }}>
           {!activeTabId && (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
@@ -149,6 +167,9 @@ export function App() {
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
       />
+
+      {/* Update Notification */}
+      <UpdateNotification />
     </div>
   )
 }

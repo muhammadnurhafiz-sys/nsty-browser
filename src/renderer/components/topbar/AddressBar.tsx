@@ -18,17 +18,11 @@ export function AddressBar({ url, onNavigate }: AddressBarProps) {
 
   // Listen for focus shortcut from main process
   useEffect(() => {
-    const cleanup = window.nsty?.onSidebarToggle?.(() => {})
-    // Focus address bar on Ctrl+L
-    const handleShortcut = () => {
+    if (!window.nsty?.onFocusAddressBar) return
+    return window.nsty.onFocusAddressBar(() => {
       inputRef.current?.focus()
       inputRef.current?.select()
-    }
-    // @ts-expect-error - custom event from main process
-    window.nsty && window.addEventListener('shortcut:focusAddressBar', handleShortcut)
-    return () => {
-      cleanup?.()
-    }
+    })
   }, [])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -56,10 +50,11 @@ export function AddressBar({ url, onNavigate }: AddressBarProps) {
 
   return (
     <div
-      className="flex-1 h-7 flex items-center rounded-lg px-3 gap-2"
+      className="flex-1 h-8 flex items-center px-3 gap-2"
       style={{
-        background: isFocused ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)',
+        background: isFocused ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
         border: isFocused ? '1px solid var(--accent)' : '1px solid transparent',
+        borderRadius: 'var(--radius-md)',
       }}
     >
       {!isFocused && url.startsWith('https') && (
@@ -77,8 +72,8 @@ export function AddressBar({ url, onNavigate }: AddressBarProps) {
         onBlur={() => setIsFocused(false)}
         onKeyDown={handleKeyDown}
         placeholder="Search or enter URL..."
-        className="flex-1 bg-transparent outline-none text-xs"
-        style={{ color: 'var(--text-secondary)' }}
+        className="flex-1 bg-transparent outline-none text-[13px]"
+        style={{ color: isFocused ? 'var(--text-primary)' : 'var(--text-secondary)' }}
       />
     </div>
   )

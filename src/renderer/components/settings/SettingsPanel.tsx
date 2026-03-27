@@ -29,14 +29,15 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
+      <div className="settings-backdrop fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
       <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[480px] max-h-[70vh] rounded-xl flex flex-col shadow-2xl overflow-hidden"
+        className="settings-panel fixed top-1/2 left-1/2 z-50 w-[500px] max-h-[70vh] flex flex-col shadow-2xl overflow-hidden"
         style={{
           background: 'var(--bg-sidebar)',
-          border: '1px solid var(--border)',
+          border: '1px solid var(--border-strong)',
+          borderRadius: 'var(--radius-lg)',
         }}
       >
         {/* Header */}
