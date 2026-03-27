@@ -3,10 +3,15 @@ import path from 'path'
 import { TabManager } from './tab-manager'
 import { WindowManager } from './window-manager'
 import { registerIpcHandlers } from './ipc-handlers'
+import { ShieldEngine } from './shield/engine'
+import { setupInterceptor } from './shield/interceptor'
+import { scheduleFilterUpdates } from './shield/filter-lists'
+import { closeDatabase } from './store/database'
 
 let mainWindow: BrowserWindow | null = null
 let tabManager: TabManager | null = null
 let windowManager: WindowManager | null = null
+let shieldEngine: ShieldEngine | null = null
 
 const isDev = !app.isPackaged
 
@@ -36,6 +41,20 @@ function createWindow(): void {
   tabManager = new TabManager(mainWindow)
   windowManager = new WindowManager(mainWindow, tabManager)
   registerIpcHandlers(tabManager, windowManager)
+
+  // Initialize shield (ad blocker)
+  shieldEngine = new ShieldEngine()
+  shieldEngine.initialize().then(() => {
+    if (shieldEngine && mainWindow) {
+      shieldEngine.enableOnSession()
+      shieldEngine.setupStatsTracking()
+      setupInterceptor(mainWindow, shieldEngine)
+      scheduleFilterUpdates()
+      console.log('[Nsty] Shield engine ready')
+    }
+  }).catch((err) => {
+    console.error('[Nsty] Failed to initialize shield:', err)
+  })
 
   // Load renderer
   if (isDev) {
@@ -96,6 +115,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   globalShortcut.unregisterAll()
+  closeDatabase()
   if (process.platform !== 'darwin') {
     app.quit()
   }

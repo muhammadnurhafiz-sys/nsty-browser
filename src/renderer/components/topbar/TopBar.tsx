@@ -1,4 +1,6 @@
 import { AddressBar } from './AddressBar'
+import { ShieldPopup } from './ShieldPopup'
+import type { ShieldStats } from '@shared/types'
 
 interface TopBarProps {
   url: string
@@ -7,6 +9,11 @@ interface TopBarProps {
   onForward: () => void
   onReload: () => void
   shieldCount: number
+  shieldStats: ShieldStats
+  shieldPopupOpen: boolean
+  onToggleShieldPopup: () => void
+  onCloseShieldPopup: () => void
+  onDisableShieldForSite: () => void
   onToggleAi: () => void
 }
 
@@ -17,6 +24,11 @@ export function TopBar({
   onForward,
   onReload,
   shieldCount,
+  shieldStats,
+  shieldPopupOpen,
+  onToggleShieldPopup,
+  onCloseShieldPopup,
+  onDisableShieldForSite,
   onToggleAi,
 }: TopBarProps) {
   return (
@@ -61,17 +73,25 @@ export function TopBar({
         <AddressBar url={url} onNavigate={onNavigate} />
       </div>
 
-      {/* Shield icon */}
-      <button
-        className="w-7 h-7 rounded-md flex items-center justify-center text-sm cursor-pointer"
-        style={{
-          background: shieldCount > 0 ? 'rgba(124,58,237,0.2)' : 'var(--bg-hover)',
-          WebkitAppRegion: 'no-drag',
-        } as React.CSSProperties}
-        title={`Nsty Shield — ${shieldCount} ads blocked`}
-      >
-        🛡️
-      </button>
+      {/* Shield icon + popup */}
+      <div className="relative" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        <button
+          onClick={onToggleShieldPopup}
+          className="w-7 h-7 rounded-md flex items-center justify-center text-sm cursor-pointer"
+          style={{
+            background: shieldCount > 0 ? 'rgba(124,58,237,0.2)' : 'var(--bg-hover)',
+          }}
+          title={`Nsty Shield — ${shieldCount} blocked`}
+        >
+          🛡️
+        </button>
+        <ShieldPopup
+          stats={shieldStats}
+          isOpen={shieldPopupOpen}
+          onClose={onCloseShieldPopup}
+          onDisableForSite={onDisableShieldForSite}
+        />
+      </div>
 
       {/* Claude AI toggle */}
       <button

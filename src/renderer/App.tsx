@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { TopBar } from './components/topbar/TopBar'
 import { useSpaces } from './hooks/useSpaces'
+import { useShield } from './hooks/useShield'
 
 export function App() {
   const {
@@ -20,8 +21,8 @@ export function App() {
     openPinInNewTab,
   } = useSpaces()
 
+  const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
-  const [shieldCount] = useState(0)
 
   const currentUrl = activeTab?.url ?? ''
 
@@ -90,7 +91,12 @@ export function App() {
           onBack={() => window.nsty?.goBack()}
           onForward={() => window.nsty?.goForward()}
           onReload={() => window.nsty?.reload()}
-          shieldCount={shieldCount}
+          shieldCount={totalBlocked}
+          shieldStats={shieldStats}
+          shieldPopupOpen={shieldPopupOpen}
+          onToggleShieldPopup={toggleShieldPopup}
+          onCloseShieldPopup={closeShieldPopup}
+          onDisableShieldForSite={disableForSite}
           onToggleAi={handleToggleAi}
         />
 
