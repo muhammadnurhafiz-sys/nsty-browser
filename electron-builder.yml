@@ -28,7 +28,7 @@ mac:
       arch:
         - x64
         - arm64
-  icon: resources/icons/icon.icns
+  icon: resources/icons/icon.png
   category: public.app-category.productivity
 
 dmg:
