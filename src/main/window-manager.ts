@@ -1,15 +1,13 @@
 import { BrowserWindow } from 'electron'
 import { TabManager } from './tab-manager'
 
-const TOP_BAR_HEIGHT = 42
-const SIDEBAR_EXPANDED = 240
-const SIDEBAR_MINIMIZED = 48
-const AI_PANEL_WIDTH = 300
+const TOP_BAR_HEIGHT = 52
+const SIDEBAR_WIDTH = 80
+const AI_PANEL_WIDTH = 340
 
 export class WindowManager {
   private window: BrowserWindow
   private tabManager: TabManager
-  private sidebarExpanded = true
   private aiPanelOpen = false
 
   constructor(window: BrowserWindow, tabManager: TabManager) {
@@ -21,7 +19,7 @@ export class WindowManager {
   }
 
   get sidebarWidth(): number {
-    return this.sidebarExpanded ? SIDEBAR_EXPANDED : SIDEBAR_MINIMIZED
+    return SIDEBAR_WIDTH
   }
 
   get aiWidth(): number {
@@ -29,9 +27,8 @@ export class WindowManager {
   }
 
   toggleSidebar(): boolean {
-    this.sidebarExpanded = !this.sidebarExpanded
-    this.updateLayout()
-    return this.sidebarExpanded
+    // Sidebar is now fixed-width, no toggle needed
+    return true
   }
 
   toggleAiPanel(): boolean {
@@ -41,7 +38,7 @@ export class WindowManager {
   }
 
   isSidebarExpanded(): boolean {
-    return this.sidebarExpanded
+    return true
   }
 
   isAiPanelOpen(): boolean {
@@ -50,8 +47,8 @@ export class WindowManager {
 
   updateLayout(): void {
     const [windowWidth, windowHeight] = this.window.getContentSize()
-    const contentX = this.sidebarWidth
-    const contentWidth = windowWidth - this.sidebarWidth - this.aiWidth
+    const contentX = SIDEBAR_WIDTH
+    const contentWidth = windowWidth - SIDEBAR_WIDTH - this.aiWidth
     const contentY = TOP_BAR_HEIGHT
     const contentHeight = windowHeight - TOP_BAR_HEIGHT
 
@@ -66,14 +63,14 @@ export class WindowManager {
   getLayoutInfo() {
     const [windowWidth, windowHeight] = this.window.getContentSize()
     return {
-      sidebarWidth: this.sidebarWidth,
-      sidebarExpanded: this.sidebarExpanded,
+      sidebarWidth: SIDEBAR_WIDTH,
+      sidebarExpanded: true,
       aiPanelWidth: this.aiWidth,
       aiPanelOpen: this.aiPanelOpen,
       topBarHeight: TOP_BAR_HEIGHT,
-      contentX: this.sidebarWidth,
+      contentX: SIDEBAR_WIDTH,
       contentY: TOP_BAR_HEIGHT,
-      contentWidth: windowWidth - this.sidebarWidth - this.aiWidth,
+      contentWidth: windowWidth - SIDEBAR_WIDTH - this.aiWidth,
       contentHeight: windowHeight - TOP_BAR_HEIGHT,
       windowWidth,
       windowHeight,

@@ -46,20 +46,28 @@ export function TabList({ tabs, activeTabId, onSwitchTab, onCloseTab, onPinTab }
   if (tabs.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center px-4">
-        <p className="text-[11px] text-center" style={{ color: 'var(--text-muted)' }}>
-          No open tabs in this space
-        </p>
+        <div className="text-center">
+          <span
+            className="material-symbols-outlined mb-2 block"
+            style={{ fontSize: 24, color: 'var(--outline)', opacity: 0.4 }}
+          >
+            tab
+          </span>
+          <p className="font-body text-[11px]" style={{ color: 'var(--outline)' }}>
+            No open tabs in this space
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-2.5 py-1.5">
+    <div className="flex-1 overflow-y-auto py-2">
       {groups.map(group => (
-        <div key={group.label}>
+        <div key={group.label} className="mb-3">
           <div
-            className="text-[10px] font-semibold uppercase tracking-widest px-1 pb-1.5 pt-1"
-            style={{ color: 'var(--text-muted)' }}
+            className="font-label text-[10px] font-semibold uppercase tracking-widest px-3 pb-2 pt-1"
+            style={{ color: 'var(--outline)' }}
           >
             {group.label}
           </div>

@@ -1,6 +1,6 @@
 import { AddressBar } from './AddressBar'
 import { ShieldPopup } from './ShieldPopup'
-import type { ShieldStats } from '@shared/types'
+import type { ShieldStats, Space } from '@shared/types'
 
 interface TopBarProps {
   url: string
@@ -15,6 +15,9 @@ interface TopBarProps {
   onCloseShieldPopup: () => void
   onDisableShieldForSite: () => void
   onToggleAi: () => void
+  spaces: Space[]
+  activeSpaceId: string
+  onSwitchSpace: (spaceId: string) => void
 }
 
 export function TopBar({
@@ -30,82 +33,134 @@ export function TopBar({
   onCloseShieldPopup,
   onDisableShieldForSite,
   onToggleAi,
+  spaces,
+  activeSpaceId,
+  onSwitchSpace,
 }: TopBarProps) {
   return (
     <div
-      className="flex items-center px-3 gap-2"
+      className="flex items-center justify-center px-4"
       style={{
         height: 'var(--topbar-height)',
-        background: 'var(--bg-surface)',
-        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface)',
         WebkitAppRegion: 'drag',
       } as React.CSSProperties}
     >
-      {/* Navigation buttons */}
-      <div className="flex gap-1" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <button
-          onClick={onBack}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
-          style={{ color: 'var(--text-muted)' }}
-          title="Back"
-        >
-          ←
-        </button>
-        <button
-          onClick={onForward}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
-          style={{ color: 'var(--text-muted)' }}
-          title="Forward"
-        >
-          →
-        </button>
-        <button
-          onClick={onReload}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
-          style={{ color: 'var(--text-muted)' }}
-          title="Reload"
-        >
-          ↻
-        </button>
-      </div>
-
-      {/* Address bar */}
-      <div className="flex-1" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <AddressBar url={url} onNavigate={onNavigate} />
-      </div>
-
-      {/* Shield icon + popup */}
-      <div className="relative" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <button
-          onClick={onToggleShieldPopup}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm cursor-pointer hover:bg-white/10"
-          style={{
-            background: shieldCount > 0 ? 'var(--accent-subtle)' : 'transparent',
-          }}
-          title={`Nsty Shield — ${shieldCount} blocked`}
-        >
-          🛡️
-        </button>
-        <ShieldPopup
-          stats={shieldStats}
-          isOpen={shieldPopupOpen}
-          onClose={onCloseShieldPopup}
-          onDisableForSite={onDisableShieldForSite}
-        />
-      </div>
-
-      {/* Claude AI toggle */}
-      <button
-        onClick={onToggleAi}
-        className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] cursor-pointer hover:bg-white/10"
+      {/* Floating glass command bar */}
+      <div
+        className="glass-panel flex items-center justify-between px-5 w-full max-w-4xl"
         style={{
-          background: 'rgba(251,146,60,0.15)',
+          height: 40,
+          borderRadius: 'var(--radius-full)',
           WebkitAppRegion: 'no-drag',
         } as React.CSSProperties}
-        title="Toggle Claude AI panel"
       >
-        ✨
-      </button>
+        {/* Left: Nav buttons + Address */}
+        <div className="flex items-center gap-3 flex-1">
+          {/* Nav buttons */}
+          <div className="flex gap-0.5">
+            <button
+              onClick={onBack}
+              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              style={{ color: 'var(--outline)' }}
+              title="Back"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            </button>
+            <button
+              onClick={onForward}
+              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              style={{ color: 'var(--outline)' }}
+              title="Forward"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </button>
+            <button
+              onClick={onReload}
+              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              style={{ color: 'var(--outline)' }}
+              title="Reload"
+            >
+              <span className="material-symbols-outlined text-[16px]">refresh</span>
+            </button>
+          </div>
+
+          {/* Address bar */}
+          <AddressBar url={url} onNavigate={onNavigate} />
+        </div>
+
+        {/* Center: Space tabs */}
+        <nav className="flex items-center gap-5 mx-4">
+          {spaces.map((space) => {
+            const isActive = space.id === activeSpaceId
+            return (
+              <button
+                key={space.id}
+                onClick={() => onSwitchSpace(space.id)}
+                className="font-body text-sm cursor-pointer transition-colors whitespace-nowrap"
+                style={{
+                  color: isActive ? 'var(--primary)' : 'var(--outline)',
+                  fontWeight: isActive ? 700 : 400,
+                  borderBottom: isActive ? '1px solid var(--primary)' : '1px solid transparent',
+                  paddingBottom: 2,
+                }}
+              >
+                {space.name}
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Right: Shield + AI + actions */}
+        <div
+          className="flex items-center gap-2 ml-4 pl-4"
+          style={{ borderLeft: '1px solid rgba(73, 72, 71, 0.2)' }}
+        >
+          {/* Shield */}
+          <div className="relative">
+            <button
+              onClick={onToggleShieldPopup}
+              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              style={{
+                color: shieldCount > 0 ? 'var(--primary)' : 'var(--outline)',
+              }}
+              title={`Nsty Shield — ${shieldCount} blocked`}
+            >
+              <span className="material-symbols-outlined text-[18px]">shield</span>
+              {shieldCount > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[8px] font-bold font-label"
+                  style={{
+                    background: 'var(--primary)',
+                    color: 'var(--on-primary)',
+                  }}
+                >
+                  {shieldCount > 99 ? '99+' : shieldCount}
+                </span>
+              )}
+            </button>
+            <ShieldPopup
+              stats={shieldStats}
+              isOpen={shieldPopupOpen}
+              onClose={onCloseShieldPopup}
+              onDisableForSite={onDisableShieldForSite}
+            />
+          </div>
+
+          {/* AI toggle */}
+          <button
+            onClick={onToggleAi}
+            className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+            style={{
+              color: 'var(--primary)',
+              background: 'rgba(206, 250, 5, 0.1)',
+            }}
+            title="Toggle AI panel"
+          >
+            <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

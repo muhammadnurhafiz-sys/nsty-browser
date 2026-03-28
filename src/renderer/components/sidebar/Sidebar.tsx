@@ -1,16 +1,11 @@
 import { useState } from 'react'
 import type { Tab, Space, PinnedPage, UserProfile } from '@shared/types'
-import { SpaceSwitcher } from './SpaceSwitcher'
-import { PinnedPages } from './PinnedPages'
-import { TabList } from './TabList'
-import { SidebarMini } from './SidebarMini'
 import { UserMenu } from './UserMenu'
 
 interface SidebarProps {
   spaces: Space[]
   activeSpaceId: string
   activeTabId: string | null
-  expanded: boolean
   onSwitchSpace: (spaceId: string) => void
   onSwitchTab: (tabId: string) => void
   onCloseTab: (tabId: string) => void
@@ -21,154 +16,156 @@ interface SidebarProps {
   onClickPin: (url: string) => void
   onOpenPinInNewTab: (url: string) => void
   onOpenSettings: () => void
-  onToggleSidebar: () => void
+  onOpenHistory: () => void
+  onToggleTabDrawer: () => void
   userProfile: UserProfile
 }
 
+type NavItem = {
+  id: string
+  icon: string
+  label: string
+  action: () => void
+}
+
 export function Sidebar({
-  spaces,
-  activeSpaceId,
-  activeTabId,
-  expanded,
-  onSwitchSpace,
-  onSwitchTab,
-  onCloseTab,
   onNewTab,
-  onPinTab,
-  onUnpin,
-  onReorderPins,
-  onClickPin,
-  onOpenPinInNewTab,
   onOpenSettings,
-  onToggleSidebar,
+  onOpenHistory,
+  onToggleTabDrawer,
   userProfile,
 }: SidebarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const activeSpace = spaces.find(s => s.id === activeSpaceId)
-  const tabs = activeSpace?.tabs ?? []
-  const pinnedPages = activeSpace?.pinnedPages ?? []
+  const [activeNav, setActiveNav] = useState('tabs')
 
-  if (!expanded) {
-    return (
-      <SidebarMini
-        spaces={spaces}
-        activeSpaceId={activeSpaceId}
-        tabs={tabs}
-        pinnedPages={pinnedPages}
-        activeTabId={activeTabId}
-        onSwitchSpace={onSwitchSpace}
-        onSwitchTab={onSwitchTab}
-        onClickPin={onClickPin}
-        onToggleSidebar={onToggleSidebar}
-      />
-    )
-  }
+  const navItems: NavItem[] = [
+    { id: 'tabs', icon: 'grid_view', label: 'Tabs', action: onToggleTabDrawer },
+    { id: 'pins', icon: 'push_pin', label: 'Pinned', action: () => setActiveNav('pins') },
+    { id: 'history', icon: 'history', label: 'History', action: onOpenHistory },
+    { id: 'extensions', icon: 'extension', label: 'Extensions', action: () => setActiveNav('extensions') },
+    { id: 'settings', icon: 'settings', label: 'Settings', action: onOpenSettings },
+  ]
 
   return (
-    <div
-      className="sidebar-container h-full flex flex-col flex-shrink-0"
+    <aside
+      className="fixed left-0 top-0 h-full z-40 flex flex-col flex-shrink-0"
       style={{
-        width: 240,
-        background: 'var(--bg-sidebar)',
-        borderRight: '1px solid var(--border)',
+        width: 80,
+        background: 'var(--surface-container-low)',
       }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <span className="text-[13px] font-semibold tracking-wider" style={{ color: 'var(--text-primary)' }}>
-          NSTY
-        </span>
-        <div className="flex gap-1">
-          <button
-            onClick={onNewTab}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-xs cursor-pointer hover:bg-white/10"
-            style={{ color: 'var(--text-secondary)' }}
-            title="New tab (Ctrl+T)"
+      <div className="flex flex-col items-center gap-8 h-full py-6">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-2">
+          <span
+            className="font-headline text-xl font-bold tracking-tighter"
+            style={{ color: 'var(--primary)' }}
           >
-            +
-          </button>
-          <button
-            onClick={onOpenSettings}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] cursor-pointer hover:bg-white/10"
-            style={{ color: 'var(--text-secondary)' }}
-            title="Settings"
+            N
+          </span>
+          <span
+            className="font-label text-[0.5rem] tracking-widest uppercase"
+            style={{ color: 'var(--primary)', opacity: 0.6 }}
           >
-            ⚙
-          </button>
-          <button
-            onClick={onToggleSidebar}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] cursor-pointer hover:bg-white/10"
-            style={{ color: 'var(--text-secondary)' }}
-            title="Collapse sidebar (Ctrl+\)"
-          >
-            «
-          </button>
+            nsty
+          </span>
         </div>
-      </div>
 
-      {/* Space Switcher */}
-      <SpaceSwitcher
-        spaces={spaces}
-        activeSpaceId={activeSpaceId}
-        onSwitchSpace={onSwitchSpace}
-      />
-
-      {/* Pinned Pages */}
-      <PinnedPages
-        pages={pinnedPages}
-        onReorder={onReorderPins}
-        onUnpin={onUnpin}
-        onOpenInNewTab={onOpenPinInNewTab}
-        onClickPin={onClickPin}
-      />
-
-      {/* Tab List */}
-      <TabList
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onSwitchTab={onSwitchTab}
-        onCloseTab={onCloseTab}
-        onPinTab={onPinTab}
-      />
-
-      {/* Footer — User Profile */}
-      <div className="relative" style={{ borderTop: '1px solid var(--border)' }}>
-        {userMenuOpen && (
-          <UserMenu
-            onOpenSettings={onOpenSettings}
-            onClose={() => setUserMenuOpen(false)}
-          />
-        )}
-        <div
-          className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-white/[0.04]"
-          onClick={() => setUserMenuOpen(prev => !prev)}
+        {/* New Tab button */}
+        <button
+          onClick={onNewTab}
+          className="flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-all duration-200"
+          style={{
+            background: 'rgba(206, 250, 5, 0.1)',
+            color: 'var(--primary)',
+          }}
+          title="New tab (Ctrl+T)"
         >
-          {userProfile.avatarUrl ? (
-            <img
-              src={userProfile.avatarUrl}
-              className="w-7 h-7 rounded-full object-cover"
-              alt={userProfile.name}
-            />
-          ) : (
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
-              style={{ background: 'var(--accent)', color: 'white' }}
-            >
-              {userProfile.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div className="flex flex-col min-w-0">
-            <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
-              {userProfile.name}
-            </span>
-            {userProfile.provider === 'google' && (
-              <span className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-                {userProfile.email}
-              </span>
+          <span className="material-symbols-outlined text-[20px]">add</span>
+        </button>
+
+        {/* Nav Icons */}
+        <nav className="flex flex-col gap-4 flex-grow">
+          {navItems.map((item) => {
+            const isActive = activeNav === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveNav(item.id)
+                  item.action()
+                }}
+                className="relative flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-all duration-300"
+                style={{
+                  color: isActive ? 'var(--primary)' : 'var(--outline)',
+                  opacity: isActive ? 1 : 0.6,
+                  background: isActive ? 'rgba(206, 250, 5, 0.08)' : 'transparent',
+                }}
+                title={item.label}
+              >
+                {/* Active glow bar */}
+                {isActive && (
+                  <span
+                    className="absolute left-0 w-[3px] h-7 rounded-r-full"
+                    style={{
+                      background: 'var(--primary)',
+                      boxShadow: '0 0 10px var(--primary)',
+                    }}
+                  />
+                )}
+                <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Bottom actions */}
+        <div className="flex flex-col gap-4 mt-auto pb-2 items-center">
+          <button
+            className="flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-colors"
+            style={{ color: 'var(--outline)', opacity: 0.6 }}
+            title="Help"
+          >
+            <span className="material-symbols-outlined text-[20px]">help_outline</span>
+          </button>
+
+          {/* User avatar */}
+          <div className="relative">
+            {userMenuOpen && (
+              <UserMenu
+                onOpenSettings={onOpenSettings}
+                onClose={() => setUserMenuOpen(false)}
+              />
             )}
+            <button
+              onClick={() => setUserMenuOpen(prev => !prev)}
+              className="w-9 h-9 rounded-full overflow-hidden cursor-pointer"
+              style={{
+                border: '2px solid rgba(73, 72, 71, 0.2)',
+              }}
+              title={userProfile.name}
+            >
+              {userProfile.avatarUrl ? (
+                <img
+                  src={userProfile.avatarUrl}
+                  className="w-full h-full object-cover"
+                  alt={userProfile.name}
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center font-headline text-[11px] font-bold"
+                  style={{
+                    background: 'var(--surface-container-highest)',
+                    color: 'var(--primary)',
+                  }}
+                >
+                  {userProfile.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   )
 }

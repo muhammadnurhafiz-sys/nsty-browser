@@ -37,12 +37,15 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   return (
     <div
-      className="px-2.5 py-2.5"
-      style={{ borderTop: '1px solid var(--border)' }}
+      className="px-3 py-3"
+      style={{ borderTop: '1px solid rgba(73, 72, 71, 0.1)' }}
     >
       <div
-        className="flex items-end gap-2 rounded-xl px-3 py-2"
-        style={{ background: 'rgba(255,255,255,0.06)' }}
+        className="flex items-end gap-2 rounded-xl px-3.5 py-2.5"
+        style={{
+          background: 'var(--surface-container)',
+          border: '1px solid rgba(73, 72, 71, 0.1)',
+        }}
       >
         <textarea
           ref={textareaRef}
@@ -52,23 +55,23 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           placeholder={disabled ? 'Waiting for response...' : 'Ask Claude about this page...'}
           disabled={disabled}
           rows={1}
-          className="flex-1 bg-transparent outline-none text-xs resize-none leading-relaxed"
+          className="flex-1 bg-transparent outline-none font-body text-xs resize-none leading-relaxed"
           style={{
-            color: 'var(--text-secondary)',
+            color: 'var(--on-surface-variant)',
             maxHeight: 120,
           }}
         />
         <button
           onClick={handleSend}
           disabled={disabled || !value.trim()}
-          className="w-6 h-6 rounded-md flex items-center justify-center text-xs cursor-pointer flex-shrink-0"
+          className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer flex-shrink-0 transition-all"
           style={{
-            background: value.trim() && !disabled ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
-            color: 'white',
+            background: value.trim() && !disabled ? 'var(--primary)' : 'var(--surface-container-high)',
+            color: value.trim() && !disabled ? 'var(--on-primary)' : 'var(--outline)',
             opacity: value.trim() && !disabled ? 1 : 0.5,
           }}
         >
-          ↑
+          <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
         </button>
       </div>
     </div>

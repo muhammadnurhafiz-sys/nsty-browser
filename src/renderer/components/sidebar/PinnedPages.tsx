@@ -44,12 +44,13 @@ export function PinnedPages({ pages, onReorder, onUnpin, onOpenInNewTab, onClick
   }
 
   return (
-    <div className="px-2.5 py-1.5">
+    <div className="py-2">
       <div
-        className="text-[10px] font-semibold uppercase tracking-widest px-1 pb-1.5"
-        style={{ color: 'var(--text-muted)' }}
+        className="font-label text-[10px] font-semibold uppercase tracking-widest px-3 pb-2 flex items-center gap-1.5"
+        style={{ color: 'var(--outline)' }}
       >
-        📌 Pinned
+        <span className="material-symbols-outlined text-[12px]">push_pin</span>
+        Pinned
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={pages.map(p => p.url)} strategy={verticalListSortingStrategy}>
@@ -89,13 +90,11 @@ function SortablePinItem({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    background: 'rgba(124,58,237,0.15)',
+    background: 'rgba(206, 250, 5, 0.06)',
   }
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
-    // Simple context menu via native menu would be ideal
-    // For now, use a basic approach
     const choice = window.confirm(`Unpin "${page.title}"?`)
     if (choice) onUnpin(page.url)
   }
@@ -106,7 +105,7 @@ function SortablePinItem({
       style={style}
       {...attributes}
       {...listeners}
-      className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer"
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors"
       onClick={() => onClick(page.url)}
       onContextMenu={handleContextMenu}
       onDoubleClick={() => onOpenInNewTab(page.url)}
@@ -115,13 +114,13 @@ function SortablePinItem({
         <img src={page.faviconUrl} className="w-4 h-4 rounded-sm" alt="" />
       ) : (
         <div
-          className="w-4 h-4 rounded-sm flex items-center justify-center text-[9px]"
-          style={{ background: 'var(--green)' }}
+          className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold"
+          style={{ background: 'var(--surface-container-highest)', color: 'var(--primary)' }}
         >
           {page.title.charAt(0).toUpperCase()}
         </div>
       )}
-      <span className="text-xs truncate" style={{ color: 'var(--text-primary)' }}>
+      <span className="font-body text-xs truncate" style={{ color: 'var(--on-surface)' }}>
         {page.title}
       </span>
     </div>

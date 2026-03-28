@@ -5,6 +5,7 @@ import { AiPanel } from './components/ai/AiPanel'
 import { HistoryPanel } from './components/history/HistoryPanel'
 import { SettingsPanel } from './components/settings/SettingsPanel'
 import { UpdateNotification } from './components/UpdateNotification'
+import { TabDrawer } from './components/sidebar/TabDrawer'
 import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
 import { useAi } from './hooks/useAi'
@@ -30,17 +31,19 @@ export function App() {
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
   const { messages: aiMessages, streamingContent, isStreaming, model: aiModel, isOpen: aiOpen, sendMessage: sendAiMessage, changeModel: changeAiModel, closePanel: closeAiPanel } = useAi()
   const { profile: userProfile } = useUserProfile()
-  const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [tabDrawerOpen, setTabDrawerOpen] = useState(false)
 
   const currentUrl = activeTab?.url ?? ''
+  const activeSpace = spaces.find(s => s.id === activeSpaceId)
 
-  // Listen for sidebar toggle from main process
+  // Listen for sidebar toggle from main process (no-op now, sidebar is fixed)
   useEffect(() => {
     if (!window.nsty) return
-    return window.nsty.onSidebarToggle((expanded) => {
-      setSidebarExpanded(expanded)
+    return window.nsty.onSidebarToggle(() => {
+      // Sidebar is now fixed-width, toggle opens/closes tab drawer instead
+      setTabDrawerOpen(prev => !prev)
     })
   }, [])
 
@@ -77,26 +80,21 @@ export function App() {
     window.nsty?.toggleAiPanel()
   }, [])
 
-  const handleToggleSidebar = useCallback(() => {
-    window.nsty?.toggleSidebar()
-  }, [])
-
   // Create initial tab if none exist
   useEffect(() => {
-    const activeSpace = spaces.find(s => s.id === activeSpaceId)
-    if (activeSpace && activeSpace.tabs.length === 0) {
+    const space = spaces.find(s => s.id === activeSpaceId)
+    if (space && space.tabs.length === 0) {
       handleNewTab()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
-      {/* Sidebar */}
+    <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--surface)' }}>
+      {/* Sidebar — fixed 80px icon bar */}
       <Sidebar
         spaces={spaces}
         activeSpaceId={activeSpaceId}
         activeTabId={activeTabId}
-        expanded={sidebarExpanded}
         onSwitchSpace={switchSpace}
         onSwitchTab={switchTab}
         onCloseTab={closeTab}
@@ -107,13 +105,14 @@ export function App() {
         onClickPin={clickPin}
         onOpenPinInNewTab={openPinInNewTab}
         onOpenSettings={() => { setSettingsOpen(true); window.nsty?.showOverlay() }}
-        onToggleSidebar={handleToggleSidebar}
+        onOpenHistory={() => { setHistoryOpen(true); window.nsty?.showOverlay() }}
+        onToggleTabDrawer={() => setTabDrawerOpen(prev => !prev)}
         userProfile={userProfile}
       />
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
+      {/* Main content area — offset by sidebar */}
+      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: 80 }}>
+        {/* Floating command bar */}
         <TopBar
           url={currentUrl}
           onNavigate={handleNavigate}
@@ -127,18 +126,26 @@ export function App() {
           onCloseShieldPopup={closeShieldPopup}
           onDisableShieldForSite={disableForSite}
           onToggleAi={handleToggleAi}
+          spaces={spaces}
+          activeSpaceId={activeSpaceId}
+          onSwitchSpace={switchSpace}
         />
 
         {/* Content area - BrowserViews are rendered here by Electron */}
-        <div className="flex-1" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex-1" style={{ background: 'var(--surface)' }}>
           {!activeTabId && (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
-                <div className="text-4xl mb-4">🌐</div>
-                <h1 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                <span
+                  className="material-symbols-outlined mb-4 block"
+                  style={{ fontSize: 48, color: 'var(--primary)', opacity: 0.3 }}
+                >
+                  language
+                </span>
+                <h1 className="font-headline text-xl font-semibold mb-2" style={{ color: 'var(--on-surface)' }}>
                   Nsty Browser
                 </h1>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                <p className="font-body text-sm" style={{ color: 'var(--outline)' }}>
                   Press Ctrl+T to open a new tab
                 </p>
               </div>
@@ -157,6 +164,22 @@ export function App() {
         onSend={sendAiMessage}
         onModelChange={changeAiModel}
         onClose={closeAiPanel}
+      />
+
+      {/* Tab Drawer */}
+      <TabDrawer
+        isOpen={tabDrawerOpen}
+        tabs={activeSpace?.tabs ?? []}
+        pinnedPages={activeSpace?.pinnedPages ?? []}
+        activeTabId={activeTabId}
+        onSwitchTab={switchTab}
+        onCloseTab={closeTab}
+        onPinTab={pinTab}
+        onUnpin={unpinPage}
+        onReorderPins={reorderPins}
+        onClickPin={clickPin}
+        onOpenPinInNewTab={openPinInNewTab}
+        onClose={() => setTabDrawerOpen(false)}
       />
 
       {/* History Panel */}

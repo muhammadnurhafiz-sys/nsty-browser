@@ -21,26 +21,24 @@ export function UserMenu({ onOpenSettings, onClose }: UserMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="absolute bottom-full left-2 right-2 mb-1 rounded-lg shadow-xl overflow-hidden"
-      style={{
-        background: 'var(--bg-sidebar)',
-        border: '1px solid var(--border-strong)',
-      }}
+      className="absolute bottom-full left-1 mb-2 w-44 rounded-xl shadow-xl overflow-hidden glass-panel fade-in"
     >
       <button
         onClick={() => { onOpenSettings(); onClose() }}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs cursor-pointer hover:bg-white/[0.06]"
-        style={{ color: 'var(--text-primary)' }}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs cursor-pointer transition-colors"
+        style={{ color: 'var(--on-surface)' }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
       >
-        <span className="text-[10px]">⚙</span>
+        <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--outline)' }}>settings</span>
         Settings
       </button>
       <div
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs"
-        style={{ color: 'var(--text-muted)' }}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs"
+        style={{ color: 'var(--outline)', borderTop: '1px solid rgba(73, 72, 71, 0.1)' }}
         title="Coming soon"
       >
-        <span className="text-[10px]">↪</span>
+        <span className="material-symbols-outlined text-[16px]">logout</span>
         Sign out
       </div>
     </div>

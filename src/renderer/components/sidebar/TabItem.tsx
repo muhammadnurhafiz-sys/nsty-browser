@@ -26,33 +26,34 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
       onClick={() => onSwitch(tab.id)}
       onAuxClick={handleMiddleClick}
       onContextMenu={handleContextMenu}
-      className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer group transition-colors"
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer group transition-all duration-200"
       style={{
-        background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+        background: isActive ? 'var(--surface-container-high)' : 'transparent',
+        borderLeft: isActive ? '2px solid var(--primary)' : '2px solid transparent',
       }}
     >
       {tab.faviconUrl ? (
         <img src={tab.faviconUrl} className="w-4 h-4 rounded-sm flex-shrink-0" alt="" />
       ) : (
         <div
-          className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px] flex-shrink-0"
-          style={{ background: 'var(--orange)' }}
+          className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold flex-shrink-0"
+          style={{ background: 'var(--surface-container-highest)', color: 'var(--primary)' }}
         >
           {tab.title.charAt(0).toUpperCase()}
         </div>
       )}
       <span
-        className="text-xs truncate flex-1"
-        style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+        className="font-body text-xs truncate flex-1"
+        style={{ color: isActive ? 'var(--on-surface)' : 'var(--on-surface-variant)' }}
       >
         {tab.title}
       </span>
       <button
         onClick={(e) => { e.stopPropagation(); onClose(tab.id) }}
-        className="hidden group-hover:flex w-4 h-4 rounded items-center justify-center text-[10px] cursor-pointer hover:bg-white/10"
-        style={{ color: 'var(--text-muted)' }}
+        className="hidden group-hover:flex w-5 h-5 rounded-full items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+        style={{ color: 'var(--outline)' }}
       >
-        ×
+        <span className="material-symbols-outlined text-[14px]">close</span>
       </button>
     </div>
   )

@@ -4,26 +4,39 @@ interface ModelSelectorProps {
 }
 
 const MODELS = [
-  { id: 'sonnet' as const, label: 'Sonnet', desc: 'Balanced' },
-  { id: 'haiku' as const, label: 'Haiku', desc: 'Fast' },
-  { id: 'opus' as const, label: 'Opus', desc: 'Deep' },
+  { id: 'haiku' as const, label: 'H' },
+  { id: 'sonnet' as const, label: 'S' },
+  { id: 'opus' as const, label: 'O' },
 ]
 
 export function ModelSelector({ model, onChange }: ModelSelectorProps) {
   return (
-    <select
-      value={model}
-      onChange={(e) => onChange(e.target.value as 'sonnet' | 'haiku' | 'opus')}
-      className="text-[10px] rounded px-1.5 py-0.5 outline-none cursor-pointer"
+    <div
+      className="flex rounded-lg p-0.5"
       style={{
-        background: 'rgba(255,255,255,0.06)',
-        color: 'var(--text-muted)',
-        border: 'none',
+        background: 'var(--surface-container)',
+        border: '1px solid rgba(73, 72, 71, 0.15)',
       }}
     >
-      {MODELS.map(m => (
-        <option key={m.id} value={m.id}>{m.label}</option>
-      ))}
-    </select>
+      {MODELS.map(m => {
+        const isActive = model === m.id
+        return (
+          <button
+            key={m.id}
+            onClick={() => onChange(m.id)}
+            className="px-2 py-0.5 font-label text-[10px] uppercase cursor-pointer transition-all rounded-md"
+            style={{
+              background: isActive ? 'var(--primary)' : 'transparent',
+              color: isActive ? 'var(--on-primary)' : 'var(--outline)',
+              fontWeight: isActive ? 700 : 400,
+              boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+            }}
+            title={m.id.charAt(0).toUpperCase() + m.id.slice(1)}
+          >
+            {m.label}
+          </button>
+        )
+      })}
+    </div>
   )
 }

@@ -32,43 +32,41 @@ export function UpdateNotification() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 w-72 rounded-xl shadow-2xl overflow-hidden"
-      style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-strong)',
-        animation: 'scaleIn 200ms ease forwards',
-      }}
+      className="fixed bottom-4 right-4 z-50 w-72 rounded-xl shadow-2xl overflow-hidden glass-panel fade-in"
     >
       <div className="px-4 py-3">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Update Available
-          </span>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>system_update</span>
+            <span className="font-headline text-xs font-semibold" style={{ color: 'var(--on-surface)' }}>
+              Update Available
+            </span>
+          </div>
           <button
             onClick={() => setDismissed(true)}
-            className="text-xs cursor-pointer"
-            style={{ color: 'var(--text-muted)' }}
+            className="w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+            style={{ color: 'var(--outline)' }}
           >
-            ×
+            <span className="material-symbols-outlined text-[14px]">close</span>
           </button>
         </div>
-        <p className="text-[11px] mb-3" style={{ color: 'var(--text-secondary)' }}>
+        <p className="font-body text-[11px] mb-3" style={{ color: 'var(--on-surface-variant)' }}>
           Version {updateInfo.version} is ready
         </p>
 
         {progress !== null && (
           <div className="mb-3">
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+            <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface-container-highest)' }}>
               <div
                 className="h-full rounded-full"
                 style={{
                   width: `${progress}%`,
-                  background: 'var(--accent)',
+                  background: 'linear-gradient(135deg, var(--primary), var(--primary-container))',
                   transition: 'width 300ms ease',
                 }}
               />
             </div>
-            <span className="text-[10px] mt-1 block" style={{ color: 'var(--text-muted)' }}>
+            <span className="font-label text-[10px] mt-1 block" style={{ color: 'var(--outline)' }}>
               {Math.round(progress)}%
             </span>
           </div>
@@ -77,16 +75,22 @@ export function UpdateNotification() {
         {downloaded ? (
           <button
             onClick={() => window.nsty?.installUpdate()}
-            className="w-full h-7 rounded-lg text-xs font-medium cursor-pointer"
-            style={{ background: 'var(--green)', color: '#111' }}
+            className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-all"
+            style={{
+              background: 'linear-gradient(135deg, var(--primary), var(--primary-container))',
+              color: 'var(--on-primary)',
+            }}
           >
             Restart to Update
           </button>
         ) : progress === null ? (
           <button
             onClick={() => window.nsty?.downloadUpdate()}
-            className="w-full h-7 rounded-lg text-xs font-medium cursor-pointer"
-            style={{ background: 'var(--accent)', color: 'white' }}
+            className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-all"
+            style={{
+              background: 'var(--primary)',
+              color: 'var(--on-primary)',
+            }}
           >
             Download Update
           </button>

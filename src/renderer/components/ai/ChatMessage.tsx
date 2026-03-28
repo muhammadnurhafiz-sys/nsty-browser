@@ -8,15 +8,16 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
 
   return (
     <div
-      className={`max-w-[90%] rounded-xl px-3 py-2 ${isUser ? 'self-end' : 'self-start'}`}
+      className={`max-w-[90%] rounded-xl px-3.5 py-2.5 ${isUser ? 'self-end' : 'self-start'}`}
       style={{
-        background: isUser ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+        background: isUser ? 'rgba(206, 250, 5, 0.12)' : 'var(--surface-container)',
         borderRadius: isUser ? '12px 12px 4px 12px' : '4px 12px 12px 12px',
+        border: isUser ? '1px solid rgba(206, 250, 5, 0.15)' : '1px solid rgba(73, 72, 71, 0.1)',
       }}
     >
       <div
-        className="text-xs leading-relaxed whitespace-pre-wrap break-words"
-        style={{ color: isUser ? 'white' : 'var(--text-primary)' }}
+        className="font-body text-xs leading-relaxed whitespace-pre-wrap break-words"
+        style={{ color: isUser ? 'var(--primary)' : 'var(--on-surface)' }}
       >
         {content}
       </div>

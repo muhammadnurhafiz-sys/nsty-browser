@@ -1,30 +1,90 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #111113;
-  --bg-sidebar: #18181b;
-  --bg-surface: #1c1c1f;
+  /* === Obsidian Monolith Design System === */
+
+  /* Surface hierarchy (dark to light) */
+  --surface: #0e0e0e;
+  --surface-dim: #0e0e0e;
+  --surface-container-lowest: #000000;
+  --surface-container-low: #131313;
+  --surface-container: #1a1919;
+  --surface-container-high: #201f1f;
+  --surface-container-highest: #262626;
+  --surface-variant: #262626;
+  --surface-bright: #2c2c2c;
+
+  /* Primary accent (neon green) */
+  --primary: #CEFA05;
+  --primary-dim: #c0ea00;
+  --primary-container: #cdf901;
+  --primary-fixed: #cdf901;
+  --on-primary: #526500;
+  --on-primary-container: #4a5c00;
+
+  /* Secondary (warm yellow) */
+  --secondary: #eee854;
+  --secondary-container: #646100;
+  --on-secondary: #575400;
+
+  /* Tertiary (gold) */
+  --tertiary: #ffeeac;
+  --tertiary-container: #fedf46;
+  --on-tertiary: #675800;
+
+  /* Text colors */
+  --on-surface: #ffffff;
+  --on-surface-variant: #adaaaa;
+  --on-background: #ffffff;
+  --inverse-surface: #fcf8f8;
+  --inverse-on-surface: #565554;
+  --surface-tint: #edffab;
+
+  /* Borders & outlines */
+  --outline: #777575;
+  --outline-variant: #494847;
+
+  /* Error / danger */
+  --error: #ff7351;
+  --error-dim: #d53d18;
+  --error-container: #b92902;
+  --on-error: #450900;
+  --on-error-container: #ffd2c8;
+
+  /* === Backward-compat aliases (existing components) === */
+  --bg-primary: var(--surface);
+  --bg-sidebar: var(--surface-container-low);
+  --bg-surface: var(--surface-container);
   --bg-hover: rgba(255, 255, 255, 0.06);
   --bg-active: rgba(255, 255, 255, 0.09);
-  --text-primary: #ececee;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --accent: #8b5cf6;
-  --accent-hover: #7c3aed;
-  --accent-subtle: rgba(139, 92, 246, 0.12);
+  --text-primary: var(--on-surface);
+  --text-secondary: var(--on-surface-variant);
+  --text-muted: var(--outline);
+  --accent: var(--primary);
+  --accent-hover: var(--primary-dim);
+  --accent-subtle: rgba(206, 250, 5, 0.12);
   --green: #34d399;
   --blue: #60a5fa;
   --orange: #fb923c;
-  --red: #f87171;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.1);
-  --topbar-height: 44px;
+  --red: var(--error);
+  --border: rgba(73, 72, 71, 0.15);
+  --border-strong: rgba(73, 72, 71, 0.3);
+
+  /* Layout */
+  --topbar-height: 52px;
+  --sidebar-width: 80px;
+
+  /* Motion */
   --transition-fast: 120ms ease;
   --transition-normal: 200ms ease;
   --transition-slow: 300ms ease;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+
+  /* Radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
 }
 
 * {
@@ -34,13 +94,31 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--surface);
+  color: var(--on-surface);
   overflow: hidden;
   user-select: none;
   -webkit-app-region: no-drag;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Typography utilities */
+.font-headline {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-body {
+  font-family: 'Manrope', sans-serif;
+}
+
+.font-label {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* Smooth transitions on interactive elements */
@@ -50,7 +128,7 @@ button, a, input, select {
               box-shadow var(--transition-fast);
 }
 
-/* Scrollbar styling */
+/* Scrollbar — low chrome */
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -60,28 +138,49 @@ button, a, input, select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
 }
 
-/* Sidebar transition */
+/* === Glassmorphism === */
+.glass-panel {
+  background: rgba(32, 31, 31, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(73, 72, 71, 0.15);
+}
+
+/* === Ghost Border === */
+.ghost-border {
+  border: 1px solid rgba(73, 72, 71, 0.15);
+}
+
+/* === Sidebar transition === */
 .sidebar-container {
   transition: width var(--transition-normal);
 }
 
-/* Peek overlay animation */
-.peek-overlay {
-  animation: peekIn 200ms ease forwards;
+/* === Animations === */
+
+/* Glow pulse for active sidebar icon */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(206, 250, 5, 0.4); }
+  50% { box-shadow: 0 0 14px rgba(206, 250, 5, 0.6); }
 }
 
-@keyframes peekIn {
+.glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* Slide in from right (AI panel, drawers) */
+@keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateX(16px);
   }
   to {
     opacity: 1;
@@ -89,27 +188,66 @@ button, a, input, select {
   }
 }
 
-/* Settings panel animation */
-.settings-backdrop {
-  animation: fadeIn 150ms ease forwards;
+.slide-in-right {
+  animation: slideInRight 200ms ease forwards;
 }
 
-.settings-panel {
-  animation: scaleIn 200ms ease forwards;
+/* Slide in from left (tab drawer) */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
+.slide-in-left {
+  animation: slideInLeft 200ms ease forwards;
+}
+
+/* Fade in */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes scaleIn {
+.fade-in {
+  animation: fadeIn 150ms ease forwards;
+}
+
+/* Settings panel — full page slide up */
+@keyframes settingsIn {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.96);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0);
   }
+}
+
+.settings-backdrop {
+  animation: fadeIn 150ms ease forwards;
+}
+
+.settings-panel {
+  animation: settingsIn 250ms ease forwards;
+}
+
+/* Legacy (keep until Phase 5 cleanup) */
+.peek-overlay {
+  animation: slideInLeft 200ms ease forwards;
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

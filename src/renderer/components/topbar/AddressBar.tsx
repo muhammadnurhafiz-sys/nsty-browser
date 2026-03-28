@@ -49,16 +49,22 @@ export function AddressBar({ url, onNavigate }: AddressBarProps) {
   const displayUrl = isFocused ? inputValue : url
 
   return (
-    <div
-      className="flex-1 h-8 flex items-center px-3 gap-2"
-      style={{
-        background: isFocused ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-        border: isFocused ? '1px solid var(--accent)' : '1px solid transparent',
-        borderRadius: 'var(--radius-md)',
-      }}
-    >
-      {!isFocused && url.startsWith('https') && (
-        <span className="text-[10px]" style={{ color: 'var(--green)' }}>🔒</span>
+    <div className="flex items-center gap-2 flex-1">
+      {!isFocused && (
+        <span
+          className="material-symbols-outlined text-[16px]"
+          style={{ color: 'var(--primary)', opacity: 0.7 }}
+        >
+          {url.startsWith('https') ? 'lock' : 'search'}
+        </span>
+      )}
+      {isFocused && (
+        <span
+          className="material-symbols-outlined text-[16px]"
+          style={{ color: 'var(--primary)' }}
+        >
+          search
+        </span>
       )}
       <input
         ref={inputRef}
@@ -72,8 +78,10 @@ export function AddressBar({ url, onNavigate }: AddressBarProps) {
         onBlur={() => setIsFocused(false)}
         onKeyDown={handleKeyDown}
         placeholder="Search or enter URL..."
-        className="flex-1 bg-transparent outline-none text-[13px]"
-        style={{ color: isFocused ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+        className="flex-1 bg-transparent outline-none font-body text-sm"
+        style={{
+          color: isFocused ? 'var(--on-surface)' : 'var(--on-surface-variant)',
+        }}
       />
     </div>
   )

@@ -42,49 +42,56 @@ export function AiPanel({
 
   return (
     <div
-      className="h-full flex flex-col flex-shrink-0"
+      className="h-full flex flex-col flex-shrink-0 slide-in-right"
       style={{
-        width: 300,
-        background: 'var(--bg-sidebar)',
-        borderLeft: '1px solid var(--border)',
+        width: 340,
+        background: 'var(--surface-container-highest)',
+        borderLeft: '1px solid rgba(73, 72, 71, 0.15)',
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-3.5 py-2.5"
-        style={{ borderBottom: '1px solid var(--border)' }}
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: '1px solid rgba(73, 72, 71, 0.1)' }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-5 h-5 rounded-[5px] flex items-center justify-center text-[10px]"
-            style={{ background: 'linear-gradient(135deg, #fb923c, #f97316)' }}
+            className="w-6 h-6 rounded-lg flex items-center justify-center"
+            style={{ background: 'rgba(206, 250, 5, 0.15)' }}
           >
-            C
+            <span className="material-symbols-outlined text-[14px]" style={{ color: 'var(--primary)' }}>
+              auto_awesome
+            </span>
           </div>
-          <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <span className="font-headline text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
             Claude
           </span>
           <ModelSelector model={model} onChange={onModelChange} />
         </div>
         <button
           onClick={onClose}
-          className="text-sm cursor-pointer hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
+          className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+          style={{ color: 'var(--outline)' }}
         >
-          ×
+          <span className="material-symbols-outlined text-[18px]">close</span>
         </button>
       </div>
 
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2.5"
+        className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3"
       >
         {messages.length === 0 && !isStreaming && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center px-4">
-              <div className="text-2xl mb-2">✨</div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            <div className="text-center px-6">
+              <span
+                className="material-symbols-outlined mb-3 block"
+                style={{ fontSize: 32, color: 'var(--primary)', opacity: 0.4 }}
+              >
+                auto_awesome
+              </span>
+              <p className="font-body text-xs" style={{ color: 'var(--outline)' }}>
                 Ask Claude anything about the page you're viewing, or start a new conversation.
               </p>
             </div>
@@ -105,12 +112,12 @@ export function AiPanel({
           <div className="self-start">
             <div
               className="rounded-xl px-3 py-2"
-              style={{ background: 'rgba(255,255,255,0.06)' }}
+              style={{ background: 'var(--surface-container)' }}
             >
-              <div className="flex gap-1">
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--text-muted)' }} />
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--text-muted)', animationDelay: '0.2s' }} />
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--text-muted)', animationDelay: '0.4s' }} />
+              <div className="flex gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--primary)', opacity: 0.6 }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--primary)', opacity: 0.6, animationDelay: '0.2s' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--primary)', opacity: 0.6, animationDelay: '0.4s' }} />
               </div>
             </div>
           </div>
