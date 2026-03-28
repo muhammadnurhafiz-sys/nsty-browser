@@ -1,5 +1,6 @@
 import { app, BrowserWindow, globalShortcut, protocol, net } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import { pathToFileURL } from 'url'
 import { TabManager } from './tab-manager'
 import { WindowManager } from './window-manager'
@@ -18,6 +19,14 @@ let shieldEngine: ShieldEngine | null = null
 let claudeClient: ClaudeClient | null = null
 
 const isDev = !app.isPackaged
+
+// Debug logger — writes to a file next to the exe so we can diagnose packaged builds
+const logFile = path.join(app.getPath('userData'), 'nsty-debug.log')
+function debugLog(msg: string): void {
+  const line = `[${new Date().toISOString()}] ${msg}\n`
+  fs.appendFileSync(logFile, line)
+  console.log(msg)
+}
 
 // Register custom protocol before app is ready — required for file:// CORS compat
 protocol.registerSchemesAsPrivileged([{
@@ -77,22 +86,33 @@ function createWindow(): void {
     setupAutoUpdater(mainWindow)
   }
 
+  // Error handling for renderer load failures
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    debugLog(`[FAIL-LOAD] code=${errorCode} desc=${errorDescription} url=${validatedURL}`)
+  })
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    debugLog('[SUCCESS] Renderer finished loading')
+  })
+
+  mainWindow.webContents.on('console-message', (_event, level, message) => {
+    if (level >= 2) debugLog(`[RENDERER-ERROR] ${message}`)
+  })
+
   // Load renderer
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
-    mainWindow.loadURL('app://./index.html')
+    const rendererPath = path.join(app.getAppPath(), 'dist', 'renderer', 'index.html')
+    debugLog(`[INIT] appPath=${app.getAppPath()}`)
+    debugLog(`[INIT] rendererPath=${rendererPath}`)
+    debugLog(`[INIT] rendererExists=${fs.existsSync(rendererPath)}`)
+    debugLog(`[INIT] __dirname=${__dirname}`)
+    debugLog(`[INIT] preloadPath=${path.join(__dirname, '../preload/index.js')}`)
+
+    mainWindow.loadFile(rendererPath)
   }
-
-  // Error handling for renderer load failures
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
-    console.error(`[Nsty] Renderer failed to load: ${errorCode} ${errorDescription}`)
-  })
-
-  mainWindow.webContents.on('console-message', (_event, level, message) => {
-    if (level >= 2) console.error(`[Nsty Renderer] ${message}`)
-  })
 
   // Register global shortcuts
   globalShortcut.register('CommandOrControl+\\', () => {

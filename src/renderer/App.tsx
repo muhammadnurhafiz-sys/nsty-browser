@@ -52,6 +52,10 @@ export function App() {
     })
   }, [])
 
+  const handleNewTab = useCallback(() => {
+    createTab('https://www.google.com')
+  }, [createTab])
+
   // Listen for new tab shortcut from main process
   useEffect(() => {
     if (!window.nsty?.onNewTabShortcut) return
@@ -59,10 +63,6 @@ export function App() {
       handleNewTab()
     })
   }, [handleNewTab])
-
-  const handleNewTab = useCallback(() => {
-    createTab('https://www.google.com')
-  }, [createTab])
 
   const handleNavigate = useCallback((url: string) => {
     window.nsty?.navigateTo(url)
