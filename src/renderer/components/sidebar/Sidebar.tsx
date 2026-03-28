@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import type { Tab, Space, PinnedPage, UserProfile } from '@shared/types'
 import { SpaceSwitcher } from './SpaceSwitcher'
 import { PinnedPages } from './PinnedPages'
 import { TabList } from './TabList'
 import { SidebarMini } from './SidebarMini'
+import { UserMenu } from './UserMenu'
 
 interface SidebarProps {
   spaces: Space[]
@@ -41,6 +43,7 @@ export function Sidebar({
   onToggleSidebar,
   userProfile,
 }: SidebarProps) {
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
   const tabs = activeSpace?.tabs ?? []
   const pinnedPages = activeSpace?.pinnedPages ?? []
@@ -129,33 +132,41 @@ export function Sidebar({
       />
 
       {/* Footer — User Profile */}
-      <div
-        className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-white/[0.04]"
-        style={{ borderTop: '1px solid var(--border)' }}
-      >
-        {userProfile.avatarUrl ? (
-          <img
-            src={userProfile.avatarUrl}
-            className="w-7 h-7 rounded-full object-cover"
-            alt={userProfile.name}
+      <div className="relative" style={{ borderTop: '1px solid var(--border)' }}>
+        {userMenuOpen && (
+          <UserMenu
+            onOpenSettings={onOpenSettings}
+            onClose={() => setUserMenuOpen(false)}
           />
-        ) : (
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
-            style={{ background: 'var(--accent)', color: 'white' }}
-          >
-            {userProfile.name.charAt(0).toUpperCase()}
-          </div>
         )}
-        <div className="flex flex-col min-w-0">
-          <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
-            {userProfile.name}
-          </span>
-          {userProfile.provider === 'google' && (
-            <span className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-              {userProfile.email}
-            </span>
+        <div
+          className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-white/[0.04]"
+          onClick={() => setUserMenuOpen(prev => !prev)}
+        >
+          {userProfile.avatarUrl ? (
+            <img
+              src={userProfile.avatarUrl}
+              className="w-7 h-7 rounded-full object-cover"
+              alt={userProfile.name}
+            />
+          ) : (
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
+              style={{ background: 'var(--accent)', color: 'white' }}
+            >
+              {userProfile.name.charAt(0).toUpperCase()}
+            </div>
           )}
+          <div className="flex flex-col min-w-0">
+            <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
+              {userProfile.name}
+            </span>
+            {userProfile.provider === 'google' && (
+              <span className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                {userProfile.email}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

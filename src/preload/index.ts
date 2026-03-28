@@ -102,6 +102,10 @@ const api = {
   downloadUpdate: () => ipcRenderer.send('update:download'),
   installUpdate: () => ipcRenderer.send('update:install'),
 
+  // Overlay (hide BrowserView for modals)
+  showOverlay: () => ipcRenderer.send('overlay:show'),
+  hideOverlay: () => ipcRenderer.send('overlay:hide'),
+
   // Session
   getSpaces: () => ipcRenderer.invoke('session:getSpaces'),
   saveSpaces: (spaces: unknown) => ipcRenderer.send('session:saveSpaces', spaces),

@@ -205,6 +205,23 @@ export class TabManager {
     })
   }
 
+  hideActiveView(): void {
+    if (!this.activeTabId) return
+    const managed = this.tabs.get(this.activeTabId)
+    if (managed) {
+      this.window.removeBrowserView(managed.view)
+    }
+  }
+
+  showActiveView(): void {
+    if (!this.activeTabId) return
+    const managed = this.tabs.get(this.activeTabId)
+    if (managed) {
+      this.window.addBrowserView(managed.view)
+      this.updateViewBounds(managed.view)
+    }
+  }
+
   setContentBounds(x: number, y: number, width: number, height: number): void {
     if (!this.activeTabId) return
     const managed = this.tabs.get(this.activeTabId)

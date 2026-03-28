@@ -60,6 +60,16 @@ export function registerIpcHandlers(
     event.sender.send('ai:toggled', open)
   })
 
+  // Overlay (hide BrowserView so DOM modals are visible)
+  ipcMain.on('overlay:show', () => {
+    tabManager.hideActiveView()
+  })
+
+  ipcMain.on('overlay:hide', () => {
+    tabManager.showActiveView()
+    windowManager.updateLayout()
+  })
+
   // Session
   ipcMain.handle('session:getSpaces', () => {
     // Will be implemented with session store

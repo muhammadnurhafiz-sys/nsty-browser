@@ -48,7 +48,12 @@ export function App() {
   useEffect(() => {
     if (!window.nsty?.onHistoryToggle) return
     return window.nsty.onHistoryToggle(() => {
-      setHistoryOpen(prev => !prev)
+      setHistoryOpen(prev => {
+        const next = !prev
+        if (next) window.nsty?.showOverlay()
+        else window.nsty?.hideOverlay()
+        return next
+      })
     })
   }, [])
 
@@ -101,7 +106,7 @@ export function App() {
         onReorderPins={reorderPins}
         onClickPin={clickPin}
         onOpenPinInNewTab={openPinInNewTab}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={() => { setSettingsOpen(true); window.nsty?.showOverlay() }}
         onToggleSidebar={handleToggleSidebar}
         userProfile={userProfile}
       />
@@ -157,14 +162,14 @@ export function App() {
       {/* History Panel */}
       <HistoryPanel
         isOpen={historyOpen}
-        onClose={() => setHistoryOpen(false)}
+        onClose={() => { setHistoryOpen(false); window.nsty?.hideOverlay() }}
         onNavigate={handleNavigate}
       />
 
       {/* Settings Panel */}
       <SettingsPanel
         isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        onClose={() => { setSettingsOpen(false); window.nsty?.hideOverlay() }}
       />
 
       {/* Update Notification */}
