@@ -22,7 +22,7 @@ const isDev = !app.isPackaged
 // Register custom protocol before app is ready — required for file:// CORS compat
 protocol.registerSchemesAsPrivileged([{
   scheme: 'app',
-  privileges: { standard: true, secure: true, supportFetchAPI: true },
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true },
 }])
 
 function createWindow(): void {
@@ -140,12 +140,9 @@ function createWindow(): void {
 app.whenReady().then(() => {
   // Serve renderer files via custom protocol (avoids file:// CORS issues with Vite's crossorigin attributes)
   protocol.handle('app', (request) => {
-    const url = new URL(request.url)
-    let filePath = url.pathname
-    // Normalize: strip leading slash on Windows paths
-    if (filePath.startsWith('/')) filePath = filePath.slice(1)
-    const fullPath = path.join(__dirname, '../../renderer', filePath)
-    return net.fetch(pathToFileURL(fullPath).toString())
+    const { pathname } = new URL(request.url)
+    const pathToServe = path.join(app.getAppPath(), 'dist', 'renderer', pathname)
+    return net.fetch(pathToFileURL(pathToServe).toString())
   })
 
   createWindow()
