@@ -4,10 +4,12 @@ import type { ShieldStats, Space } from '@shared/types'
 
 interface TopBarProps {
   url: string
+  isDashboard: boolean
   onNavigate: (url: string) => void
   onBack: () => void
   onForward: () => void
   onReload: () => void
+  onToggleSidebar: () => void
   shieldCount: number
   shieldStats: ShieldStats
   shieldPopupOpen: boolean
@@ -22,10 +24,12 @@ interface TopBarProps {
 
 export function TopBar({
   url,
+  isDashboard,
   onNavigate,
   onBack,
   onForward,
   onReload,
+  onToggleSidebar,
   shieldCount,
   shieldStats,
   shieldPopupOpen,
@@ -37,6 +41,36 @@ export function TopBar({
   activeSpaceId,
   onSwitchSpace,
 }: TopBarProps) {
+  if (isDashboard) {
+    return (
+      <div
+        className="flex items-center justify-between px-4"
+        style={{
+          height: 'var(--topbar-height)',
+          background: 'var(--surface)',
+          WebkitAppRegion: 'drag',
+        } as React.CSSProperties}
+      >
+        <button
+          onClick={onToggleSidebar}
+          className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+          style={{ color: 'var(--outline)', WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          title="Toggle sidebar"
+        >
+          <span className="material-symbols-outlined text-[18px]">menu</span>
+        </button>
+        <button
+          onClick={onToggleAi}
+          className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+          style={{ color: 'var(--primary)', background: 'rgba(206, 250, 5, 0.1)', WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          title="Toggle AI panel"
+        >
+          <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div
       className="flex items-center justify-center px-4"

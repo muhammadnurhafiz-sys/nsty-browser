@@ -4,6 +4,7 @@ import { TabList } from './TabList'
 
 interface TabDrawerProps {
   isOpen: boolean
+  sidebarWidth: number
   tabs: Tab[]
   pinnedPages: PinnedPage[]
   activeTabId: string | null
@@ -19,6 +20,7 @@ interface TabDrawerProps {
 
 export function TabDrawer({
   isOpen,
+  sidebarWidth,
   tabs,
   pinnedPages,
   activeTabId,
@@ -38,7 +40,7 @@ export function TabDrawer({
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 fade-in"
-        style={{ background: 'rgba(0, 0, 0, 0.4)', left: 80 }}
+        style={{ background: 'rgba(0, 0, 0, 0.4)', left: sidebarWidth }}
         onClick={onClose}
       />
 
@@ -46,7 +48,7 @@ export function TabDrawer({
       <div
         className="fixed top-0 bottom-0 z-50 flex flex-col slide-in-left hide-scrollbar overflow-y-auto"
         style={{
-          left: 80,
+          left: sidebarWidth,
           width: 280,
           background: 'var(--surface-container)',
           borderRight: '1px solid rgba(73, 72, 71, 0.15)',
