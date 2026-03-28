@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "if echo \"$TOOL_INPUT\" | grep -qE '\\.(ts|tsx)'; then cd /home/hafiz/nsty-browser && npx tsc --noEmit --pretty 2>&1 | tail -5; fi"
+      }
+    ]
+  }
+}
