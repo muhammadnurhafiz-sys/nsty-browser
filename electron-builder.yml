@@ -14,6 +14,9 @@ files:
   - resources/**/*
   - "!node_modules/**/{test,tests,__tests__}/**"
 
+asarUnpack:
+  - "node_modules/better-sqlite3/**"
+
 win:
   target: nsis
   icon: resources/icons/icon.ico

@@ -1,5 +1,6 @@
-import { app, BrowserWindow, globalShortcut } from 'electron'
+import { app, BrowserWindow, globalShortcut, protocol, net } from 'electron'
 import path from 'path'
+import { pathToFileURL } from 'url'
 import { TabManager } from './tab-manager'
 import { WindowManager } from './window-manager'
 import { registerIpcHandlers } from './ipc-handlers'
@@ -17,6 +18,12 @@ let shieldEngine: ShieldEngine | null = null
 let claudeClient: ClaudeClient | null = null
 
 const isDev = !app.isPackaged
+
+// Register custom protocol before app is ready — required for file:// CORS compat
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'app',
+  privileges: { standard: true, secure: true, supportFetchAPI: true },
+}])
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -75,8 +82,17 @@ function createWindow(): void {
     mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../../renderer/index.html'))
+    mainWindow.loadURL('app://./index.html')
   }
+
+  // Error handling for renderer load failures
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.error(`[Nsty] Renderer failed to load: ${errorCode} ${errorDescription}`)
+  })
+
+  mainWindow.webContents.on('console-message', (_event, level, message) => {
+    if (level >= 2) console.error(`[Nsty Renderer] ${message}`)
+  })
 
   // Register global shortcuts
   globalShortcut.register('CommandOrControl+\\', () => {
@@ -122,6 +138,16 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Serve renderer files via custom protocol (avoids file:// CORS issues with Vite's crossorigin attributes)
+  protocol.handle('app', (request) => {
+    const url = new URL(request.url)
+    let filePath = url.pathname
+    // Normalize: strip leading slash on Windows paths
+    if (filePath.startsWith('/')) filePath = filePath.slice(1)
+    const fullPath = path.join(__dirname, '../../renderer', filePath)
+    return net.fetch(pathToFileURL(fullPath).toString())
+  })
+
   createWindow()
 
   app.on('activate', () => {
