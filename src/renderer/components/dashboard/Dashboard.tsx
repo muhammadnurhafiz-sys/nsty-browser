@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { ShieldStatusCard } from './ShieldStatusCard'
 import { QuickAccessCard } from './QuickAccessCard'
 import { FeatureCard } from './FeatureCard'
@@ -21,15 +21,17 @@ function getGreeting(): string {
 }
 
 export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, onNavigate, onSearch }: DashboardProps) {
+  const [searchValue, setSearchValue] = useState('')
+
   const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      const value = e.currentTarget.value.trim()
+      const value = searchValue.trim()
       if (value) {
         onSearch(value)
-        e.currentTarget.value = ''
+        setSearchValue('')
       }
     }
-  }, [onSearch])
+  }, [searchValue, onSearch])
 
   const recentItems = recentTabs.map(t => ({
     title: t.title || t.url,
@@ -67,6 +69,8 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
           <input
             type="text"
             placeholder="Search or enter URL..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
             onKeyDown={handleSearchKeyDown}
             className="flex-1 bg-transparent outline-none font-body text-sm"
             style={{ color: 'var(--on-surface)' }}

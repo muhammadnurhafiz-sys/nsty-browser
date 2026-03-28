@@ -42,7 +42,7 @@ export function QuickAccessCard({ title, icon, items, emptyMessage, animationCla
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
               {item.favicon ? (
-                <img src={item.favicon} className="w-4 h-4 rounded" alt="" />
+                <img src={item.favicon} className="w-4 h-4 rounded" alt="" onError={(e) => { e.currentTarget.style.display = 'none' }} />
               ) : (
                 <span
                   className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold font-label"

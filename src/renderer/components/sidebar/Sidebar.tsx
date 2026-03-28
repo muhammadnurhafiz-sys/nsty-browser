@@ -183,7 +183,7 @@ export function Sidebar({
                       color: 'var(--primary)',
                     }}
                   >
-                    {userProfile.name.charAt(0).toUpperCase()}
+                    {userProfile.name?.charAt(0)?.toUpperCase() || '?'}
                   </div>
                 )}
               </div>
