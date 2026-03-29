@@ -43,7 +43,7 @@
   /* Borders & outlines */
   --outline: #777575;
   --outline-variant: #494847;
-  --ghost-border: rgba(73, 72, 71, 0.25);
+  --ghost-border: rgba(100, 100, 100, 0.35);
 
   /* Error / danger */
   --error: #ff7351;
@@ -401,9 +401,8 @@ textarea:focus-visible,
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation: none !important;
+    transition: none !important;
     scroll-behavior: auto !important;
   }
 

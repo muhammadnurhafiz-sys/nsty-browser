@@ -90,7 +90,7 @@ export function App() {
   return (
     <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--surface)' }}>
       {/* Skip to content link for keyboard users */}
-      <a href="#main-content" className="skip-to-content">
+      <a href="#main-content" className="skip-to-content" aria-label="Skip to main content">
         Skip to content
       </a>
 

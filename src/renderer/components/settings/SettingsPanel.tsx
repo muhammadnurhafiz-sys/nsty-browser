@@ -278,6 +278,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                               value={apiKey}
                               onChange={(e) => setApiKey(e.target.value)}
                               placeholder={apiKeySaved ? 'Saved' : 'sk-ant-...'}
+                              aria-label="Anthropic API key"
                               className="flex-1 h-9 px-3 rounded-lg font-body text-xs outline-none transition-colors"
                               style={{
                                 background: 'transparent',
