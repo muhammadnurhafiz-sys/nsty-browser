@@ -6,6 +6,7 @@ import { NavControls } from './NavControls'
 import { SpaceDots } from './SpaceDots'
 import { PinnedPages } from './PinnedPages'
 import { TabList } from './TabList'
+import { CommandBar } from './CommandBar'
 
 interface SidebarProps {
   spaces: Space[]
@@ -24,6 +25,7 @@ interface SidebarProps {
   onOpenPinInNewTab: (url: string) => void
   onOpenSettings: () => void
   onOpenHistory: () => void
+  onNavigate: (url: string) => void
   onBack: () => void
   onForward: () => void
   onReload: () => void
@@ -33,6 +35,12 @@ interface SidebarProps {
   onToggleShieldPopup: () => void
   onCloseShieldPopup: () => void
   onDisableShieldForSite: () => void
+  ai: {
+    messages: { role: 'user' | 'assistant'; content: string }[]
+    streamingContent: string
+    isStreaming: boolean
+    sendMessage: (message: string) => void
+  }
   userProfile: UserProfile
 }
 
@@ -52,6 +60,7 @@ export function Sidebar({
   onClickPin,
   onOpenPinInNewTab,
   onOpenSettings,
+  onNavigate,
   onBack,
   onForward,
   onReload,
@@ -61,6 +70,7 @@ export function Sidebar({
   onToggleShieldPopup,
   onCloseShieldPopup,
   onDisableShieldForSite,
+  ai,
   userProfile,
 }: SidebarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -112,21 +122,14 @@ export function Sidebar({
           )}
         </div>
 
-        {/* Section 2: Command Bar Placeholder (functional in Wave 3) */}
-        {isExpanded && (
-          <div className="px-3 py-2">
-            <div
-              className="h-8 rounded-[10px] flex items-center gap-2 px-3 cursor-text"
-              style={{ background: 'var(--command-bar-bg)', border: '1px solid var(--command-bar-border)' }}
-              onClick={() => { /* Wave 3: focus command bar */ }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'rgba(206, 250, 5, 0.4)' }}>search</span>
-              <span className="font-body text-xs" style={{ color: 'rgba(206, 250, 5, 0.35)' }}>
-                Search, URL, or @claude...
-              </span>
-            </div>
-          </div>
-        )}
+        {/* Section 2: Command Bar */}
+        <CommandBar
+          onNavigate={onNavigate}
+          tabs={tabs}
+          onSwitchTab={onSwitchTab}
+          ai={ai}
+          isExpanded={isExpanded}
+        />
 
         {/* Section 3: Navigation Controls */}
         <div className="py-1">

@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { HistoryPanel } from './components/history/HistoryPanel'
-import { SettingsPanel } from './components/settings/SettingsPanel'
 import { UpdateNotification } from './components/UpdateNotification'
 import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
+import { useAi } from './hooks/useAi'
 import { useUserProfile } from './hooks/useUserProfile'
 
 export function App() {
@@ -25,9 +25,9 @@ export function App() {
   } = useSpaces()
 
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
+  const { messages: aiMessages, streamingContent, isStreaming, sendMessage: sendAiMessage } = useAi()
   const { profile: userProfile } = useUserProfile()
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
 
   const sidebarWidth = sidebarExpanded ? 240 : 60
@@ -79,7 +79,7 @@ export function App() {
         Skip to content
       </a>
 
-      {/* Sidebar — Arc-style with inline tabs, nav controls, spaces */}
+      {/* Sidebar — Arc-style with command palette, inline tabs, spaces */}
       <Sidebar
         spaces={spaces}
         activeSpaceId={activeSpaceId}
@@ -95,8 +95,9 @@ export function App() {
         onReorderPins={reorderPins}
         onClickPin={clickPin}
         onOpenPinInNewTab={openPinInNewTab}
-        onOpenSettings={() => { setSettingsOpen(true); window.nsty?.showOverlay() }}
+        onOpenSettings={() => { /* Settings now in command bar */ }}
         onOpenHistory={() => { setHistoryOpen(true); window.nsty?.showOverlay() }}
+        onNavigate={handleNavigate}
         onBack={() => window.nsty?.goBack()}
         onForward={() => window.nsty?.goForward()}
         onReload={() => window.nsty?.reload()}
@@ -106,6 +107,12 @@ export function App() {
         onToggleShieldPopup={toggleShieldPopup}
         onCloseShieldPopup={closeShieldPopup}
         onDisableShieldForSite={disableForSite}
+        ai={{
+          messages: aiMessages,
+          streamingContent,
+          isStreaming,
+          sendMessage: sendAiMessage,
+        }}
         userProfile={userProfile}
       />
 
@@ -137,12 +144,6 @@ export function App() {
         isOpen={historyOpen}
         onClose={() => { setHistoryOpen(false); window.nsty?.hideOverlay() }}
         onNavigate={handleNavigate}
-      />
-
-      {/* Settings Panel */}
-      <SettingsPanel
-        isOpen={settingsOpen}
-        onClose={() => { setSettingsOpen(false); window.nsty?.hideOverlay() }}
       />
 
       {/* Update Notification */}
