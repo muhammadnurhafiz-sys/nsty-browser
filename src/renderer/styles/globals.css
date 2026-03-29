@@ -89,7 +89,9 @@
   --radius-xl: 12px;
   --radius-full: 9999px;
 
-  /* Z-index scale */
+  /* Z-index scale — use these instead of hardcoded Tailwind z-* classes.
+     Layers: base(1) < card(10) < sidebar(30) < backdrop(40) < drawer(50) < modal(60) < skip(100)
+     TODO: Migrate existing z-40/z-50 in components to use these custom properties */
   --z-base: 1;
   --z-card: 10;
   --z-sidebar: 30;
