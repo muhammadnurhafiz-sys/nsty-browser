@@ -10,7 +10,9 @@ interface AiState {
   messages: { role: 'user' | 'assistant'; content: string }[]
   streamingContent: string
   isStreaming: boolean
+  model: 'sonnet' | 'haiku' | 'opus'
   sendMessage: (message: string) => void
+  changeModel: (model: 'sonnet' | 'haiku' | 'opus') => void
 }
 
 interface CommandBarProps {
@@ -19,9 +21,10 @@ interface CommandBarProps {
   onSwitchTab: (tabId: string) => void
   ai: AiState
   isExpanded: boolean
+  onExpandSidebar?: () => void
 }
 
-export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded }: CommandBarProps) {
+export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onExpandSidebar }: CommandBarProps) {
   const {
     query,
     mode,
@@ -54,7 +57,12 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded }: Co
 
       if (mode === 'ai') {
         const aiQuery = getAiQuery()
-        if (aiQuery) {
+        // Model switching: @claude /opus, @claude /sonnet, @claude /haiku
+        const modelMatch = aiQuery.match(/^\/?(opus|sonnet|haiku)$/i)
+        if (modelMatch) {
+          ai.changeModel(modelMatch[1].toLowerCase() as 'sonnet' | 'haiku' | 'opus')
+          updateQuery('@claude ')
+        } else if (aiQuery) {
           ai.sendMessage(aiQuery)
           updateQuery('@claude ')
         }
@@ -83,7 +91,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded }: Co
     return (
       <div className="flex justify-center py-2">
         <button
-          onClick={() => focus()}
+          onClick={() => { onExpandSidebar?.(); }}
           className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors"
           style={{ background: 'var(--command-bar-bg)', border: '1px solid var(--command-bar-border)' }}
           aria-label="Search or navigate"
@@ -96,7 +104,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded }: Co
 
   // Mode indicator chip
   const modeChip = mode === 'ai'
-    ? { label: 'AI', color: 'rgba(206, 250, 5, 0.6)' }
+    ? { label: `AI · ${ai.model}`, color: 'rgba(206, 250, 5, 0.6)' }
     : mode === 'settings'
       ? { label: 'Settings', color: 'rgba(206, 250, 5, 0.5)' }
       : null

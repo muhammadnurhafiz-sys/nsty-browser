@@ -39,7 +39,9 @@ interface SidebarProps {
     messages: { role: 'user' | 'assistant'; content: string }[]
     streamingContent: string
     isStreaming: boolean
+    model: 'sonnet' | 'haiku' | 'opus'
     sendMessage: (message: string) => void
+    changeModel: (model: 'sonnet' | 'haiku' | 'opus') => void
   }
   userProfile: UserProfile
 }
@@ -60,6 +62,7 @@ export function Sidebar({
   onClickPin,
   onOpenPinInNewTab,
   onOpenSettings,
+  onOpenHistory,
   onNavigate,
   onBack,
   onForward,
@@ -129,6 +132,7 @@ export function Sidebar({
           onSwitchTab={onSwitchTab}
           ai={ai}
           isExpanded={isExpanded}
+          onExpandSidebar={onToggleExpand}
         />
 
         {/* Section 3: Navigation Controls */}
@@ -137,6 +141,7 @@ export function Sidebar({
             onBack={onBack}
             onForward={onForward}
             onReload={onReload}
+            onOpenHistory={onOpenHistory}
             shieldCount={shieldCount}
             shieldStats={shieldStats}
             shieldPopupOpen={shieldPopupOpen}

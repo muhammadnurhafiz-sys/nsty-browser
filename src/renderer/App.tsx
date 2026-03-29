@@ -25,7 +25,7 @@ export function App() {
   } = useSpaces()
 
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
-  const { messages: aiMessages, streamingContent, isStreaming, sendMessage: sendAiMessage } = useAi()
+  const { messages: aiMessages, streamingContent, isStreaming, model: aiModel, sendMessage: sendAiMessage, changeModel: changeAiModel } = useAi()
   const { profile: userProfile } = useUserProfile()
   const [historyOpen, setHistoryOpen] = useState(false)
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
@@ -111,7 +111,9 @@ export function App() {
           messages: aiMessages,
           streamingContent,
           isStreaming,
+          model: aiModel,
           sendMessage: sendAiMessage,
+          changeModel: changeAiModel,
         }}
         userProfile={userProfile}
       />

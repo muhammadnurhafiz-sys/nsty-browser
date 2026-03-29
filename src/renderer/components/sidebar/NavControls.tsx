@@ -5,6 +5,7 @@ interface NavControlsProps {
   onBack: () => void
   onForward: () => void
   onReload: () => void
+  onOpenHistory: () => void
   shieldCount: number
   shieldStats: ShieldStats
   shieldPopupOpen: boolean
@@ -18,6 +19,7 @@ export function NavControls({
   onBack,
   onForward,
   onReload,
+  onOpenHistory,
   shieldCount,
   shieldStats,
   shieldPopupOpen,
@@ -31,6 +33,7 @@ export function NavControls({
       <NavButton icon="arrow_back" label="Back" onClick={onBack} />
       <NavButton icon="arrow_forward" label="Forward" onClick={onForward} />
       <NavButton icon="refresh" label="Reload" onClick={onReload} />
+      <NavButton icon="history" label="History" onClick={onOpenHistory} />
       {isExpanded && <div className="flex-1" />}
       <div className="relative">
         <button
@@ -42,7 +45,7 @@ export function NavControls({
           aria-label={`Shield: ${shieldCount} blocked`}
           title={`${shieldCount} blocked`}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--outline)' }}>shield</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--outline)' }}>shield</span>
           {shieldCount > 0 && (
             <span
               className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[7px] font-bold"
@@ -74,7 +77,7 @@ function NavButton({ icon, label, onClick }: { icon: string; label: string; onCl
       aria-label={label}
       title={label}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--outline)' }}>{icon}</span>
+      <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--outline)' }}>{icon}</span>
     </button>
   )
 }
