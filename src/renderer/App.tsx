@@ -88,13 +88,13 @@ export function App() {
   // No auto-create — Dashboard shows when no tabs exist
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--surface)' }}>
+    <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--space-gradient-1)' }}>
       {/* Skip to content link for keyboard users */}
       <a href="#main-content" className="skip-to-content" aria-label="Skip to main content">
         Skip to content
       </a>
 
-      {/* Sidebar — collapsible 60px/240px */}
+      {/* Sidebar — Arc-style with inline tabs, nav controls, spaces */}
       <Sidebar
         spaces={spaces}
         activeSpaceId={activeSpaceId}
@@ -112,7 +112,15 @@ export function App() {
         onOpenPinInNewTab={openPinInNewTab}
         onOpenSettings={() => { setSettingsOpen(true); window.nsty?.showOverlay() }}
         onOpenHistory={() => { setHistoryOpen(true); window.nsty?.showOverlay() }}
-        onToggleTabDrawer={() => setTabDrawerOpen(prev => !prev)}
+        onBack={() => window.nsty?.goBack()}
+        onForward={() => window.nsty?.goForward()}
+        onReload={() => window.nsty?.reload()}
+        shieldCount={totalBlocked}
+        shieldStats={shieldStats}
+        shieldPopupOpen={shieldPopupOpen}
+        onToggleShieldPopup={toggleShieldPopup}
+        onCloseShieldPopup={closeShieldPopup}
+        onDisableShieldForSite={disableForSite}
         userProfile={userProfile}
       />
 

@@ -62,16 +62,16 @@ export function TabList({ tabs, activeTabId, onSwitchTab, onCloseTab, onPinTab }
   }
 
   return (
-    <div className="flex-1 overflow-y-auto py-2">
+    <div className="flex-1 overflow-y-auto hide-scrollbar py-1">
       {groups.map(group => (
-        <div key={group.label} className="mb-3">
+        <div key={group.label} className="mb-2">
           <div
-            className="font-label text-xs font-semibold uppercase tracking-widest px-3 pb-2 pt-1"
-            style={{ color: 'var(--outline)' }}
+            className="font-label text-[10px] uppercase px-3 pb-1 pt-1"
+            style={{ color: 'rgba(206, 250, 5, 0.35)', letterSpacing: '0.12em' }}
           >
             {group.label}
           </div>
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-0.5 px-1">
             {group.tabs.map(tab => (
               <TabItem
                 key={tab.id}

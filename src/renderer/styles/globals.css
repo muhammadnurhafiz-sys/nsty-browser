@@ -71,6 +71,22 @@
   --border: var(--ghost-border);
   --border-strong: rgba(73, 72, 71, 0.3);
 
+  /* Arc-inspired translucent surfaces */
+  --surface-translucent: rgba(206, 250, 5, 0.03);
+  --surface-translucent-hover: rgba(206, 250, 5, 0.06);
+  --surface-translucent-active: rgba(206, 250, 5, 0.1);
+  --border-subtle: rgba(206, 250, 5, 0.08);
+  --border-active: rgba(206, 250, 5, 0.15);
+
+  /* Command bar */
+  --command-bar-bg: rgba(206, 250, 5, 0.06);
+  --command-bar-border: rgba(206, 250, 5, 0.12);
+
+  /* Space gradients (green-tinted) */
+  --space-gradient-1: linear-gradient(135deg, #0a1a0a 0%, #132613 40%, #0d1f0d 80%, #0a150a 100%);
+  --space-gradient-2: linear-gradient(135deg, #0a1a1a 0%, #0d2a1a 40%, #0a1f1a 80%, #0a1510 100%);
+  --space-gradient-3: linear-gradient(135deg, #1a1a0a 0%, #2a2d0a 40%, #1f1f0d 80%, #15150a 100%);
+
   /* Layout */
   --topbar-height: 52px;
   --sidebar-width: 60px;
@@ -172,6 +188,14 @@ button, a, input, select {
   border: 1px solid var(--ghost-border);
 }
 
+/* Arc-inspired sidebar glass */
+.sidebar-glass {
+  background: var(--surface-translucent);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-right: 1px solid var(--border-subtle);
+}
+
 /* === Ghost Border === */
 .ghost-border {
   border: 1px solid var(--ghost-border);
@@ -254,6 +278,25 @@ button, a, input, select {
 
 .settings-panel {
   animation: settingsIn 250ms ease-out forwards;
+}
+
+/* Expand down (command bar panels) */
+@keyframes expandDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    max-height: 60vh;
+    transform: translateY(0);
+  }
+}
+
+.expand-down {
+  animation: expandDown 200ms ease-out forwards;
+  overflow: hidden;
 }
 
 /* Legacy (keep until Phase 5 cleanup) */

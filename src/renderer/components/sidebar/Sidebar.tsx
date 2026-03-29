@@ -1,7 +1,11 @@
 import { useState } from 'react'
-import type { Tab, Space, PinnedPage, UserProfile } from '@shared/types'
+import type { Tab, Space, PinnedPage, UserProfile, ShieldStats } from '@shared/types'
 import { UserMenu } from './UserMenu'
 import { HexIcon } from '../dashboard/HexIcon'
+import { NavControls } from './NavControls'
+import { SpaceDots } from './SpaceDots'
+import { PinnedPages } from './PinnedPages'
+import { TabList } from './TabList'
 
 interface SidebarProps {
   spaces: Space[]
@@ -20,143 +24,181 @@ interface SidebarProps {
   onOpenPinInNewTab: (url: string) => void
   onOpenSettings: () => void
   onOpenHistory: () => void
-  onToggleTabDrawer: () => void
+  onBack: () => void
+  onForward: () => void
+  onReload: () => void
+  shieldCount: number
+  shieldStats: ShieldStats
+  shieldPopupOpen: boolean
+  onToggleShieldPopup: () => void
+  onCloseShieldPopup: () => void
+  onDisableShieldForSite: () => void
   userProfile: UserProfile
 }
 
-type NavItem = {
-  id: string
-  icon: string
-  label: string
-  action: () => void
-}
-
 export function Sidebar({
+  spaces,
+  activeSpaceId,
+  activeTabId,
   isExpanded,
   onToggleExpand,
+  onSwitchSpace,
+  onSwitchTab,
+  onCloseTab,
   onNewTab,
+  onPinTab,
+  onUnpin,
+  onReorderPins,
+  onClickPin,
+  onOpenPinInNewTab,
   onOpenSettings,
-  onOpenHistory,
-  onToggleTabDrawer,
+  onBack,
+  onForward,
+  onReload,
+  shieldCount,
+  shieldStats,
+  shieldPopupOpen,
+  onToggleShieldPopup,
+  onCloseShieldPopup,
+  onDisableShieldForSite,
   userProfile,
 }: SidebarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [activeNav, setActiveNav] = useState('tabs')
 
   const sidebarWidth = isExpanded ? 240 : 60
-
-  const navItems: NavItem[] = [
-    { id: 'tabs', icon: 'grid_view', label: 'Tabs', action: onToggleTabDrawer },
-    { id: 'pins', icon: 'push_pin', label: 'Pinned', action: () => setActiveNav('pins') },
-    { id: 'history', icon: 'history', label: 'History', action: onOpenHistory },
-    { id: 'extensions', icon: 'extension', label: 'Extensions', action: () => setActiveNav('extensions') },
-    { id: 'settings', icon: 'settings', label: 'Settings', action: onOpenSettings },
-  ]
+  const activeSpace = spaces.find(s => s.id === activeSpaceId)
+  const tabs = activeSpace?.tabs ?? []
+  const pinnedPages = activeSpace?.pinnedPages ?? []
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full z-40 flex flex-col flex-shrink-0 sidebar-collapse"
-      style={{
-        width: sidebarWidth,
-        background: 'var(--surface-container-low)',
-      }}
+      className="fixed left-0 top-0 h-full z-40 flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
+      style={{ width: sidebarWidth }}
     >
-      <div className={`flex flex-col h-full py-6 ${isExpanded ? 'px-4' : 'items-center'}`} style={{ gap: 24 }}>
-        {/* Logo */}
+      <div className="flex flex-col h-full">
+
+        {/* Section 1: Header — Logo + Wordmark + Collapse Toggle */}
         <div
-          className={`flex items-center ${isExpanded ? 'gap-3 px-2' : 'flex-col'} mb-1 cursor-pointer`}
-          onClick={onToggleExpand}
-          title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+          className={`flex items-center ${isExpanded ? 'justify-between px-4' : 'justify-center'} pt-3 pb-1`}
+          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
-          <HexIcon size={isExpanded ? 28 : 24} />
+          <div
+            className={`flex items-center ${isExpanded ? 'gap-2' : ''} cursor-pointer`}
+            onClick={onToggleExpand}
+            title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          >
+            <HexIcon size={isExpanded ? 24 : 20} />
+            {isExpanded && (
+              <span
+                className="font-headline text-[13px] font-bold uppercase"
+                style={{ color: 'var(--primary)', letterSpacing: '0.15em' }}
+              >
+                nsty
+              </span>
+            )}
+          </div>
           {isExpanded && (
-            <span
-              className="font-headline text-base font-bold tracking-tighter whitespace-nowrap"
-              style={{ color: 'var(--primary)' }}
+            <button
+              onClick={onToggleExpand}
+              className="w-5 h-5 rounded flex items-center justify-center cursor-pointer transition-colors"
+              style={{ color: 'var(--outline)', opacity: 0.5, WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+              aria-label="Collapse sidebar"
             >
-              nsty
-            </span>
+              <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+            </button>
           )}
         </div>
 
-        {/* New Tab button */}
-        <button
-          onClick={onNewTab}
-          className={`flex items-center ${isExpanded ? 'gap-3 px-3 w-full' : 'justify-center w-10 h-10'} rounded-xl cursor-pointer transition-all duration-200`}
-          style={{
-            background: 'rgba(206, 250, 5, 0.1)',
-            color: 'var(--primary)',
-            height: isExpanded ? 40 : undefined,
-          }}
-          aria-label="New tab (Ctrl+T)"
-          title="New tab (Ctrl+T)"
-        >
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          {isExpanded && (
-            <span className="font-body text-sm whitespace-nowrap">New Tab</span>
-          )}
-        </button>
+        {/* Section 2: Command Bar Placeholder (functional in Wave 3) */}
+        {isExpanded && (
+          <div className="px-3 py-2">
+            <div
+              className="h-8 rounded-[10px] flex items-center gap-2 px-3 cursor-text"
+              style={{ background: 'var(--command-bar-bg)', border: '1px solid var(--command-bar-border)' }}
+              onClick={() => { /* Wave 3: focus command bar */ }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'rgba(206, 250, 5, 0.4)' }}>search</span>
+              <span className="font-body text-xs" style={{ color: 'rgba(206, 250, 5, 0.35)' }}>
+                Search, URL, or @claude...
+              </span>
+            </div>
+          </div>
+        )}
 
-        {/* Nav Icons */}
-        <nav className="flex flex-col gap-1 flex-grow">
-          {navItems.map((item) => {
-            const isActive = activeNav === item.id
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveNav(item.id)
-                  item.action()
-                }}
-                className={`relative flex items-center ${isExpanded ? 'gap-3 px-3 w-full' : 'justify-center w-10 h-10'} rounded-xl cursor-pointer transition-all duration-300`}
-                style={{
-                  color: isActive ? 'var(--primary)' : 'var(--outline)',
-                  opacity: isActive ? 1 : 0.6,
-                  background: isActive ? 'rgba(206, 250, 5, 0.08)' : 'transparent',
-                  height: isExpanded ? 40 : undefined,
-                }}
-                aria-label={item.label}
-                aria-current={isActive ? 'page' : undefined}
-                title={isExpanded ? undefined : item.label}
-              >
-                {/* Active glow bar */}
-                {isActive && (
-                  <span
-                    className="absolute left-0 w-[3px] h-7 rounded-r-full"
-                    style={{
-                      background: 'var(--primary)',
-                      boxShadow: '0 0 10px var(--primary)',
-                    }}
-                  />
-                )}
-                <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
-                {isExpanded && (
-                  <span className="font-body text-sm whitespace-nowrap">{item.label}</span>
-                )}
-              </button>
-            )
-          })}
-        </nav>
+        {/* Section 3: Navigation Controls */}
+        <div className="py-1">
+          <NavControls
+            onBack={onBack}
+            onForward={onForward}
+            onReload={onReload}
+            shieldCount={shieldCount}
+            shieldStats={shieldStats}
+            shieldPopupOpen={shieldPopupOpen}
+            onToggleShieldPopup={onToggleShieldPopup}
+            onCloseShieldPopup={onCloseShieldPopup}
+            onDisableShieldForSite={onDisableShieldForSite}
+            isExpanded={isExpanded}
+          />
+        </div>
 
-        {/* Bottom actions */}
-        <div className={`flex flex-col gap-3 mt-auto pb-2 ${isExpanded ? '' : 'items-center'}`}>
-          {/* Collapse/Expand toggle */}
+        {/* Divider */}
+        <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+
+        {/* Section 4: Pinned Pages */}
+        <PinnedPages
+          pages={pinnedPages}
+          onReorder={onReorderPins}
+          onUnpin={onUnpin}
+          onOpenInNewTab={onOpenPinInNewTab}
+          onClickPin={onClickPin}
+          isExpanded={isExpanded}
+        />
+
+        {pinnedPages.length > 0 && (
+          <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+        )}
+
+        {/* Section 5: Today Tabs (scrollable, flex-1) */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <TabList
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSwitchTab={onSwitchTab}
+            onCloseTab={onCloseTab}
+            onPinTab={onPinTab}
+          />
+        </div>
+
+        {/* Section 6: New Tab Button */}
+        <div className={`${isExpanded ? 'px-3' : 'flex justify-center'} py-1`}>
           <button
-            onClick={onToggleExpand}
-            className={`flex items-center ${isExpanded ? 'gap-3 px-3 w-full' : 'justify-center w-10 h-10'} rounded-xl cursor-pointer transition-colors`}
-            style={{ color: 'var(--outline)', opacity: 0.6, height: isExpanded ? 36 : undefined }}
-            aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-            title={isExpanded ? 'Collapse' : 'Expand'}
+            onClick={onNewTab}
+            className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors`}
+            style={{ color: 'rgba(206, 250, 5, 0.5)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            aria-label="New tab"
+            title="New tab"
           >
-            <span className="material-symbols-outlined text-[20px]">
-              {isExpanded ? 'chevron_left' : 'chevron_right'}
-            </span>
-            {isExpanded && (
-              <span className="font-body text-sm whitespace-nowrap">Collapse</span>
-            )}
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            {isExpanded && <span className="font-body text-xs">New Tab</span>}
           </button>
+        </div>
 
-          {/* User avatar */}
+        {/* Divider */}
+        <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+
+        {/* Section 7: Bottom Bar — Space Dots + User Avatar */}
+        <div className={`flex items-center ${isExpanded ? 'justify-between px-3' : 'flex-col gap-2 items-center'} py-2.5`}>
+          <SpaceDots
+            spaces={spaces}
+            activeSpaceId={activeSpaceId}
+            onSwitchSpace={onSwitchSpace}
+            isExpanded={isExpanded}
+          />
           <div className="relative">
             {userMenuOpen && (
               <UserMenu
@@ -166,43 +208,23 @@ export function Sidebar({
             )}
             <button
               onClick={() => setUserMenuOpen(prev => !prev)}
-              className={`flex items-center ${isExpanded ? 'gap-3 px-2 w-full' : ''} cursor-pointer`}
+              className="cursor-pointer"
               aria-label={`User menu for ${userProfile.name}`}
               aria-expanded={userMenuOpen}
               title={userProfile.name}
             >
               <div
-                className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0"
-                style={{ border: '2px solid rgba(73, 72, 71, 0.2)' }}
+                className="w-[26px] h-[26px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                style={{ background: 'var(--surface-translucent-active)', border: '1px solid var(--border-active)' }}
               >
                 {userProfile.avatarUrl ? (
-                  <img
-                    src={userProfile.avatarUrl}
-                    className="w-full h-full object-cover"
-                    alt={userProfile.name}
-                  />
+                  <img src={userProfile.avatarUrl} className="w-full h-full object-cover" alt={userProfile.name} />
                 ) : (
-                  <div
-                    className="w-full h-full flex items-center justify-center font-headline text-[11px] font-bold"
-                    style={{
-                      background: 'var(--surface-container-highest)',
-                      color: 'var(--primary)',
-                    }}
-                  >
+                  <span className="font-headline text-[10px] font-bold" style={{ color: 'var(--primary)' }}>
                     {userProfile.name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
+                  </span>
                 )}
               </div>
-              {isExpanded && (
-                <div className="flex flex-col text-left">
-                  <span className="font-body text-sm truncate" style={{ color: 'var(--on-surface)', maxWidth: 140 }}>
-                    {userProfile.name}
-                  </span>
-                  <span className="font-body text-xs truncate" style={{ color: 'var(--outline)', maxWidth: 140 }}>
-                    {userProfile.email}
-                  </span>
-                </div>
-              )}
             </button>
           </div>
         </div>
