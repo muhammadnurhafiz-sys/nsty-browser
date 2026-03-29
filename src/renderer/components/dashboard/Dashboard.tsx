@@ -8,7 +8,7 @@ interface DashboardProps {
   recentTabs: Tab[]
   pinnedPages: PinnedPage[]
   onNavigate: (url: string) => void
-  onSearch: (query: string) => void
+  userName?: string
 }
 
 function getGreeting(): string {
@@ -18,7 +18,7 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
-export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, onNavigate }: DashboardProps) {
+export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, onNavigate, userName }: DashboardProps) {
   const recentItems = recentTabs.map(t => ({
     title: t.title || t.url,
     url: t.url,
@@ -36,7 +36,7 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
       <div style={{ maxWidth: 480, width: '100%', padding: '0 24px' }}>
         {/* Greeting */}
         <p className="font-body text-sm text-center mb-6" style={{ color: 'rgba(206, 250, 5, 0.6)' }}>
-          {getGreeting()}
+          {getGreeting()}{userName ? `, ${userName}` : ''}
         </p>
 
         {/* Shield Stats — 2-column grid */}

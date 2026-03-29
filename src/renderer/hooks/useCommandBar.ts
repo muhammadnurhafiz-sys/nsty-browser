@@ -11,10 +11,10 @@ export function useCommandBar() {
   const updateQuery = useCallback((value: string) => {
     setQuery(value)
 
-    // Detect mode from prefix
-    if (value.startsWith('@claude') || value.startsWith('@')) {
+    // Detect mode from exact prefix (require space or full keyword to avoid false triggers on URLs)
+    if (value.startsWith('@claude ') || value === '@claude') {
       if (mode !== 'ai') setMode('ai')
-    } else if (value.startsWith('/settings') || value.startsWith('/')) {
+    } else if (value.startsWith('/settings ') || value === '/settings') {
       if (mode !== 'settings') setMode('settings')
     } else {
       if (mode !== 'default' && mode !== 'tabs') setMode('default')
@@ -23,12 +23,12 @@ export function useCommandBar() {
 
   const getAiQuery = useCallback((): string => {
     // Strip @claude prefix to get the actual message
-    return query.replace(/^@claude\s*/, '').replace(/^@\s*/, '').trim()
+    return query.replace(/^@claude\s*/, '').trim()
   }, [query])
 
   const getSettingsFilter = useCallback((): string => {
     // Strip /settings prefix to get the filter
-    return query.replace(/^\/settings\s*/, '').replace(/^\/\s*/, '').trim()
+    return query.replace(/^\/settings\s*/, '').trim()
   }, [query])
 
   const resolveNavigation = useCallback((value: string): string => {

@@ -130,10 +130,7 @@ export function App() {
               recentTabs={activeSpace?.tabs ?? []}
               pinnedPages={activeSpace?.pinnedPages ?? []}
               onNavigate={handleNavigate}
-              onSearch={(query) => {
-                const url = query.includes('.') ? (query.startsWith('http') ? query : `https://${query}`) : `https://www.google.com/search?q=${encodeURIComponent(query)}`
-                handleNavigate(url)
-              }}
+              userName={userProfile.name}
             />
           )}
         </main>

@@ -1,5 +1,21 @@
 import { useState, useCallback, useMemo } from 'react'
 
+function usePersisted<T>(key: string, defaultValue: T): [T, (v: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const stored = localStorage.getItem(`nsty-settings:${key}`)
+      return stored !== null ? JSON.parse(stored) : defaultValue
+    } catch {
+      return defaultValue
+    }
+  })
+  const setPersisted = useCallback((v: T) => {
+    setValue(v)
+    try { localStorage.setItem(`nsty-settings:${key}`, JSON.stringify(v)) } catch { /* ignore */ }
+  }, [key])
+  return [value, setPersisted]
+}
+
 export type SettingType = 'toggle' | 'slider' | 'segmented' | 'input'
 
 export interface SettingItem {
@@ -19,18 +35,18 @@ export interface SettingItem {
 }
 
 export function useSettings() {
-  const [shieldEnabled, setShieldEnabled] = useState(true)
-  const [obsidianIntensity, setObsidianIntensity] = useState(75)
-  const [holoAccents, setHoloAccents] = useState(true)
-  const [autoHide, setAutoHide] = useState(false)
-  const [compactTypo, setCompactTypo] = useState<'off' | 'on'>('on')
-  const [zoomLevel, setZoomLevel] = useState(100)
-  const [localOnly, setLocalOnly] = useState(true)
-  const [biometric, setBiometric] = useState(false)
-  const [encryptedTelemetry, setEncryptedTelemetry] = useState(true)
-  const [defaultModel, setDefaultModel] = useState<'sonnet' | 'haiku' | 'opus'>('sonnet')
-  const [apiKey, setApiKey] = useState('')
-  const [autoArchiveHours, setAutoArchiveHours] = useState(12)
+  const [shieldEnabled, setShieldEnabled] = usePersisted('shield', true)
+  const [obsidianIntensity, setObsidianIntensity] = usePersisted('obsidian-intensity', 75)
+  const [holoAccents, setHoloAccents] = usePersisted('holo-accents', true)
+  const [autoHide, setAutoHide] = usePersisted('auto-hide', false)
+  const [compactTypo, setCompactTypo] = usePersisted<'off' | 'on'>('compact-typo', 'on')
+  const [zoomLevel, setZoomLevel] = usePersisted('zoom-level', 100)
+  const [localOnly, setLocalOnly] = usePersisted('local-only', true)
+  const [biometric, setBiometric] = usePersisted('biometric', false)
+  const [encryptedTelemetry, setEncryptedTelemetry] = usePersisted('telemetry', true)
+  const [defaultModel, setDefaultModel] = usePersisted<'sonnet' | 'haiku' | 'opus'>('default-model', 'sonnet')
+  const [apiKey, setApiKey] = usePersisted('api-key', '')
+  const [autoArchiveHours, setAutoArchiveHours] = usePersisted('auto-archive', 12)
 
   const items: SettingItem[] = useMemo(() => [
     // Interface
