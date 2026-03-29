@@ -109,8 +109,14 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
       ? { label: 'Settings', color: 'rgba(206, 250, 5, 0.5)' }
       : null
 
+  const modeAnnouncement = mode === 'ai' ? `AI mode, model: ${ai.model}` : mode === 'settings' ? 'Settings mode' : ''
+
   return (
     <div className="px-3 py-2">
+      {/* Screen reader announcement for mode changes */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden' }}>
+        {modeAnnouncement}
+      </div>
       {/* Input */}
       <div
         className="rounded-[10px] flex items-center gap-2 px-3"

@@ -38,12 +38,10 @@ export function QuickAccessCard({ title, icon, items, emptyMessage, animationCla
             <button
               key={item.url}
               onClick={() => onItemClick(item.url)}
-              className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors text-left"
+              className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors text-left hover-surface"
               style={{
                 borderBottom: i < Math.min(items.length, 5) - 1 ? '1px solid rgba(206, 250, 5, 0.05)' : 'none',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
               {item.favicon ? (
                 <img src={item.favicon} className="w-3.5 h-3.5 rounded" alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none' }} />

@@ -28,10 +28,7 @@ export function CommandResults({ tabs, query, onSwitchTab }: CommandResultsProps
         <button
           key={tab.id}
           onClick={() => onSwitchTab(tab.id)}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg cursor-pointer transition-colors text-left"
-          style={{ background: 'transparent' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg cursor-pointer transition-colors text-left hover-surface"
         >
           {tab.faviconUrl ? (
             <img src={tab.faviconUrl} className="w-3.5 h-3.5 rounded-sm flex-shrink-0" alt="" />

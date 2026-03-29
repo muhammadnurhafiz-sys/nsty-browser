@@ -114,10 +114,8 @@ export function Sidebar({
           {isExpanded && (
             <button
               onClick={onToggleExpand}
-              className="w-5 h-5 rounded flex items-center justify-center cursor-pointer transition-colors"
+              className="w-5 h-5 rounded flex items-center justify-center cursor-pointer transition-colors hover-surface"
               style={{ color: 'var(--outline)', opacity: 0.5, WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
               aria-label="Collapse sidebar"
             >
               <span className="material-symbols-outlined text-[16px]">chevron_left</span>
@@ -184,10 +182,8 @@ export function Sidebar({
         <div className={`${isExpanded ? 'px-3' : 'flex justify-center'} py-1`}>
           <button
             onClick={onNewTab}
-            className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors`}
+            className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors hover-surface`}
             style={{ color: 'rgba(206, 250, 5, 0.5)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             aria-label="New tab"
             title="New tab"
           >

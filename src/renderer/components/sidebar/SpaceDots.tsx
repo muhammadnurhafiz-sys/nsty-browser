@@ -49,8 +49,9 @@ export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace, isExpanded }: 
           color: 'rgba(206, 250, 5, 0.3)',
           fontSize: 8,
         }}
+        onClick={() => { /* Space creation not yet implemented */ }}
         aria-label="Create new space"
-        title="New space"
+        title="New space (coming soon)"
       >
         +
       </button>

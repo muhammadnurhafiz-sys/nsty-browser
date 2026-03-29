@@ -38,10 +38,7 @@ export function NavControls({
       <div className="relative">
         <button
           onClick={onToggleShieldPopup}
-          className="w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors"
-          style={{ background: 'transparent' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+          className="w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors hover-surface"
           aria-label={`Shield: ${shieldCount} blocked`}
           title={`${shieldCount} blocked`}
         >
@@ -70,10 +67,7 @@ function NavButton({ icon, label, onClick }: { icon: string; label: string; onCl
   return (
     <button
       onClick={onClick}
-      className="w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors"
-      style={{ background: 'transparent' }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+      className="w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors hover-surface"
       aria-label={label}
       title={label}
     >

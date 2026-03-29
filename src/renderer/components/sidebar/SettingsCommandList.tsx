@@ -55,10 +55,7 @@ export function SettingsCommandList({ items, filter }: SettingsCommandListProps)
 function SettingRow({ item }: { item: SettingItem }) {
   return (
     <div
-      className="flex items-center justify-between gap-2 px-2 py-2 rounded-lg transition-colors"
-      style={{ background: 'transparent' }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+      className="flex items-center justify-between gap-2 px-2 py-2 rounded-lg transition-colors hover-surface"
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'rgba(206, 250, 5, 0.4)' }}>
