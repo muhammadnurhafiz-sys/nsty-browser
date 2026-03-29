@@ -15,7 +15,7 @@ export function FeatureCard({ animationClass = '' }: FeatureCardProps) {
         <h3 className="font-headline text-xl font-semibold mb-1" style={{ color: 'var(--on-surface)' }}>
           Browse with Confidence
         </h3>
-        <p className="font-body text-sm" style={{ color: 'var(--on-surface-variant)', maxWidth: 420 }}>
+        <p className="font-body text-sm leading-relaxed" style={{ color: 'var(--on-surface-variant)', maxWidth: 420 }}>
           Nsty Shield blocks ads and trackers automatically. Your browsing data stays on your device.
         </p>
       </div>

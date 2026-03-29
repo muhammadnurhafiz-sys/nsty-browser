@@ -9,6 +9,7 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
   return (
     <div
       className={`max-w-[90%] rounded-xl px-3.5 py-2.5 ${isUser ? 'self-end' : 'self-start'}`}
+      role={isUser ? undefined : 'log'}
       style={{
         background: isUser ? 'rgba(206, 250, 5, 0.12)' : 'var(--surface-container)',
         borderRadius: isUser ? '12px 12px 4px 12px' : '4px 12px 12px 12px',

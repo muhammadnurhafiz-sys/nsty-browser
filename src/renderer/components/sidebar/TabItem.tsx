@@ -33,7 +33,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
       }}
     >
       {tab.faviconUrl ? (
-        <img src={tab.faviconUrl} className="w-4 h-4 rounded-sm flex-shrink-0" alt={`${tab.title} favicon`} />
+        <img src={tab.faviconUrl} className="w-4 h-4 rounded-sm flex-shrink-0" alt={`${tab.title} favicon`} loading="lazy" />
       ) : (
         <div
           className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold flex-shrink-0"
