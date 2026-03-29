@@ -15,49 +15,55 @@ interface QuickAccessCardProps {
 
 export function QuickAccessCard({ title, icon, items, emptyMessage, animationClass = '', onItemClick }: QuickAccessCardProps) {
   return (
-    <div className={`card-base card-fade-up ${animationClass} p-5 flex flex-col`} style={{ opacity: 0 }}>
+    <div
+      className={`rounded-xl p-4 card-fade-up ${animationClass}`}
+      style={{
+        background: 'rgba(206, 250, 5, 0.04)',
+        border: '1px solid rgba(206, 250, 5, 0.1)',
+        opacity: 0,
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <span
-          className="material-symbols-outlined text-[18px]"
-          style={{ color: 'var(--primary)' }}
-        >
-          {icon}
-        </span>
-        <span className="text-display text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-          {title}
-        </span>
+      <div
+        className="font-label text-[10px] uppercase mb-3"
+        style={{ color: 'rgba(206, 250, 5, 0.4)', letterSpacing: '0.1em' }}
+      >
+        {title}
       </div>
 
       {/* Items */}
       {items.length > 0 ? (
-        <div className="flex flex-col gap-1">
-          {items.slice(0, 5).map((item) => (
+        <div className="flex flex-col">
+          {items.slice(0, 5).map((item, i) => (
             <button
               key={item.url}
               onClick={() => onItemClick(item.url)}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors text-left"
-              style={{ color: 'var(--on-surface)' }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors text-left"
+              style={{
+                borderBottom: i < Math.min(items.length, 5) - 1 ? '1px solid rgba(206, 250, 5, 0.05)' : 'none',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-translucent-hover)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
               {item.favicon ? (
-                <img src={item.favicon} className="w-4 h-4 rounded" alt={`${item.title} favicon`} loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                <img src={item.favicon} className="w-3.5 h-3.5 rounded" alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none' }} />
               ) : (
                 <span
-                  className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold font-label"
-                  style={{ background: 'var(--surface-container-highest)', color: 'var(--primary)' }}
+                  className="w-3.5 h-3.5 rounded flex items-center justify-center text-[8px] font-bold"
+                  style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--on-surface-variant)' }}
                 >
                   {item.title.charAt(0).toUpperCase()}
                 </span>
               )}
-              <span className="font-body text-sm truncate">{item.title}</span>
+              <span className="font-body text-xs truncate" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                {item.title}
+              </span>
             </button>
           ))}
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center py-6">
-          <p className="font-body text-sm" style={{ color: 'var(--outline)' }}>{emptyMessage}</p>
+        <div className="py-4 text-center">
+          <p className="font-body text-[11px]" style={{ color: 'rgba(255, 255, 255, 0.3)' }}>{emptyMessage}</p>
         </div>
       )}
     </div>

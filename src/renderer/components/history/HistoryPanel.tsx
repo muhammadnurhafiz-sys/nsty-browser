@@ -39,15 +39,21 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
 
       {/* Panel */}
       <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[560px] max-h-[70vh] rounded-xl flex flex-col shadow-2xl glass-panel fade-in"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[560px] max-h-[70vh] rounded-xl flex flex-col shadow-2xl fade-in"
+        style={{
+          background: 'rgba(206, 250, 5, 0.03)',
+          backdropFilter: 'blur(30px)',
+          WebkitBackdropFilter: 'blur(30px)',
+          border: '1px solid var(--border-subtle)',
+        }}
         role="dialog"
         aria-modal="true"
         aria-label="Search history"
         onKeyDown={handleKeyDown}
       >
         {/* Search header */}
-        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(73, 72, 71, 0.1)' }}>
-          <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--primary)' }}>search</span>
+        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          <span className="material-symbols-outlined text-[18px]" style={{ color: 'rgba(206, 250, 5, 0.5)' }}>search</span>
           <input
             type="text"
             value={query}
@@ -62,9 +68,9 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
             aria-label="Close history"
             className="font-label text-[10px] uppercase tracking-wider px-2 py-1 rounded-md cursor-pointer"
             style={{
-              background: 'var(--surface-container-high)',
-              color: 'var(--outline)',
-              border: '1px solid rgba(73, 72, 71, 0.15)',
+              background: 'var(--surface-translucent-hover)',
+              color: 'rgba(206, 250, 5, 0.4)',
+              border: '1px solid var(--border-subtle)',
             }}
           >
             ESC
@@ -95,7 +101,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
               onClick={() => { onNavigate(entry.url); onClose() }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-left transition-colors"
               style={{ background: 'transparent' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-translucent-hover)' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
               {entry.favicon_url ? (

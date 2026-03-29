@@ -1,7 +1,5 @@
-import { useState, useCallback } from 'react'
 import { ShieldStatusCard } from './ShieldStatusCard'
 import { QuickAccessCard } from './QuickAccessCard'
-import { FeatureCard } from './FeatureCard'
 import type { ShieldStats, Tab, PinnedPage } from '@shared/types'
 
 interface DashboardProps {
@@ -20,19 +18,7 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
-export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, onNavigate, onSearch }: DashboardProps) {
-  const [searchValue, setSearchValue] = useState('')
-
-  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const value = searchValue.trim()
-      if (value) {
-        onSearch(value)
-        setSearchValue('')
-      }
-    }
-  }, [searchValue, onSearch])
-
+export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, onNavigate }: DashboardProps) {
   const recentItems = recentTabs.map(t => ({
     title: t.title || t.url,
     url: t.url,
@@ -46,63 +32,39 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
   }))
 
   return (
-    <div className="h-full overflow-y-auto hide-scrollbar">
-      <div className="max-w-3xl mx-auto px-8 py-12">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-display text-2xl mb-1" style={{ color: 'var(--primary)' }}>
-            Nsty
-          </h1>
-          <p className="font-body text-base" style={{ color: 'var(--on-surface-variant)' }}>
-            {getGreeting()}
-          </p>
-        </div>
+    <div className="h-full overflow-y-auto hide-scrollbar flex items-center justify-center">
+      <div style={{ maxWidth: 480, width: '100%', padding: '0 24px' }}>
+        {/* Greeting */}
+        <p className="font-body text-sm text-center mb-6" style={{ color: 'rgba(206, 250, 5, 0.6)' }}>
+          {getGreeting()}
+        </p>
 
-        {/* Search bar */}
-        <div
-          className="glass-panel flex items-center gap-3 px-5 mb-8"
-          style={{ height: 48, borderRadius: 'var(--radius-full)' }}
-        >
-          <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--outline)' }}>
-            search
-          </span>
-          <input
-            type="text"
-            placeholder="Search or enter URL..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            className="flex-1 bg-transparent outline-none font-body text-sm"
-            style={{ color: 'var(--on-surface)' }}
-          />
-        </div>
+        {/* Shield Stats — 2-column grid */}
+        <ShieldStatusCard stats={shieldStats} totalBlocked={totalBlocked} />
 
-        {/* Card grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Shield Status — full width */}
-          <ShieldStatusCard stats={shieldStats} totalBlocked={totalBlocked} />
-
-          {/* Quick Access — side by side */}
+        {/* Recent Tabs */}
+        <div className="mt-3">
           <QuickAccessCard
-            title="Recent Tabs"
+            title="Recent"
             icon="schedule"
             items={recentItems}
             emptyMessage="No recent tabs"
-            animationClass="card-fade-up-2"
             onItemClick={onNavigate}
           />
-          <QuickAccessCard
-            title="Pinned Pages"
-            icon="push_pin"
-            items={pinnedItems}
-            emptyMessage="No pinned pages"
-            animationClass="card-fade-up-3"
-            onItemClick={onNavigate}
-          />
-
-          {/* Feature Card — full width */}
-          <FeatureCard animationClass="card-fade-up-4" />
         </div>
+
+        {/* Pinned Pages */}
+        {pinnedItems.length > 0 && (
+          <div className="mt-3">
+            <QuickAccessCard
+              title="Pinned"
+              icon="push_pin"
+              items={pinnedItems}
+              emptyMessage="No pinned pages"
+              onItemClick={onNavigate}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

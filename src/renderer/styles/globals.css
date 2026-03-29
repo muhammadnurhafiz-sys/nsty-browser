@@ -408,39 +408,6 @@ button, a, input, select {
   overflow: hidden;
 }
 
-/* === Feature Card Geometric Background === */
-
-.geo-bg {
-  background:
-    linear-gradient(135deg, rgba(0, 180, 160, 0.15) 0%, transparent 60%),
-    linear-gradient(225deg, rgba(0, 120, 140, 0.1) 0%, transparent 50%),
-    var(--surface-container-high);
-  position: relative;
-}
-
-.geo-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 40px,
-      rgba(0, 180, 160, 0.04) 40px,
-      rgba(0, 180, 160, 0.04) 41px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 40px,
-      rgba(0, 180, 160, 0.04) 40px,
-      rgba(0, 180, 160, 0.04) 41px
-    );
-  border-radius: inherit;
-  pointer-events: none;
-}
-
 /* === Accessibility: Focus Visible === */
 
 button:focus-visible,
