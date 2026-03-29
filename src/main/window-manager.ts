@@ -1,15 +1,12 @@
 import { BrowserWindow } from 'electron'
 import { TabManager } from './tab-manager'
 
-const TOP_BAR_HEIGHT = 52
 const SIDEBAR_WIDTH_MINI = 60
 const SIDEBAR_WIDTH_WIDE = 240
-const AI_PANEL_WIDTH = 340
 
 export class WindowManager {
   private window: BrowserWindow
   private tabManager: TabManager
-  private aiPanelOpen = false
   private sidebarExpanded = false
 
   constructor(window: BrowserWindow, tabManager: TabManager) {
@@ -24,36 +21,22 @@ export class WindowManager {
     return this.sidebarExpanded ? SIDEBAR_WIDTH_WIDE : SIDEBAR_WIDTH_MINI
   }
 
-  get aiWidth(): number {
-    return this.aiPanelOpen ? AI_PANEL_WIDTH : 0
-  }
-
   toggleSidebar(): boolean {
     this.sidebarExpanded = !this.sidebarExpanded
     this.updateLayout()
     return this.sidebarExpanded
   }
 
-  toggleAiPanel(): boolean {
-    this.aiPanelOpen = !this.aiPanelOpen
-    this.updateLayout()
-    return this.aiPanelOpen
-  }
-
   isSidebarExpanded(): boolean {
     return this.sidebarExpanded
-  }
-
-  isAiPanelOpen(): boolean {
-    return this.aiPanelOpen
   }
 
   updateLayout(): void {
     const [windowWidth, windowHeight] = this.window.getContentSize()
     const contentX = this.sidebarWidth
-    const contentWidth = windowWidth - this.sidebarWidth - this.aiWidth
-    const contentY = TOP_BAR_HEIGHT
-    const contentHeight = windowHeight - TOP_BAR_HEIGHT
+    const contentWidth = windowWidth - this.sidebarWidth
+    const contentY = 0
+    const contentHeight = windowHeight
 
     this.tabManager.setContentBounds(
       contentX,
@@ -68,13 +51,10 @@ export class WindowManager {
     return {
       sidebarWidth: this.sidebarWidth,
       sidebarExpanded: this.sidebarExpanded,
-      aiPanelWidth: this.aiWidth,
-      aiPanelOpen: this.aiPanelOpen,
-      topBarHeight: TOP_BAR_HEIGHT,
       contentX: this.sidebarWidth,
-      contentY: TOP_BAR_HEIGHT,
-      contentWidth: windowWidth - this.sidebarWidth - this.aiWidth,
-      contentHeight: windowHeight - TOP_BAR_HEIGHT,
+      contentY: 0,
+      contentWidth: windowWidth - this.sidebarWidth,
+      contentHeight: windowHeight,
       windowWidth,
       windowHeight,
     }

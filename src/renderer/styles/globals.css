@@ -88,7 +88,6 @@
   --space-gradient-3: linear-gradient(135deg, #1a1a0a 0%, #2a2d0a 40%, #1f1f0d 80%, #15150a 100%);
 
   /* Layout */
-  --topbar-height: 52px;
   --sidebar-width: 60px;
   --sidebar-width-mini: 60px;
   --sidebar-width-wide: 240px;

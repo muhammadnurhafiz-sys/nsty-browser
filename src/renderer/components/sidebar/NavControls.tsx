@@ -1,4 +1,4 @@
-import { ShieldPopup } from '../topbar/ShieldPopup'
+import { ShieldPopup } from './ShieldPopup'
 import type { ShieldStats } from '@shared/types'
 
 interface NavControlsProps {

@@ -31,14 +31,9 @@ export function useAi() {
       setIsStreaming(false)
     })
 
-    const cleanupToggle = window.nsty.onAiPanelToggle((open) => {
-      setIsOpen(open)
-    })
-
     return () => {
       cleanupStream()
       cleanupStreamEnd()
-      cleanupToggle()
     }
   }, [])
 
@@ -59,11 +54,10 @@ export function useAi() {
   }, [])
 
   const togglePanel = useCallback(() => {
-    window.nsty?.toggleAiPanel()
+    setIsOpen(prev => !prev)
   }, [])
 
   const closePanel = useCallback(() => {
-    window.nsty?.toggleAiPanel()
     setIsOpen(false)
   }, [])
 

@@ -11,7 +11,7 @@ vi.mock('./tab-manager', () => ({
 }))
 
 describe('WindowManager', () => {
-  it('uses 80px fixed sidebar width', async () => {
+  it('defaults to collapsed sidebar (60px)', async () => {
     const { WindowManager } = await import('./window-manager')
     const mockWindow = {
       on: vi.fn(),
@@ -21,10 +21,10 @@ describe('WindowManager', () => {
       setContentBounds: vi.fn(),
     }
     const wm = new WindowManager(mockWindow as any, mockTabManager as any)
-    expect(wm.sidebarWidth).toBe(80)
+    expect(wm.sidebarWidth).toBe(60)
   })
 
-  it('sidebar is always expanded (fixed width)', async () => {
+  it('toggles sidebar between 60px and 240px', async () => {
     const { WindowManager } = await import('./window-manager')
     const mockWindow = {
       on: vi.fn(),
@@ -34,13 +34,14 @@ describe('WindowManager', () => {
       setContentBounds: vi.fn(),
     }
     const wm = new WindowManager(mockWindow as any, mockTabManager as any)
-    expect(wm.isSidebarExpanded()).toBe(true)
-    // Toggle should still return true (no-op)
+    expect(wm.isSidebarExpanded()).toBe(false)
     expect(wm.toggleSidebar()).toBe(true)
-    expect(wm.sidebarWidth).toBe(80)
+    expect(wm.sidebarWidth).toBe(240)
+    expect(wm.toggleSidebar()).toBe(false)
+    expect(wm.sidebarWidth).toBe(60)
   })
 
-  it('calculates correct layout with AI panel closed', async () => {
+  it('calculates correct layout — full height, no top bar', async () => {
     const { WindowManager } = await import('./window-manager')
     const mockWindow = {
       on: vi.fn(),
@@ -51,28 +52,10 @@ describe('WindowManager', () => {
     }
     const wm = new WindowManager(mockWindow as any, mockTabManager as any)
     const layout = wm.getLayoutInfo()
-    expect(layout.sidebarWidth).toBe(80)
-    expect(layout.topBarHeight).toBe(52)
-    expect(layout.contentX).toBe(80)
-    expect(layout.contentY).toBe(52)
-    expect(layout.contentWidth).toBe(1920 - 80)
-    expect(layout.contentHeight).toBe(1080 - 52)
-  })
-
-  it('calculates correct layout with AI panel open', async () => {
-    const { WindowManager } = await import('./window-manager')
-    const mockWindow = {
-      on: vi.fn(),
-      getContentSize: vi.fn(() => [1920, 1080]),
-    }
-    const mockTabManager = {
-      setContentBounds: vi.fn(),
-    }
-    const wm = new WindowManager(mockWindow as any, mockTabManager as any)
-    wm.toggleAiPanel()
-    const layout = wm.getLayoutInfo()
-    expect(layout.aiPanelOpen).toBe(true)
-    expect(layout.aiPanelWidth).toBe(340)
-    expect(layout.contentWidth).toBe(1920 - 80 - 340)
+    expect(layout.sidebarWidth).toBe(60)
+    expect(layout.contentX).toBe(60)
+    expect(layout.contentY).toBe(0)
+    expect(layout.contentWidth).toBe(1920 - 60)
+    expect(layout.contentHeight).toBe(1080)
   })
 })

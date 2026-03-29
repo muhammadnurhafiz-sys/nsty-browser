@@ -1,15 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from './components/sidebar/Sidebar'
-import { TopBar } from './components/topbar/TopBar'
 import { Dashboard } from './components/dashboard/Dashboard'
-import { AiPanel } from './components/ai/AiPanel'
 import { HistoryPanel } from './components/history/HistoryPanel'
 import { SettingsPanel } from './components/settings/SettingsPanel'
 import { UpdateNotification } from './components/UpdateNotification'
-import { TabDrawer } from './components/sidebar/TabDrawer'
 import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
-import { useAi } from './hooks/useAi'
 import { useUserProfile } from './hooks/useUserProfile'
 
 export function App() {
@@ -17,7 +13,6 @@ export function App() {
     spaces,
     activeSpaceId,
     activeTabId,
-    activeTab,
     switchSpace,
     switchTab,
     createTab,
@@ -30,25 +25,21 @@ export function App() {
   } = useSpaces()
 
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
-  const { messages: aiMessages, streamingContent, isStreaming, model: aiModel, isOpen: aiOpen, sendMessage: sendAiMessage, changeModel: changeAiModel, closePanel: closeAiPanel } = useAi()
   const { profile: userProfile } = useUserProfile()
   const [historyOpen, setHistoryOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [tabDrawerOpen, setTabDrawerOpen] = useState(false)
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
 
   const sidebarWidth = sidebarExpanded ? 240 : 60
   const isDashboard = !activeTabId
 
-  const currentUrl = activeTab?.url ?? ''
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
 
-  // Listen for sidebar toggle from main process (no-op now, sidebar is fixed)
+  // Listen for sidebar toggle from main process
   useEffect(() => {
     if (!window.nsty) return
     return window.nsty.onSidebarToggle(() => {
-      // Sidebar is now fixed-width, toggle opens/closes tab drawer instead
-      setTabDrawerOpen(prev => !prev)
+      setSidebarExpanded(prev => !prev)
     })
   }, [])
 
@@ -80,12 +71,6 @@ export function App() {
   const handleNavigate = useCallback((url: string) => {
     window.nsty?.navigateTo(url)
   }, [])
-
-  const handleToggleAi = useCallback(() => {
-    window.nsty?.toggleAiPanel()
-  }, [])
-
-  // No auto-create — Dashboard shows when no tabs exist
 
   return (
     <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--space-gradient-1)' }}>
@@ -124,34 +109,13 @@ export function App() {
         userProfile={userProfile}
       />
 
-      {/* Main content area — offset by sidebar */}
+      {/* Main content area — full height, offset by sidebar only */}
       <div
         className="flex-1 flex flex-col min-w-0"
         style={{ marginLeft: sidebarWidth, transition: 'margin-left var(--transition-normal)' }}
       >
-        {/* Floating command bar */}
-        <TopBar
-          url={currentUrl}
-          isDashboard={isDashboard}
-          onNavigate={handleNavigate}
-          onBack={() => window.nsty?.goBack()}
-          onForward={() => window.nsty?.goForward()}
-          onReload={() => window.nsty?.reload()}
-          onToggleSidebar={() => setSidebarExpanded(prev => !prev)}
-          shieldCount={totalBlocked}
-          shieldStats={shieldStats}
-          shieldPopupOpen={shieldPopupOpen}
-          onToggleShieldPopup={toggleShieldPopup}
-          onCloseShieldPopup={closeShieldPopup}
-          onDisableShieldForSite={disableForSite}
-          onToggleAi={handleToggleAi}
-          spaces={spaces}
-          activeSpaceId={activeSpaceId}
-          onSwitchSpace={switchSpace}
-        />
-
         {/* Content area - BrowserViews are rendered here by Electron */}
-        <main id="main-content" className="flex-1" style={{ background: 'var(--surface)' }}>
+        <main id="main-content" className="flex-1">
           {isDashboard && (
             <Dashboard
               shieldStats={shieldStats}
@@ -167,35 +131,6 @@ export function App() {
           )}
         </main>
       </div>
-
-      {/* AI Panel */}
-      <AiPanel
-        isOpen={aiOpen}
-        messages={aiMessages}
-        streamingContent={streamingContent}
-        isStreaming={isStreaming}
-        model={aiModel}
-        onSend={sendAiMessage}
-        onModelChange={changeAiModel}
-        onClose={closeAiPanel}
-      />
-
-      {/* Tab Drawer */}
-      <TabDrawer
-        isOpen={tabDrawerOpen}
-        sidebarWidth={sidebarWidth}
-        tabs={activeSpace?.tabs ?? []}
-        pinnedPages={activeSpace?.pinnedPages ?? []}
-        activeTabId={activeTabId}
-        onSwitchTab={switchTab}
-        onCloseTab={closeTab}
-        onPinTab={pinTab}
-        onUnpin={unpinPage}
-        onReorderPins={reorderPins}
-        onClickPin={clickPin}
-        onOpenPinInNewTab={openPinInNewTab}
-        onClose={() => setTabDrawerOpen(false)}
-      />
 
       {/* History Panel */}
       <HistoryPanel

@@ -42,7 +42,6 @@ function createMockWindowManager() {
   return {
     updateLayout: vi.fn(),
     toggleSidebar: vi.fn().mockReturnValue(true),
-    toggleAiPanel: vi.fn().mockReturnValue(true),
     getLayoutInfo: vi.fn().mockReturnValue({}),
   }
 }

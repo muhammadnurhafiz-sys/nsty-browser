@@ -121,12 +121,6 @@ function createWindow(): void {
     mainWindow.webContents.send('sidebar:toggled', expanded)
   })
 
-  globalShortcut.register('CommandOrControl+Shift+A', () => {
-    if (!mainWindow || !windowManager) return
-    const open = windowManager.toggleAiPanel()
-    mainWindow.webContents.send('ai:toggled', open)
-  })
-
   globalShortcut.register('CommandOrControl+T', () => {
     if (!mainWindow || !tabManager) return
     // Create tab in current space — renderer will send the spaceId

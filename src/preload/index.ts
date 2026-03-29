@@ -75,14 +75,6 @@ const api = {
     return () => ipcRenderer.removeListener('sidebar:toggled', listener)
   },
 
-  // AI panel
-  toggleAiPanel: () => ipcRenderer.send('ai:toggle'),
-  onAiPanelToggle: (callback: (open: boolean) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, open: boolean) => callback(open)
-    ipcRenderer.on('ai:toggled', listener)
-    return () => ipcRenderer.removeListener('ai:toggled', listener)
-  },
-
   // Auto-update
   onUpdateAvailable: (callback: (info: { version: string; releaseNotes: string }) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, info: { version: string; releaseNotes: string }) => callback(info)

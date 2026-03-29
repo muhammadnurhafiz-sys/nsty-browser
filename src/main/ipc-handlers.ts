@@ -54,12 +54,6 @@ export function registerIpcHandlers(
     event.sender.send('sidebar:toggled', expanded)
   })
 
-  // AI panel
-  ipcMain.on('ai:toggle', (event) => {
-    const open = windowManager.toggleAiPanel()
-    event.sender.send('ai:toggled', open)
-  })
-
   // Overlay (hide BrowserView so DOM modals are visible)
   ipcMain.on('overlay:show', () => {
     tabManager.hideActiveView()
