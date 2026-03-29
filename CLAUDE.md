@@ -16,9 +16,10 @@ After implementing changes, always follow this sequence:
 4. Version bump in package.json
 5. Git commit with conventional prefix
 6. Git tag matching version
-7. Git push with tags
+7. Git push with tags → triggers GitHub Actions CI (builds Win/Mac/Linux)
+8. Local build: `npm run package:linux` + `npx electron-builder --win` (WSL2 can cross-compile Windows, macOS is CI-only)
 
-Use `/release` skill to automate steps 4-7. Use `/deploy-desktop` skill for AppImage builds.
+Use `/release` skill to automate steps 4-7. Use `/deploy-desktop` skill to automate step 8 (auto-chained after `/release` for Electron apps).
 
 ## Pre-commit Hook Awareness
 The global TDD gate hook blocks `feat:` and `fix:` commits if test files are missing for changed modules.
