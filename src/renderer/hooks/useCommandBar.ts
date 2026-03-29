@@ -2,6 +2,34 @@ import { useState, useCallback, useRef } from 'react'
 
 export type CommandBarMode = 'default' | 'ai' | 'settings' | 'tabs'
 
+/** Detect command bar mode from input value */
+export function detectMode(value: string): CommandBarMode | null {
+  if (value.startsWith('@claude ') || value === '@claude') return 'ai'
+  if (value.startsWith('/settings ') || value === '/settings') return 'settings'
+  return null
+}
+
+/** Strip @claude prefix to get the AI message */
+export function extractAiQuery(query: string): string {
+  return query.replace(/^@claude\s*/, '').trim()
+}
+
+/** Strip /settings prefix to get the filter */
+export function extractSettingsFilter(query: string): string {
+  return query.replace(/^\/settings\s*/, '').trim()
+}
+
+/** Resolve input value to a navigation URL */
+export function resolveNavigation(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+
+  const isUrl = trimmed.includes('.') && !trimmed.includes(' ')
+  if (isUrl && !trimmed.startsWith('http')) return `https://${trimmed}`
+  if (isUrl) return trimmed
+  return `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`
+}
+
 export function useCommandBar() {
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<CommandBarMode>('default')
@@ -10,36 +38,21 @@ export function useCommandBar() {
 
   const updateQuery = useCallback((value: string) => {
     setQuery(value)
-
-    // Detect mode from exact prefix (require space or full keyword to avoid false triggers on URLs)
-    if (value.startsWith('@claude ') || value === '@claude') {
-      if (mode !== 'ai') setMode('ai')
-    } else if (value.startsWith('/settings ') || value === '/settings') {
-      if (mode !== 'settings') setMode('settings')
+    const detected = detectMode(value)
+    if (detected) {
+      if (mode !== detected) setMode(detected)
     } else {
       if (mode !== 'default' && mode !== 'tabs') setMode('default')
     }
   }, [mode])
 
   const getAiQuery = useCallback((): string => {
-    // Strip @claude prefix to get the actual message
-    return query.replace(/^@claude\s*/, '').trim()
+    return extractAiQuery(query)
   }, [query])
 
   const getSettingsFilter = useCallback((): string => {
-    // Strip /settings prefix to get the filter
-    return query.replace(/^\/settings\s*/, '').trim()
+    return extractSettingsFilter(query)
   }, [query])
-
-  const resolveNavigation = useCallback((value: string): string => {
-    const trimmed = value.trim()
-    if (!trimmed) return ''
-
-    const isUrl = trimmed.includes('.') && !trimmed.includes(' ')
-    if (isUrl && !trimmed.startsWith('http')) return `https://${trimmed}`
-    if (isUrl) return trimmed
-    return `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`
-  }, [])
 
   const expand = useCallback(() => {
     setIsExpanded(true)
