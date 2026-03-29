@@ -55,17 +55,19 @@ export function TopBar({
           onClick={onToggleSidebar}
           className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
           style={{ color: 'var(--outline)', WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          aria-label="Toggle sidebar"
           title="Toggle sidebar"
         >
-          <span className="material-symbols-outlined text-[18px]">menu</span>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">menu</span>
         </button>
         <button
           onClick={onToggleAi}
           className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
           style={{ color: 'var(--primary)', background: 'rgba(206, 250, 5, 0.1)', WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          aria-label="Toggle AI panel"
           title="Toggle AI panel"
         >
-          <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">auto_awesome</span>
         </button>
       </div>
     )
@@ -97,25 +99,28 @@ export function TopBar({
               onClick={onBack}
               className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
               style={{ color: 'var(--outline)' }}
+              aria-label="Go back"
               title="Back"
             >
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
             </button>
             <button
               onClick={onForward}
               className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
               style={{ color: 'var(--outline)' }}
+              aria-label="Go forward"
               title="Forward"
             >
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
             </button>
             <button
               onClick={onReload}
               className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
               style={{ color: 'var(--outline)' }}
+              aria-label="Reload page"
               title="Reload"
             >
-              <span className="material-symbols-outlined text-[16px]">refresh</span>
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">refresh</span>
             </button>
           </div>
 
@@ -158,9 +163,10 @@ export function TopBar({
               style={{
                 color: shieldCount > 0 ? 'var(--primary)' : 'var(--outline)',
               }}
+              aria-label={`Nsty Shield — ${shieldCount} blocked`}
               title={`Nsty Shield — ${shieldCount} blocked`}
             >
-              <span className="material-symbols-outlined text-[18px]">shield</span>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">shield</span>
               {shieldCount > 0 && (
                 <span
                   className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[8px] font-bold font-label"
@@ -189,9 +195,10 @@ export function TopBar({
               color: 'var(--primary)',
               background: 'rgba(206, 250, 5, 0.1)',
             }}
+            aria-label="Toggle AI panel"
             title="Toggle AI panel"
           >
-            <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">auto_awesome</span>
           </button>
         </div>
       </div>

@@ -55,6 +55,9 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
       {/* Full-page panel */}
       <div
         className="settings-panel fixed inset-0 z-50 overflow-y-auto hide-scrollbar"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
         style={{
           marginLeft: 80,
           background: 'var(--surface)',
@@ -63,10 +66,11 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label="Close settings"
           className="fixed top-6 right-6 z-50 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
           style={{ color: 'var(--outline)', background: 'var(--surface-container)' }}
         >
-          <span className="material-symbols-outlined text-[20px]">close</span>
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
         </button>
 
         <main className="pt-16 pb-12 px-12 min-h-screen">

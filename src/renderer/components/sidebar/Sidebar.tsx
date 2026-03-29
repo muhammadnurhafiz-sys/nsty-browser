@@ -88,6 +88,7 @@ export function Sidebar({
             color: 'var(--primary)',
             height: isExpanded ? 40 : undefined,
           }}
+          aria-label="New tab (Ctrl+T)"
           title="New tab (Ctrl+T)"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
@@ -114,6 +115,8 @@ export function Sidebar({
                   background: isActive ? 'rgba(206, 250, 5, 0.08)' : 'transparent',
                   height: isExpanded ? 40 : undefined,
                 }}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
                 title={isExpanded ? undefined : item.label}
               >
                 {/* Active glow bar */}
@@ -142,6 +145,7 @@ export function Sidebar({
             onClick={onToggleExpand}
             className={`flex items-center ${isExpanded ? 'gap-3 px-3 w-full' : 'justify-center w-10 h-10'} rounded-xl cursor-pointer transition-colors`}
             style={{ color: 'var(--outline)', opacity: 0.6, height: isExpanded ? 36 : undefined }}
+            aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
             <span className="material-symbols-outlined text-[20px]">
@@ -163,6 +167,8 @@ export function Sidebar({
             <button
               onClick={() => setUserMenuOpen(prev => !prev)}
               className={`flex items-center ${isExpanded ? 'gap-3 px-2 w-full' : ''} cursor-pointer`}
+              aria-label={`User menu for ${userProfile.name}`}
+              aria-expanded={userMenuOpen}
               title={userProfile.name}
             >
               <div

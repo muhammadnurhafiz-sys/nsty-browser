@@ -43,7 +43,7 @@
   /* Borders & outlines */
   --outline: #777575;
   --outline-variant: #494847;
-  --ghost-border: rgba(73, 72, 71, 0.15);
+  --ghost-border: rgba(73, 72, 71, 0.25);
 
   /* Error / danger */
   --error: #ff7351;
@@ -274,7 +274,7 @@ button, a, input, select {
 .text-card-label {
   font-family: 'Space Grotesk', sans-serif;
   text-transform: uppercase;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   letter-spacing: 0.15em;
   color: var(--on-surface-variant);
 }
@@ -382,4 +382,54 @@ button, a, input, select {
     );
   border-radius: inherit;
   pointer-events: none;
+}
+
+/* === Accessibility: Focus Visible === */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* === Accessibility: Reduced Motion === */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .glow-pulse {
+    animation: none;
+    box-shadow: 0 0 8px rgba(206, 250, 5, 0.4);
+  }
+}
+
+/* === Accessibility: Skip to Content === */
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 0 0 var(--radius-md) 0;
+  text-decoration: none;
+}
+
+.skip-to-content:focus {
+  left: 0;
 }

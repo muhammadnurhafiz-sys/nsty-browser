@@ -47,6 +47,9 @@ export function TabDrawer({
       {/* Drawer panel */}
       <div
         className="fixed top-0 bottom-0 z-50 flex flex-col slide-in-left hide-scrollbar overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Tab drawer"
         style={{
           left: sidebarWidth,
           width: 280,
@@ -61,10 +64,11 @@ export function TabDrawer({
           </h2>
           <button
             onClick={onClose}
+            aria-label="Close tab drawer"
             className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
             style={{ color: 'var(--outline)' }}
           >
-            <span className="material-symbols-outlined text-[18px]">close</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
           </button>
         </div>
 

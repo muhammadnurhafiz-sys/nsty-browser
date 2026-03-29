@@ -18,6 +18,8 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
       {/* Popup */}
       <div
         className="absolute right-0 top-10 z-50 w-60 rounded-xl p-4 shadow-2xl glass-panel fade-in"
+        role="dialog"
+        aria-label="Shield statistics"
       >
         {/* Header */}
         <div className="flex items-center gap-2.5 mb-3">

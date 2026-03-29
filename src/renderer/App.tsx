@@ -89,6 +89,11 @@ export function App() {
 
   return (
     <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--surface)' }}>
+      {/* Skip to content link for keyboard users */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to content
+      </a>
+
       {/* Sidebar — collapsible 60px/240px */}
       <Sidebar
         spaces={spaces}
@@ -138,7 +143,7 @@ export function App() {
         />
 
         {/* Content area - BrowserViews are rendered here by Electron */}
-        <div className="flex-1" style={{ background: 'var(--surface)' }}>
+        <main id="main-content" className="flex-1" style={{ background: 'var(--surface)' }}>
           {isDashboard && (
             <Dashboard
               shieldStats={shieldStats}
@@ -152,7 +157,7 @@ export function App() {
               }}
             />
           )}
-        </div>
+        </main>
       </div>
 
       {/* AI Panel */}

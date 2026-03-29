@@ -43,6 +43,8 @@ export function AiPanel({
   return (
     <div
       className="h-full flex flex-col flex-shrink-0 slide-in-right"
+      role="complementary"
+      aria-label="AI Assistant"
       style={{
         width: 340,
         background: 'var(--surface-container-highest)',
@@ -70,10 +72,11 @@ export function AiPanel({
         </div>
         <button
           onClick={onClose}
+          aria-label="Close AI panel"
           className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
           style={{ color: 'var(--outline)' }}
         >
-          <span className="material-symbols-outlined text-[18px]">close</span>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
         </button>
       </div>
 
@@ -109,7 +112,7 @@ export function AiPanel({
 
         {/* Streaming indicator */}
         {isStreaming && !streamingContent && (
-          <div className="self-start">
+          <div className="self-start" role="status" aria-label="AI is thinking">
             <div
               className="rounded-xl px-3 py-2"
               style={{ background: 'var(--surface-container)' }}

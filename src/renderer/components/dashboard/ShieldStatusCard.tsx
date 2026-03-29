@@ -19,7 +19,10 @@ export function ShieldStatusCard({ stats, totalBlocked }: ShieldStatusCardProps)
             <span className="text-card-title" style={{ color: 'var(--on-surface)' }}>
               Nsty Shield
             </span>
-            <span className="badge-active">Active</span>
+            <span className="badge-active" aria-label="Shield status: Active">
+              <span className="material-symbols-outlined text-[10px] mr-0.5" aria-hidden="true" style={{ color: 'inherit' }}>check_circle</span>
+              Active
+            </span>
           </div>
           <span className="text-card-label">v0.3.0 — Privacy Engine</span>
         </div>

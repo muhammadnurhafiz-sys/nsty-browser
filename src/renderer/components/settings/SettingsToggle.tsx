@@ -7,6 +7,8 @@ export function SettingsToggle({ checked, onChange }: SettingsToggleProps) {
   return (
     <button
       onClick={() => onChange(!checked)}
+      role="switch"
+      aria-checked={checked}
       className="w-11 h-6 rounded-full relative cursor-pointer transition-colors duration-200"
       style={{
         background: checked ? 'var(--primary-container)' : 'var(--surface-container-highest)',

@@ -40,6 +40,9 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
       {/* Panel */}
       <div
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[560px] max-h-[70vh] rounded-xl flex flex-col shadow-2xl glass-panel fade-in"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search history"
         onKeyDown={handleKeyDown}
       >
         {/* Search header */}
@@ -56,6 +59,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
           />
           <button
             onClick={onClose}
+            aria-label="Close history"
             className="font-label text-[10px] uppercase tracking-wider px-2 py-1 rounded-md cursor-pointer"
             style={{
               background: 'var(--surface-container-high)',
@@ -95,7 +99,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
               {entry.favicon_url ? (
-                <img src={entry.favicon_url} className="w-4 h-4 rounded-sm flex-shrink-0" alt="" />
+                <img src={entry.favicon_url} className="w-4 h-4 rounded-sm flex-shrink-0" alt={`${entry.title || entry.url} favicon`} />
               ) : (
                 <div
                   className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold flex-shrink-0"

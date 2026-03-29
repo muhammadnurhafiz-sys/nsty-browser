@@ -23,6 +23,7 @@ export function SettingsSlider({
         max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        aria-label={labelLeft && labelRight ? `${labelLeft} to ${labelRight}` : undefined}
         className="w-full h-1 rounded-lg appearance-none cursor-pointer"
         style={{
           background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${((value - min) / (max - min)) * 100}%, var(--surface-container-highest) ${((value - min) / (max - min)) * 100}%, var(--surface-container-highest) 100%)`,

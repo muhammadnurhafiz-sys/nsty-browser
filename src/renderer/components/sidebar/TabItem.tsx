@@ -33,7 +33,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
       }}
     >
       {tab.faviconUrl ? (
-        <img src={tab.faviconUrl} className="w-4 h-4 rounded-sm flex-shrink-0" alt="" />
+        <img src={tab.faviconUrl} className="w-4 h-4 rounded-sm flex-shrink-0" alt={`${tab.title} favicon`} />
       ) : (
         <div
           className="w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold flex-shrink-0"
@@ -50,10 +50,11 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
       </span>
       <button
         onClick={(e) => { e.stopPropagation(); onClose(tab.id) }}
-        className="hidden group-hover:flex w-5 h-5 rounded-full items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+        aria-label={`Close ${tab.title}`}
+        className="opacity-0 group-hover:opacity-100 flex w-5 h-5 rounded-full items-center justify-center cursor-pointer hover:bg-white/10 transition-opacity"
         style={{ color: 'var(--outline)' }}
       >
-        <span className="material-symbols-outlined text-[14px]">close</span>
+        <span className="material-symbols-outlined text-[14px]" aria-hidden="true">close</span>
       </button>
     </div>
   )

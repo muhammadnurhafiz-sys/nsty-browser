@@ -53,6 +53,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           onChange={handleInput}
           onKeyDown={handleKeyDown}
           placeholder={disabled ? 'Waiting for response...' : 'Ask Claude about this page...'}
+          aria-label="Message to Claude"
           disabled={disabled}
           rows={1}
           className="flex-1 bg-transparent outline-none font-body text-xs resize-none leading-relaxed"
@@ -64,6 +65,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         <button
           onClick={handleSend}
           disabled={disabled || !value.trim()}
+          aria-label="Send message"
           className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer flex-shrink-0 transition-all"
           style={{
             background: value.trim() && !disabled ? 'var(--primary)' : 'var(--surface-container-high)',
@@ -71,7 +73,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
             opacity: value.trim() && !disabled ? 1 : 0.5,
           }}
         >
-          <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
+          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_upward</span>
         </button>
       </div>
     </div>
