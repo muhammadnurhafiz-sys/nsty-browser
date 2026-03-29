@@ -42,3 +42,8 @@ dmg:
       y: 220
       type: link
       path: /Applications
+
+linux:
+  target: AppImage
+  icon: resources/icons/icon.png
+  category: Network

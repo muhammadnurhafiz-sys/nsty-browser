@@ -57,8 +57,31 @@ jobs:
             release/*.dmg
             release/*.zip
 
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build & package Linux
+        run: npm run package:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: release/*.AppImage
+
   create-release:
-    needs: [build-windows, build-macos]
+    needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,6 +96,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: macos-build
+          path: artifacts/
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
           path: artifacts/
 
       - name: Create GitHub Release
