@@ -97,7 +97,7 @@ export function TopBar({
           <div className="flex gap-0.5">
             <button
               onClick={onBack}
-              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
               style={{ color: 'var(--outline)' }}
               aria-label="Go back"
               title="Back"
@@ -106,7 +106,7 @@ export function TopBar({
             </button>
             <button
               onClick={onForward}
-              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
               style={{ color: 'var(--outline)' }}
               aria-label="Go forward"
               title="Forward"
@@ -115,7 +115,7 @@ export function TopBar({
             </button>
             <button
               onClick={onReload}
-              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
               style={{ color: 'var(--outline)' }}
               aria-label="Reload page"
               title="Reload"
@@ -159,7 +159,7 @@ export function TopBar({
           <div className="relative">
             <button
               onClick={onToggleShieldPopup}
-              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
               style={{
                 color: shieldCount > 0 ? 'var(--primary)' : 'var(--outline)',
               }}
@@ -190,7 +190,7 @@ export function TopBar({
           {/* AI toggle */}
           <button
             onClick={onToggleAi}
-            className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
             style={{
               color: 'var(--primary)',
               background: 'rgba(206, 250, 5, 0.1)',

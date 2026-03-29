@@ -66,7 +66,7 @@ export function TabList({ tabs, activeTabId, onSwitchTab, onCloseTab, onPinTab }
       {groups.map(group => (
         <div key={group.label} className="mb-3">
           <div
-            className="font-label text-[10px] font-semibold uppercase tracking-widest px-3 pb-2 pt-1"
+            className="font-label text-xs font-semibold uppercase tracking-widest px-3 pb-2 pt-1"
             style={{ color: 'var(--outline)' }}
           >
             {group.label}

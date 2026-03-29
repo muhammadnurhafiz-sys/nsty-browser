@@ -51,7 +51,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
       <button
         onClick={(e) => { e.stopPropagation(); onClose(tab.id) }}
         aria-label={`Close ${tab.title}`}
-        className="opacity-0 group-hover:opacity-100 flex w-5 h-5 rounded-full items-center justify-center cursor-pointer hover:bg-white/10 transition-opacity"
+        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex w-6 h-6 rounded-full items-center justify-center cursor-pointer hover:bg-white/10 transition-opacity"
         style={{ color: 'var(--outline)' }}
       >
         <span className="material-symbols-outlined text-[14px]" aria-hidden="true">close</span>

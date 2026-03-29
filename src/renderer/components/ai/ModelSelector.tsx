@@ -24,13 +24,14 @@ export function ModelSelector({ model, onChange }: ModelSelectorProps) {
           <button
             key={m.id}
             onClick={() => onChange(m.id)}
-            className="px-2 py-0.5 font-label text-[10px] uppercase cursor-pointer transition-all rounded-md"
+            className="px-2.5 py-1 font-label text-xs uppercase cursor-pointer transition-all rounded-md"
             style={{
               background: isActive ? 'var(--primary)' : 'transparent',
               color: isActive ? 'var(--on-primary)' : 'var(--outline)',
               fontWeight: isActive ? 700 : 400,
               boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
             }}
+            aria-label={m.id.charAt(0).toUpperCase() + m.id.slice(1)}
             title={m.id.charAt(0).toUpperCase() + m.id.slice(1)}
           >
             {m.label}
