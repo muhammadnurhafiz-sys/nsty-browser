@@ -5,9 +5,10 @@ import { useSettings } from '../../hooks/useSettings'
 import { AiChatInline } from './AiChatInline'
 import { SettingsCommandList } from './SettingsCommandList'
 import { CommandResults } from './CommandResults'
+import type { AiMessage } from '../../hooks/useAi'
 
 interface AiState {
-  messages: { role: 'user' | 'assistant'; content: string }[]
+  messages: AiMessage[]
   streamingContent: string
   isStreaming: boolean
   model: 'sonnet' | 'haiku' | 'opus'

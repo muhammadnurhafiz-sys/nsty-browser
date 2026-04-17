@@ -1,9 +1,5 @@
 import { useEffect, useRef } from 'react'
-
-interface AiMessage {
-  role: 'user' | 'assistant'
-  content: string
-}
+import type { AiMessage } from '../../hooks/useAi'
 
 interface AiChatInlineProps {
   messages: AiMessage[]
@@ -37,9 +33,9 @@ export function AiChatInline({ messages, streamingContent, isStreaming }: AiChat
       style={{ maxHeight: '50vh' }}
     >
       <div className="flex flex-col gap-2 px-2 py-2">
-        {messages.map((msg, i) => (
+        {messages.map((msg) => (
           <div
-            key={`${msg.role}-${i}-${msg.content.slice(0, 20)}`}
+            key={msg.id}
             className="rounded-lg px-2.5 py-1.5"
             style={{
               background: msg.role === 'user'

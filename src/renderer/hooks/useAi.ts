@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 
-interface AiMessage {
+export interface AiMessage {
+  id: string
   role: 'user' | 'assistant'
   content: string
 }
+
+const newId = (): string => (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+  ? crypto.randomUUID()
+  : `m-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`)
 
 export function useAi() {
   const [messages, setMessages] = useState<AiMessage[]>([])
@@ -24,7 +29,7 @@ export function useAi() {
     const cleanupStreamEnd = window.nsty.onAiStreamEnd(() => {
       setStreamingContent(prev => {
         if (prev) {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: prev }])
+          setMessages(msgs => [...msgs, { id: newId(), role: 'assistant', content: prev }])
         }
         return ''
       })
@@ -41,7 +46,7 @@ export function useAi() {
     if (!window.nsty || isStreaming) return
 
     // Add user message to UI immediately
-    setMessages(prev => [...prev, { role: 'user', content: message }])
+    setMessages(prev => [...prev, { id: newId(), role: 'user', content: message }])
     setIsStreaming(true)
     setStreamingContent('')
 

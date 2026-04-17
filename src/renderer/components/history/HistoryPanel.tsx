@@ -113,10 +113,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
             <button type="button"
               key={entry.id}
               onClick={() => { onNavigate(entry.url); onClose() }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-left transition-colors"
-              style={{ background: 'transparent' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-translucent-hover)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-left transition-colors hover-surface"
             >
               {entry.favicon_url ? (
                 <img src={entry.favicon_url} className="w-4 h-4 rounded-sm flex-shrink-0" alt={`${entry.title || entry.url} favicon`} />

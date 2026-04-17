@@ -25,10 +25,8 @@ export function UserMenu({ onOpenSettings, onClose }: UserMenuProps) {
     >
       <button type="button"
         onClick={() => { onOpenSettings(); onClose() }}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs cursor-pointer transition-colors"
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs cursor-pointer transition-colors hover-bg"
         style={{ color: 'var(--on-surface)' }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
       >
         <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--outline)' }}>settings</span>
         Settings

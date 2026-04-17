@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Tab, Space, PinnedPage, UserProfile, ShieldStats } from '@shared/types'
+import type { AiMessage } from '../../hooks/useAi'
 import { UserMenu } from './UserMenu'
 import { HexIcon } from '../dashboard/HexIcon'
 import { NavControls } from './NavControls'
@@ -36,7 +37,7 @@ interface SidebarProps {
   onCloseShieldPopup: () => void
   onDisableShieldForSite: () => void
   ai: {
-    messages: { role: 'user' | 'assistant'; content: string }[]
+    messages: AiMessage[]
     streamingContent: string
     isStreaming: boolean
     model: 'sonnet' | 'haiku' | 'opus'
@@ -96,22 +97,35 @@ export function Sidebar({
           className={`flex items-center ${isExpanded ? 'justify-between px-4' : 'justify-center'} pt-3 pb-1`}
           style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
-          <div
-            className={`flex items-center ${isExpanded ? 'gap-2' : ''} cursor-pointer`}
-            onClick={onToggleExpand}
-            title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-          >
-            <HexIcon size={isExpanded ? 24 : 20} />
-            {isExpanded && (
+          {isExpanded ? (
+            // Brand is static when the sidebar is already open — prevents
+            // accidental collapse when users click the logo expecting "home".
+            <div
+              className="flex items-center gap-2"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            >
+              <HexIcon size={24} />
               <span
                 className="font-headline text-[13px] font-bold uppercase"
                 style={{ color: 'var(--primary)', letterSpacing: '0.15em' }}
               >
                 nsty
               </span>
-            )}
-          </div>
+            </div>
+          ) : (
+            // Collapsed: the logo IS the expand affordance — there is no chevron
+            // in this state, so we keep this interactive.
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="flex items-center cursor-pointer bg-transparent border-0 p-0 appearance-none"
+              title="Expand sidebar"
+              aria-label="Expand sidebar"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            >
+              <HexIcon size={20} />
+            </button>
+          )}
           {isExpanded && (
             <button type="button"
               onClick={onToggleExpand}
