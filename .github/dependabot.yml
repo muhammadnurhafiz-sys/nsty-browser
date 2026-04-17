@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      electron:
+        patterns:
+          - electron
+          - electron-*
+          - "@electron/*"
+          - "@types/electron"
+      react:
+        patterns:
+          - react
+          - react-*
+          - "@types/react"
+          - "@types/react-*"
+      anthropic:
+        patterns:
+          - "@anthropic-ai/*"
+      dev-tooling:
+        patterns:
+          - vite
+          - "@vitejs/*"
+          - vitest
+          - typescript
+          - "@biomejs/*"
+          - husky
+          - lint-staged
+          - tailwindcss
+          - "@tailwindcss/*"
+      dnd:
+        patterns:
+          - "@dnd-kit/*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
