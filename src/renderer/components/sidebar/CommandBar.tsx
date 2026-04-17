@@ -147,7 +147,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
           onFocus={handleFocus}
           placeholder="Search, URL, or @claude..."
           aria-label="Search, URL, or AI prompt"
-          className="flex-1 bg-transparent font-body text-xs outline-none"
+          className="flex-1 bg-transparent font-mono text-xs outline-none"
           style={{ color: 'rgba(255, 255, 255, 0.8)' }}
           spellCheck={false}
         />

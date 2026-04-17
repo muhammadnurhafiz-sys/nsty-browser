@@ -113,6 +113,17 @@
   --radius-xl: 12px;
   --radius-full: 9999px;
 
+  /* Shadow-as-border (Vercel-inspired).
+     Zero-offset, zero-blur, 1px-spread shadow replaces traditional CSS borders —
+     no subpixel artifacts on rounded corners, smoother transitions, and shadows
+     stack with elevation shadows in a single declaration. */
+  --shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-border-strong: 0 0 0 1px rgba(255, 255, 255, 0.10);
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 2px rgba(0, 0, 0, 0.24);
+  --shadow-card-elevated: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 2px rgba(0, 0, 0, 0.24), 0 8px 16px -8px rgba(0, 0, 0, 0.4);
+  --shadow-ambient: 0 8px 24px rgba(0, 0, 0, 0.30);
+  --shadow-focus-ring: 0 0 0 2px var(--primary);
+
   /* Z-index scale — use these instead of hardcoded Tailwind z-* classes.
      Layers: base(1) < card(10) < sidebar(30) < backdrop(40) < drawer(50) < modal(60) < skip(100)
      TODO: Migrate existing z-40/z-50 in components to use these custom properties */
@@ -156,6 +167,16 @@ body {
 
 .font-label {
   font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Geist Mono — technical/developer voice.
+   Use for URLs, code, keyboard shortcuts, timestamps, file sizes,
+   and any content where the "this is data" signal should be clear.
+   OpenType ligatures enabled for code-friendly glyph combinations. */
+.font-mono {
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, 'Roboto Mono',
+               Menlo, Monaco, 'Courier New', monospace;
+  font-feature-settings: 'liga' 1, 'tnum' 1;
 }
 
 /* Material Symbols */
@@ -365,7 +386,29 @@ button, a, input, select {
 
 .card-base:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-ambient);
+}
+
+/* Shadow-border card variant — Vercel-inspired.
+   Uses box-shadow as the 1px outline instead of CSS border, avoiding
+   subpixel artifacts on rounded corners and allowing the ring to compose
+   with elevation shadows in a single stack. Prefer this for new cards. */
+.card-ring {
+  background: var(--surface-container-high);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.card-ring:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-elevated);
+}
+
+/* Utility: apply shadow-as-border without the full card treatment.
+   Compose with background + radius on any container. */
+.shadow-border {
+  box-shadow: var(--shadow-border);
 }
 
 .badge-active {
