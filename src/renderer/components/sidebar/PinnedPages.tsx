@@ -66,7 +66,7 @@ export function PinnedPages({ pages, onReorder, onUnpin, onOpenInNewTab, onClick
       {isExpanded && (
         <div
           className="font-label text-[10px] uppercase px-3 pb-2"
-          style={{ color: 'rgba(206, 250, 5, 0.35)', letterSpacing: '0.12em' }}
+          style={{ color: 'rgba(var(--primary-rgb), 0.35)', letterSpacing: '0.12em' }}
         >
           Pinned
         </div>

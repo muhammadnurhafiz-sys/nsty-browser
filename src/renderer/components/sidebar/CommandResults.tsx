@@ -20,7 +20,7 @@ export function CommandResults({ tabs, query, onSwitchTab }: CommandResultsProps
     <div className="overflow-y-auto hide-scrollbar expand-down" style={{ maxHeight: '40vh' }}>
       <div
         className="font-label text-[9px] uppercase px-4 py-1"
-        style={{ color: 'rgba(206, 250, 5, 0.3)', letterSpacing: '0.1em' }}
+        style={{ color: 'rgba(var(--primary-rgb), 0.3)', letterSpacing: '0.1em' }}
       >
         Open Tabs
       </div>
@@ -35,16 +35,16 @@ export function CommandResults({ tabs, query, onSwitchTab }: CommandResultsProps
           ) : (
             <div
               className="w-3.5 h-3.5 rounded-sm flex items-center justify-center text-[7px] font-bold flex-shrink-0"
-              style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--on-surface-variant)' }}
+              style={{ background: 'rgba(var(--neutral-rgb), 0.1)', color: 'var(--on-surface-variant)' }}
             >
               {tab.title.charAt(0).toUpperCase()}
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="font-body text-[11px] truncate" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+            <div className="font-body text-[11px] truncate" style={{ color: 'rgba(var(--neutral-rgb), 0.8)' }}>
               {tab.title}
             </div>
-            <div className="font-body text-[9px] truncate" style={{ color: 'rgba(255, 255, 255, 0.3)' }}>
+            <div className="font-body text-[9px] truncate" style={{ color: 'rgba(var(--neutral-rgb), 0.3)' }}>
               {tab.url}
             </div>
           </div>

@@ -41,7 +41,7 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
     <div className="h-full overflow-y-auto hide-scrollbar flex items-center justify-center">
       <div style={{ maxWidth: 480, width: '100%', padding: '0 24px' }}>
         {/* Greeting */}
-        <p className="font-body text-sm text-center mb-6" style={{ color: 'rgba(206, 250, 5, 0.6)' }}>
+        <p className="font-body text-sm text-center mb-6" style={{ color: 'rgba(var(--primary-rgb), 0.6)' }}>
           {getGreeting()}{userName ? `, ${userName}` : ''}
         </p>
 

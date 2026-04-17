@@ -8,7 +8,7 @@ export function FeatureCard({ animationClass = '' }: FeatureCardProps) {
       className={`card-base card-fade-up ${animationClass} geo-bg col-span-full overflow-hidden`}
       style={{ opacity: 0, minHeight: 160 }}
     >
-      <div className="relative z-10 p-6 flex flex-col justify-end h-full" style={{ minHeight: 160 }}>
+      <div className="relative z-[var(--z-card)] p-6 flex flex-col justify-end h-full" style={{ minHeight: 160 }}>
         <span className="text-display text-xs mb-2" style={{ color: 'rgba(0, 200, 180, 0.7)' }}>
           Private Browsing
         </span>

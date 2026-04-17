@@ -67,7 +67,7 @@ export function TabList({ tabs, activeTabId, onSwitchTab, onCloseTab, onPinTab }
         <div key={group.label} className="mb-2">
           <div
             className="font-label text-[10px] uppercase px-3 pb-1 pt-1"
-            style={{ color: 'rgba(206, 250, 5, 0.35)', letterSpacing: '0.12em' }}
+            style={{ color: 'rgba(var(--primary-rgb), 0.35)', letterSpacing: '0.12em' }}
           >
             {group.label}
           </div>

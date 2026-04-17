@@ -97,7 +97,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
           style={{ background: 'var(--command-bar-bg)', border: '1px solid var(--command-bar-border)' }}
           aria-label="Search or navigate"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'rgba(206, 250, 5, 0.4)' }}>search</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'rgba(var(--primary-rgb), 0.4)' }}>search</span>
         </button>
       </div>
     )
@@ -105,9 +105,9 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
 
   // Mode indicator chip
   const modeChip = mode === 'ai'
-    ? { label: `AI · ${ai.model}`, color: 'rgba(206, 250, 5, 0.6)' }
+    ? { label: `AI · ${ai.model}`, color: 'rgba(var(--primary-rgb), 0.6)' }
     : mode === 'settings'
-      ? { label: 'Settings', color: 'rgba(206, 250, 5, 0.5)' }
+      ? { label: 'Settings', color: 'rgba(var(--primary-rgb), 0.5)' }
       : null
 
   const modeAnnouncement = mode === 'ai' ? `AI mode, model: ${ai.model}` : mode === 'settings' ? 'Settings mode' : ''
@@ -127,13 +127,13 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
           height: 34,
         }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'rgba(206, 250, 5, 0.4)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'rgba(var(--primary-rgb), 0.4)' }}>
           {mode === 'ai' ? 'smart_toy' : mode === 'settings' ? 'settings' : 'search'}
         </span>
         {modeChip && (
           <span
             className="font-label text-[8px] uppercase px-1.5 py-0.5 rounded"
-            style={{ background: 'rgba(206, 250, 5, 0.1)', color: modeChip.color, letterSpacing: '0.08em' }}
+            style={{ background: 'var(--surface-translucent-active)', color: modeChip.color, letterSpacing: '0.08em' }}
           >
             {modeChip.label}
           </span>
@@ -148,7 +148,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
           placeholder="Search, URL, or @claude..."
           aria-label="Search, URL, or AI prompt"
           className="flex-1 bg-transparent font-mono text-xs outline-none"
-          style={{ color: 'rgba(255, 255, 255, 0.8)' }}
+          style={{ color: 'rgba(var(--neutral-rgb), 0.8)' }}
           spellCheck={false}
         />
       </div>

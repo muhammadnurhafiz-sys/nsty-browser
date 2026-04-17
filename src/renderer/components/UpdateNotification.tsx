@@ -36,7 +36,7 @@ export function UpdateNotification() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 w-72 rounded-xl shadow-2xl overflow-hidden glass-panel fade-in"
+      className="fixed bottom-4 right-4 z-[var(--z-drawer)] w-72 rounded-xl shadow-2xl overflow-hidden glass-panel fade-in"
     >
       <div className="px-4 py-3">
         <div className="flex items-center justify-between mb-2">

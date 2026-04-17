@@ -34,7 +34,7 @@ export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace, isExpanded }: 
               height: 20,
               background: getSpaceGradient(space, i),
               opacity: isActive ? 1 : 0.4,
-              border: isActive ? '2px solid rgba(206, 250, 5, 0.4)' : '2px solid transparent',
+              border: isActive ? '2px solid rgba(var(--primary-rgb), 0.4)' : '2px solid transparent',
             }}
             aria-label={`Switch to ${space.name} space`}
             title={space.name}

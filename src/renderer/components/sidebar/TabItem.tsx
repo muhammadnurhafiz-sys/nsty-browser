@@ -60,7 +60,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
         )}
         <span
           className="font-body text-xs truncate"
-          style={{ color: isActive ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.5)' }}
+          style={{ color: isActive ? 'rgba(var(--neutral-rgb), 0.9)' : 'rgba(var(--neutral-rgb), 0.5)' }}
         >
           {tab.title}
         </span>
@@ -70,7 +70,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
         onClick={() => onClose(tab.id)}
         aria-label={`Close ${tab.title}`}
         className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex w-5 h-5 rounded items-center justify-center cursor-pointer hover:bg-white/10 transition-opacity flex-shrink-0"
-        style={{ color: isActive ? 'var(--primary-muted-accessible)' : 'rgba(255, 255, 255, 0.45)' }}
+        style={{ color: isActive ? 'var(--primary-muted-accessible)' : 'rgba(var(--neutral-rgb), 0.45)' }}
       >
         <span className="material-symbols-outlined text-[12px]" aria-hidden="true">close</span>
       </button>

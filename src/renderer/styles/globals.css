@@ -16,6 +16,11 @@
 
   /* Primary accent (neon green) */
   --primary: #CEFA05;
+  /* RGB channels — enables rgba(var(--primary-rgb), X) at arbitrary alpha
+     without hardcoding the hex. Use this when a component needs a primary
+     tint at an opacity not covered by the named translucent tokens below. */
+  --primary-rgb: 206, 250, 5;
+  --neutral-rgb: 255, 255, 255;
   --primary-dim: #c0ea00;
   --primary-container: #cdf901;
   --primary-fixed: #cdf901;
@@ -124,9 +129,8 @@
   --shadow-ambient: 0 8px 24px rgba(0, 0, 0, 0.30);
   --shadow-focus-ring: 0 0 0 2px var(--primary);
 
-  /* Z-index scale — use these instead of hardcoded Tailwind z-* classes.
-     Layers: base(1) < card(10) < sidebar(30) < backdrop(40) < drawer(50) < modal(60) < skip(100)
-     TODO: Migrate existing z-40/z-50 in components to use these custom properties */
+  /* Z-index scale — use via Tailwind arbitrary syntax: z-[var(--z-sidebar)].
+     Layers: base(1) < card(10) < sidebar(30) < backdrop(40) < drawer(50) < modal(60) < skip(100) */
   --z-base: 1;
   --z-card: 10;
   --z-sidebar: 30;

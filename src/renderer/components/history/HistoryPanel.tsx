@@ -44,7 +44,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 fade-in"
+        className="fixed inset-0 z-[var(--z-backdrop)] fade-in"
         style={{ background: 'var(--surface-overlay-dim)' }}
         onClick={onClose}
       />
@@ -52,10 +52,10 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
       {/* Panel */}
       <div
         ref={panelRef}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-h-[70vh] rounded-xl flex flex-col shadow-2xl fade-in"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[var(--z-drawer)] max-h-[70vh] rounded-xl flex flex-col shadow-2xl fade-in"
         style={{
           width: 'min(560px, calc(100vw - 120px))',
-          background: 'rgba(206, 250, 5, 0.03)',
+          background: 'var(--surface-translucent)',
           backdropFilter: 'blur(30px)',
           WebkitBackdropFilter: 'blur(30px)',
           border: '1px solid var(--border-subtle)',
@@ -67,7 +67,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
       >
         {/* Search header */}
         <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          <span className="material-symbols-outlined text-[18px]" style={{ color: 'rgba(206, 250, 5, 0.5)' }}>search</span>
+          <span className="material-symbols-outlined text-[18px]" style={{ color: 'rgba(var(--primary-rgb), 0.5)' }}>search</span>
           <input
             type="text"
             value={query}
@@ -83,7 +83,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
             className="font-label text-[10px] uppercase tracking-wider px-2 py-1 rounded-md cursor-pointer"
             style={{
               background: 'var(--surface-translucent-hover)',
-              color: 'rgba(206, 250, 5, 0.4)',
+              color: 'rgba(var(--primary-rgb), 0.4)',
               border: '1px solid var(--border-subtle)',
             }}
           >

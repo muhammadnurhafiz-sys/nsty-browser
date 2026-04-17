@@ -87,7 +87,7 @@ export function Sidebar({
   return (
     <nav
       aria-label="Workspaces and tabs"
-      className="fixed left-0 top-0 h-full z-40 flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
+      className="fixed left-0 top-0 h-full z-[var(--z-sidebar)] flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
       style={{ width: sidebarWidth }}
     >
       <div className="flex flex-col h-full">
@@ -198,7 +198,7 @@ export function Sidebar({
           <button type="button"
             onClick={onNewTab}
             className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors hover-surface`}
-            style={{ color: 'rgba(206, 250, 5, 0.5)' }}
+            style={{ color: 'rgba(var(--primary-rgb), 0.5)' }}
             aria-label="New tab"
             title="New tab"
           >

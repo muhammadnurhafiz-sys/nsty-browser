@@ -27,7 +27,7 @@ export function SettingsCommandList({ items, filter }: SettingsCommandListProps)
   if (filtered.length === 0) {
     return (
       <div className="px-3 py-4 text-center">
-        <span className="font-body text-[11px]" style={{ color: 'rgba(206, 250, 5, 0.35)' }}>
+        <span className="font-body text-[11px]" style={{ color: 'rgba(var(--primary-rgb), 0.35)' }}>
           No settings match "{filter}"
         </span>
       </div>
@@ -40,7 +40,7 @@ export function SettingsCommandList({ items, filter }: SettingsCommandListProps)
         <div key={category} className="px-2 py-1">
           <div
             className="font-label text-[9px] uppercase px-2 py-1"
-            style={{ color: 'rgba(206, 250, 5, 0.3)', letterSpacing: '0.1em' }}
+            style={{ color: 'rgba(var(--primary-rgb), 0.3)', letterSpacing: '0.1em' }}
           >
             {category}
           </div>
@@ -59,14 +59,14 @@ function SettingRow({ item }: { item: SettingItem }) {
       className="flex items-center justify-between gap-2 px-2 py-2 rounded-lg transition-colors hover-surface"
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'rgba(206, 250, 5, 0.4)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'rgba(var(--primary-rgb), 0.4)' }}>
           {item.icon}
         </span>
         <div className="min-w-0">
-          <div className="font-body text-[11px] truncate" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+          <div className="font-body text-[11px] truncate" style={{ color: 'rgba(var(--neutral-rgb), 0.8)' }}>
             {item.label}
           </div>
-          <div className="font-body text-[9px] truncate" style={{ color: 'rgba(255, 255, 255, 0.35)' }}>
+          <div className="font-body text-[9px] truncate" style={{ color: 'rgba(var(--neutral-rgb), 0.35)' }}>
             {item.description}
           </div>
         </div>

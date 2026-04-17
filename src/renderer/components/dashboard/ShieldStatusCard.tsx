@@ -21,14 +21,14 @@ function StatCard({ value, label }: { value: string; label: string }) {
     <div
       className="rounded-xl p-4 card-fade-up card-fade-up-1"
       style={{
-        background: 'rgba(206, 250, 5, 0.04)',
-        border: '1px solid rgba(206, 250, 5, 0.1)',
+        background: 'rgba(var(--primary-rgb), 0.04)',
+        border: '1px solid var(--surface-translucent-active)',
       }}
     >
       <div className="font-headline text-2xl font-semibold" style={{ color: 'var(--primary)' }}>
         {value}
       </div>
-      <div className="font-body text-[10px] mt-1" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>
+      <div className="font-body text-[10px] mt-1" style={{ color: 'rgba(var(--neutral-rgb), 0.4)' }}>
         {label}
       </div>
     </div>

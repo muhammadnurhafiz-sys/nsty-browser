@@ -35,12 +35,12 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 z-[var(--z-backdrop)]" onClick={onClose} aria-hidden="true" />
 
       {/* Popup */}
       <div
         ref={popupRef}
-        className="absolute right-0 top-10 z-50 w-60 rounded-xl p-4 shadow-2xl glass-panel fade-in"
+        className="absolute right-0 top-10 z-[var(--z-drawer)] w-60 rounded-xl p-4 shadow-2xl glass-panel fade-in"
         role="dialog"
         aria-modal="true"
         aria-label="Shield statistics"
@@ -49,7 +49,7 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
         <div className="flex items-center gap-2.5 mb-3">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'rgba(206, 250, 5, 0.12)' }}
+            style={{ background: 'var(--command-bar-border)' }}
           >
             <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--primary)' }}>shield</span>
           </div>
