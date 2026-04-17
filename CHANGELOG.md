@@ -1,5 +1,56 @@
 # Changelog
 
+## v0.4.0 (2026-04-17) — Production-readiness release
+
+Closes the 6 foundation gaps identified in the production-readiness audit.
+All changes gated by CI lint + test + build.
+
+### Security
+- Enable main-window `sandbox: true`
+- Strict Content-Security-Policy injected via `session.webRequest.onHeadersReceived`
+- `safeOn` / `safeHandle` IPC wrappers validate `event.senderFrame.url` against an app:// + localhost:5173 allowlist
+- Navigation guard blocks `javascript:`, `file:`, `data:`, `chrome:` on every BrowserView and the shell; new-window requests denied with https fallback to `shell.openExternal`
+- Resolves 6 npm audit findings (xmldom, brace-expansion, electron, lodash, vite, and `@anthropic-ai/sdk` 0.80 → 0.90 path-validation CVE)
+
+### Observability
+- `createLogger(module)` in both main and renderer — tagged levels, ISO timestamps, JSON context, appends to `userData/nsty-debug.log` on main
+- React `ErrorBoundary` wraps `<App/>` with Obsidian-styled fallback + Reload CTA
+- Main-process crash handlers: `uncaughtException`, `unhandledRejection`, `render-process-gone`, `child-process-gone`
+- All ad-hoc `console.*` replaced with structured logger calls
+
+### Accessibility (WCAG 2.1 AA)
+- `useFocusTrap` hook applied to `HistoryPanel`, `ShieldPopup`, and the new `ConfirmDialog`
+- `useReducedMotion` hook gates the sidebar margin-left JS transition
+- `<aside>` → `<nav aria-label="Workspaces and tabs">` semantic landmark
+- `SkipToContent` component rendered as first child of `App.tsx`
+- `type="button"` added to 20 previously-untyped buttons
+- `aria-label` on CommandBar, HistoryPanel, and SettingsCommandList inputs
+- `TabItem` outer `<div onClick>` restructured to sibling `<button>`s with proper labels and discoverability tooltip
+- `vitest-axe` smoke test asserts zero violations on `SkipToContent`, `ConfirmDialog`, `ErrorBoundary`
+
+### Design system
+- New tokens: `--border-interactive`, `--primary-muted-accessible`, `--surface-overlay-dim`
+- Fade-up cards now render visible under `prefers-reduced-motion`
+- `ConfirmDialog` replaces `window.confirm` in `PinnedPages`
+- `HistoryPanel` width responsive to narrow viewports (`min(560px, 100vw - 120px)`)
+- `::-webkit-slider-thumb` + `::-moz-range-thumb` styling for `SettingsSlider`
+- JS hover handlers migrated to CSS `:hover` in `HistoryPanel`, `UserMenu`, `QuickAccessCard`
+- `SpaceDots` no longer renders a non-functional "+ new space" button
+- Sidebar header collapses its dual-toggle into a single affordance per state
+
+### Tooling
+- Biome 2.4 with strict rules + test-file overrides; `husky` + `lint-staged` pre-commit gate
+- Tightened tsconfig: `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noFallthroughCasesInSwitch`, `noImplicitOverride`
+- New `.github/workflows/ci.yml` runs lint + test + build on every PR
+- Dependabot config: weekly grouped updates (electron, react, anthropic, dev-tooling, dnd)
+- `vitest.config.ts` unifies test discovery across main/renderer (was previously silently skipping 19 of 47 test files)
+- jsdom environment for all tests; `@testing-library/react` + `vitest-axe` added
+
+### Metrics
+- 94 → 115 tests, 28 → 55 test files
+- 0 npm audit findings (was 6)
+- 23 lint warnings → 4 (remaining are intentional deferrals)
+
 ## v0.3.1 (2026-03-29)
 
 ### Fixes
