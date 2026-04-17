@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.4.1 (2026-04-17) — Design system documentation and token migration
+
+Formalizes the "Obsidian Monolith" design system as an agent-consumable reference
+and borrows three techniques from Vercel's Geist system without swapping the
+dark/neon-green aesthetic.
+
+### Design system
+- New `DESIGN.md` at project root — 9-section getdesign.md-format reference
+  covering colors, typography, components, spacing, elevation, do's/don'ts,
+  responsive behavior, and agent prompt guide. Agents must consult this file
+  before writing UI.
+- New tokens in `globals.css`:
+  - `--primary-rgb`, `--neutral-rgb` — RGB channel vars enabling
+    `rgba(var(--primary-rgb), X)` at arbitrary alpha without hardcoding hex
+  - `--shadow-border`, `--shadow-card`, `--shadow-card-elevated`,
+    `--shadow-ambient`, `--shadow-focus-ring` — Vercel-inspired shadow-as-border
+    stack that avoids subpixel artifacts on rounded corners
+  - `.card-ring` and `.shadow-border` utility classes
+- Geist Mono font family loaded (400/500/600 with OpenType `liga` + `tnum`);
+  `.font-mono` utility class for URLs, code, timestamps, technical labels
+- Command bar URL input migrated to `.font-mono` — matches developer-browser
+  convention (Raycast, Warp, Arc)
+
+### Refactor
+- 30 hardcoded `rgba(206, 250, 5, …)` across 13 components migrated to either
+  `rgba(var(--primary-rgb), …)` or a semantic token
+  (`--surface-translucent`, `--border-subtle`, etc.) where opacity matches
+- 16 hardcoded `rgba(255, 255, 255, …)` across 7 components migrated to
+  `rgba(var(--neutral-rgb), …)`
+- 7 Tailwind `z-40` / `z-50` / `z-10` classes migrated to
+  `z-[var(--z-sidebar/backdrop/drawer/card)]` arbitrary-var syntax
+- Sidebar z-index corrected from 40 to `var(--z-sidebar)` (30) — modal
+  backdrops at `var(--z-backdrop)` (40) now reliably layer above the sidebar
+  instead of relying on DOM render order
+
 ## v0.4.0 (2026-04-17) — Production-readiness release
 
 Closes the 6 foundation gaps identified in the production-readiness audit.

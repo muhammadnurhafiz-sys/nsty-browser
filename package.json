@@ -1,6 +1,6 @@
 {
   "name": "nsty-browser",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Personal browser combining Brave ad blocking, Arc sidebar workspaces, and Claude AI integration",
   "main": "dist/main/main/index.js",
   "author": "Hafiz",
