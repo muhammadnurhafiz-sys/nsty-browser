@@ -58,9 +58,9 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vite": "^8.0.3",
-    "vitest": "^4.1.2",
+    "vitest": "^4.1.4",
     "vitest-axe": "^0.1.0"
   }
 }
