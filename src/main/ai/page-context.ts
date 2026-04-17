@@ -23,7 +23,7 @@ export async function extractPageContext(view: BrowserView | null): Promise<stri
 
     // Truncate to max context length
     if (text.length > MAX_CONTEXT_LENGTH) {
-      return text.slice(0, MAX_CONTEXT_LENGTH) + '\n\n[Content truncated...]'
+      return `${text.slice(0, MAX_CONTEXT_LENGTH)}\n\n[Content truncated...]`
     }
 
     return text

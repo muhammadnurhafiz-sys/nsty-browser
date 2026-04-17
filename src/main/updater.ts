@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import type { BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
 
 export function setupAutoUpdater(mainWindow: BrowserWindow): void {

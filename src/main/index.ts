@@ -1,7 +1,7 @@
 import { app, BrowserWindow, globalShortcut, protocol, net } from 'electron'
-import path from 'path'
-import fs from 'fs'
-import { pathToFileURL } from 'url'
+import path from 'node:path'
+import fs from 'node:fs'
+import { pathToFileURL } from 'node:url'
 import { TabManager } from './tab-manager'
 import { WindowManager } from './window-manager'
 import { registerIpcHandlers } from './ipc-handlers'
@@ -35,19 +35,21 @@ protocol.registerSchemesAsPrivileged([{
 }])
 
 function createWindow(): void {
+  const isMac = process.platform === 'darwin'
+  const platformOptions = isMac
+    ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 12, y: 12 } }
+    : {
+        titleBarStyle: 'hidden' as const,
+        titleBarOverlay: { color: '#111113', symbolColor: '#94a3b8', height: 42 },
+      }
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
     minHeight: 600,
     frame: false,
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
-    titleBarOverlay: process.platform === 'darwin' ? undefined : {
-      color: '#111113',
-      symbolColor: '#94a3b8',
-      height: 42,
-    },
-    trafficLightPosition: process.platform === 'darwin' ? { x: 12, y: 12 } : undefined,
+    ...platformOptions,
     icon: path.join(__dirname, '../../resources/icons/icon.png'),
     backgroundColor: '#111113',
     webPreferences: {

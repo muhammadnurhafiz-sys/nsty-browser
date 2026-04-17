@@ -18,8 +18,9 @@ export function SettingsCommandList({ items, filter }: SettingsCommandListProps)
 
   // Group by category
   const grouped = filtered.reduce<Record<string, SettingItem[]>>((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = []
-    acc[item.category].push(item)
+    const bucket = acc[item.category] ?? []
+    bucket.push(item)
+    acc[item.category] = bucket
     return acc
   }, {})
 

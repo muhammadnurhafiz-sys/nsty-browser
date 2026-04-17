@@ -1,0 +1,72 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"includes": [
+			"src/**/*.{ts,tsx}",
+			"!**/dist/**",
+			"!**/release/**",
+			"!**/node_modules/**"
+		],
+		"ignoreUnknown": true
+	},
+	"formatter": {
+		"enabled": false
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noExplicitAny": "error",
+				"noArrayIndexKey": "warn"
+			},
+			"style": {
+				"useImportType": "error",
+				"useConst": "error"
+			},
+			"correctness": {
+				"useHookAtTopLevel": "error",
+				"useExhaustiveDependencies": "warn"
+			},
+			"a11y": {
+				"useButtonType": "warn",
+				"noStaticElementInteractions": "off",
+				"useKeyWithClickEvents": "off",
+				"noSvgWithoutTitle": "warn"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["**/*.test.ts", "**/*.test.tsx"],
+			"linter": {
+				"rules": {
+					"suspicious": { "noExplicitAny": "off" },
+					"complexity": { "noBannedTypes": "off" },
+					"style": { "noNonNullAssertion": "off" }
+				}
+			}
+		},
+		{
+			"includes": ["src/renderer/main.tsx"],
+			"linter": {
+				"rules": {
+					"style": { "noNonNullAssertion": "off" }
+				}
+			}
+		}
+	],
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}

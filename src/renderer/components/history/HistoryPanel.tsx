@@ -18,13 +18,13 @@ interface HistoryPanelProps {
 
 export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps) {
   const [query, setQuery] = useState('')
-  const [entries, setEntries] = useState<HistoryEntry[]>([])
+  const [entries, _setEntries] = useState<HistoryEntry[]>([])
 
   // Search history when query changes
   useEffect(() => {
     if (!isOpen) return
     // TODO: Wire to IPC for actual SQLite search
-  }, [query, isOpen])
+  }, [isOpen])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
@@ -59,7 +59,6 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search history..."
-            autoFocus
             className="flex-1 bg-transparent outline-none font-body text-sm"
             style={{ color: 'var(--on-surface)' }}
           />

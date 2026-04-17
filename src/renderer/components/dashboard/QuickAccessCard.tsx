@@ -13,7 +13,7 @@ interface QuickAccessCardProps {
   onItemClick: (url: string) => void
 }
 
-export function QuickAccessCard({ title, icon, items, emptyMessage, animationClass = '', onItemClick }: QuickAccessCardProps) {
+export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, animationClass = '', onItemClick }: QuickAccessCardProps) {
   return (
     <div
       className={`rounded-xl p-4 card-fade-up ${animationClass}`}

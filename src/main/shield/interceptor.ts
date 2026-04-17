@@ -1,5 +1,5 @@
-import { BrowserWindow } from 'electron'
-import { ShieldEngine } from './engine'
+import type { BrowserWindow } from 'electron'
+import type { ShieldEngine } from './engine'
 import { injectYouTubeScript } from './youtube'
 
 export function setupInterceptor(window: BrowserWindow, engine: ShieldEngine): void {

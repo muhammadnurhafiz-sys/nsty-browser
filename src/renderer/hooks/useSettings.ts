@@ -68,7 +68,7 @@ export function useSettings() {
 
     // Sync & Vault
     { id: 'auto-archive', label: 'Auto-archive Tabs', description: 'Close inactive tabs after', category: 'Sync', icon: 'archive', type: 'segmented' as const, value: autoArchiveHours, onChange: (v: unknown) => setAutoArchiveHours(v as number), options: [{ label: '6h', value: 6 }, { label: '12h', value: 12 }, { label: '24h', value: 24 }, { label: '48h', value: 48 }, { label: 'Never', value: 0 }] },
-  ], [obsidianIntensity, holoAccents, autoHide, compactTypo, zoomLevel, shieldEnabled, localOnly, biometric, encryptedTelemetry, defaultModel, apiKey, autoArchiveHours])
+  ], [obsidianIntensity, holoAccents, autoHide, compactTypo, zoomLevel, shieldEnabled, localOnly, biometric, encryptedTelemetry, defaultModel, apiKey, autoArchiveHours, setZoomLevel, setShieldEnabled, setObsidianIntensity, setLocalOnly, setDefaultModel, setHoloAccents, setCompactTypo, setAutoArchiveHours, setEncryptedTelemetry, setBiometric, setAutoHide, setApiKey])
 
   const filterItems = useCallback((search: string): SettingItem[] => {
     if (!search) return items

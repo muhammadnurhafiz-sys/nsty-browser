@@ -1,9 +1,9 @@
 interface SettingsSliderProps {
   value: number
-  min?: number
-  max?: number
-  labelLeft?: string
-  labelRight?: string
+  min?: number | undefined
+  max?: number | undefined
+  labelLeft?: string | undefined
+  labelRight?: string | undefined
   onChange: (value: number) => void
 }
 

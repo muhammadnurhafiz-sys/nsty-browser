@@ -59,7 +59,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
         const aiQuery = getAiQuery()
         // Model switching: @claude /opus, @claude /sonnet, @claude /haiku
         const modelMatch = aiQuery.match(/^\/?(opus|sonnet|haiku)$/i)
-        if (modelMatch) {
+        if (modelMatch?.[1]) {
           ai.changeModel(modelMatch[1].toLowerCase() as 'sonnet' | 'haiku' | 'opus')
           updateQuery('@claude ')
         } else if (aiQuery) {

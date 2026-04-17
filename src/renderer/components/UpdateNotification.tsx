@@ -25,7 +25,11 @@ export function UpdateNotification() {
         setProgress(null)
       }),
     ]
-    return () => cleanups.forEach(fn => fn?.())
+    return () => {
+      cleanups.forEach(fn => {
+        fn?.()
+      })
+    }
   }, [])
 
   if (!updateInfo || dismissed) return null

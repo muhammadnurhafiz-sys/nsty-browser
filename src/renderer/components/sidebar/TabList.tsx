@@ -15,11 +15,11 @@ type TabGroup = {
 }
 
 function groupTabsByDay(tabs: Tab[]): TabGroup[] {
-  const now = Date.now()
+  const _now = Date.now()
   const today = new Date().setHours(0, 0, 0, 0)
   const yesterday = today - 86400000
 
-  const groups: Record<string, Tab[]> = {
+  const groups: { Today: Tab[]; Yesterday: Tab[]; Older: Tab[] } = {
     Today: [],
     Yesterday: [],
     Older: [],
@@ -35,7 +35,7 @@ function groupTabsByDay(tabs: Tab[]): TabGroup[] {
     }
   }
 
-  return Object.entries(groups)
+  return (Object.entries(groups) as [string, Tab[]][])
     .filter(([, tabs]) => tabs.length > 0)
     .map(([label, tabs]) => ({ label, tabs }))
 }

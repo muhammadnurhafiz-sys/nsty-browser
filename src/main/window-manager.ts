@@ -1,5 +1,5 @@
-import { BrowserWindow } from 'electron'
-import { TabManager } from './tab-manager'
+import type { BrowserWindow } from 'electron'
+import type { TabManager } from './tab-manager'
 
 const SIDEBAR_WIDTH_MINI = 60
 const SIDEBAR_WIDTH_WIDE = 240
@@ -31,8 +31,13 @@ export class WindowManager {
     return this.sidebarExpanded
   }
 
+  private getSize(): [number, number] {
+    const [w = 0, h = 0] = this.window.getContentSize()
+    return [w, h]
+  }
+
   updateLayout(): void {
-    const [windowWidth, windowHeight] = this.window.getContentSize()
+    const [windowWidth, windowHeight] = this.getSize()
     const contentX = this.sidebarWidth
     const contentWidth = windowWidth - this.sidebarWidth
     const contentY = 0
@@ -47,7 +52,7 @@ export class WindowManager {
   }
 
   getLayoutInfo() {
-    const [windowWidth, windowHeight] = this.window.getContentSize()
+    const [windowWidth, windowHeight] = this.getSize()
     return {
       sidebarWidth: this.sidebarWidth,
       sidebarExpanded: this.sidebarExpanded,

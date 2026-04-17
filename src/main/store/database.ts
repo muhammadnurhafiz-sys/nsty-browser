@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import path from 'path'
+import path from 'node:path'
 import { app } from 'electron'
 
 let db: Database.Database | null = null

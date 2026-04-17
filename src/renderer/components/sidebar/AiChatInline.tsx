@@ -18,7 +18,7 @@ export function AiChatInline({ messages, streamingContent, isStreaming }: AiChat
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages, streamingContent])
+  }, [])
 
   if (messages.length === 0 && !isStreaming) {
     return (

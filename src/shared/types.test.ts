@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { UserProfile, Tab, Space, ShieldStats } from './types'
+import type { UserProfile, } from './types'
 
 describe('shared types', () => {
   it('UserProfile interface accepts valid profile', () => {

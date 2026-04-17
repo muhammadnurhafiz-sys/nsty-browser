@@ -13,8 +13,10 @@ const SPACE_GRADIENTS: Record<string, string> = {
   dev: 'linear-gradient(135deg, #1a2a0a, #3a4a0a)',
 }
 
+const GRADIENT_FALLBACKS = Object.values(SPACE_GRADIENTS)
+
 function getSpaceGradient(space: Space, index: number): string {
-  return SPACE_GRADIENTS[space.id] ?? Object.values(SPACE_GRADIENTS)[index % 3]
+  return SPACE_GRADIENTS[space.id] ?? GRADIENT_FALLBACKS[index % GRADIENT_FALLBACKS.length] ?? GRADIENT_FALLBACKS[0]!
 }
 
 export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace, isExpanded }: SpaceDotsProps) {

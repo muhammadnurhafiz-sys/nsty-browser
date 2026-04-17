@@ -5,7 +5,7 @@ interface ShieldStatusCardProps {
   totalBlocked: number
 }
 
-export function ShieldStatusCard({ stats, totalBlocked }: ShieldStatusCardProps) {
+export function ShieldStatusCard({ stats: _stats, totalBlocked }: ShieldStatusCardProps) {
   const effectiveness = totalBlocked > 0 ? Math.min(Math.round((totalBlocked / (totalBlocked + 20)) * 100), 99) : 0
 
   return (

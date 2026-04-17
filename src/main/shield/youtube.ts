@@ -1,6 +1,6 @@
 import type { WebContents } from 'electron'
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 // YouTube ad blocking content script
 // Injected into youtube.com pages to handle ads that bypass network-level blocking

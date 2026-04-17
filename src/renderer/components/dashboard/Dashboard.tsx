@@ -19,17 +19,23 @@ function getGreeting(): string {
 }
 
 export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, onNavigate, userName }: DashboardProps) {
-  const recentItems = recentTabs.map(t => ({
-    title: t.title || t.url,
-    url: t.url,
-    favicon: t.faviconUrl || undefined,
-  }))
+  const recentItems = recentTabs.map(t => {
+    const item: { title: string; url: string; favicon?: string } = {
+      title: t.title || t.url,
+      url: t.url,
+    }
+    if (t.faviconUrl) item.favicon = t.faviconUrl
+    return item
+  })
 
-  const pinnedItems = pinnedPages.map(p => ({
-    title: p.title || p.url,
-    url: p.url,
-    favicon: p.faviconUrl || undefined,
-  }))
+  const pinnedItems = pinnedPages.map(p => {
+    const item: { title: string; url: string; favicon?: string } = {
+      title: p.title || p.url,
+      url: p.url,
+    }
+    if (p.faviconUrl) item.favicon = p.faviconUrl
+    return item
+  })
 
   return (
     <div className="h-full overflow-y-auto hide-scrollbar flex items-center justify-center">

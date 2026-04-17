@@ -1,5 +1,5 @@
-import { BrowserView, BrowserWindow } from 'electron'
-import { randomUUID } from 'crypto'
+import { BrowserView, type BrowserWindow } from 'electron'
+import { randomUUID } from 'node:crypto'
 import type { Tab, TabUpdateEvent } from '../shared/types'
 
 interface ManagedTab {
@@ -54,8 +54,9 @@ export class TabManager {
     })
 
     view.webContents.on('page-favicon-updated', (_event, favicons) => {
-      if (favicons.length > 0) {
-        tab.faviconUrl = favicons[0]
+      const first = favicons[0]
+      if (first) {
+        tab.faviconUrl = first
         this.emitTabUpdate(tab)
       }
     })
@@ -88,8 +89,9 @@ export class TabManager {
       // Switch to another tab in same space
       const sameSpaceTabs = this.getTabsBySpace(managed.tab.spaceId)
       const remaining = sameSpaceTabs.filter(t => t.id !== tabId)
-      if (remaining.length > 0) {
-        this.switchTab(remaining[remaining.length - 1].id)
+      const last = remaining[remaining.length - 1]
+      if (last) {
+        this.switchTab(last.id)
       }
     } else {
       this.window.removeBrowserView(managed.view)
@@ -186,8 +188,9 @@ export class TabManager {
 
     // Find first tab in new space and activate it
     const spaceTabs = this.getTabsBySpace(spaceId)
-    if (spaceTabs.length > 0) {
-      this.switchTab(spaceTabs[spaceTabs.length - 1].id)
+    const lastTab = spaceTabs[spaceTabs.length - 1]
+    if (lastTab) {
+      this.switchTab(lastTab.id)
     }
   }
 

@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { BrowserWindow, safeStorage } from 'electron'
-import { randomUUID } from 'crypto'
+import { type BrowserWindow, safeStorage } from 'electron'
+import { randomUUID } from 'node:crypto'
 import { getSetting, setSetting } from '../store/settings'
 import { saveConversation, saveMessage, getConversationMessages } from '../store/database'
 
@@ -112,7 +112,7 @@ export class ClaudeClient {
       saveMessage(convId, 'assistant', fullResponse, tokensUsed)
 
       // Save/update conversation
-      const title = message.length > 50 ? message.slice(0, 47) + '...' : message
+      const title = message.length > 50 ? `${message.slice(0, 47)}...` : message
       saveConversation(convId, title, model, null)
 
       this.window.webContents.send('ai:stream:end', convId)

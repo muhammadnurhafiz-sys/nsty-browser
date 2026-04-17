@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
-import { TabManager } from './tab-manager'
-import { WindowManager } from './window-manager'
-import { ClaudeClient } from './ai/claude-client'
+import type { TabManager } from './tab-manager'
+import type { WindowManager } from './window-manager'
+import type { ClaudeClient } from './ai/claude-client'
 import { extractPageContext } from './ai/page-context'
 import { downloadUpdate, installUpdate } from './updater'
 
