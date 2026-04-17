@@ -31,7 +31,7 @@ function emit(level: Level, module: string, msg: string, ctx?: object): void {
   // eslint-disable-next-line no-console
   console[consoleFn](line)
   try {
-    fs.appendFile(getLogFile(), line + '\n', () => undefined)
+    fs.appendFile(getLogFile(), `${line}\n`, () => undefined)
   } catch {
     // If we can't write to disk, dropping the line is better than crashing.
   }

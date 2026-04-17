@@ -16,7 +16,7 @@ export function SettingsSegmented<T extends string>({ options, value, onChange }
       {options.map(opt => {
         const isActive = value === opt.id
         return (
-          <button
+          <button type="button"
             key={opt.id}
             onClick={() => onChange(opt.id)}
             className="px-3 py-1 font-label text-xs uppercase cursor-pointer transition-all rounded-md"

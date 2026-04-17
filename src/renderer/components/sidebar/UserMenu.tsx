@@ -23,7 +23,7 @@ export function UserMenu({ onOpenSettings, onClose }: UserMenuProps) {
       ref={menuRef}
       className="absolute bottom-full left-1 mb-2 w-44 rounded-xl shadow-xl overflow-hidden glass-panel fade-in"
     >
-      <button
+      <button type="button"
         onClick={() => { onOpenSettings(); onClose() }}
         className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs cursor-pointer transition-colors"
         style={{ color: 'var(--on-surface)' }}

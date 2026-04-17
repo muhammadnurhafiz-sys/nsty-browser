@@ -25,7 +25,7 @@ export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace, isExpanded }: 
       {spaces.map((space, i) => {
         const isActive = space.id === activeSpaceId
         return (
-          <button
+          <button type="button"
             key={space.id}
             onClick={() => onSwitchSpace(space.id)}
             className="rounded-full cursor-pointer transition-all"

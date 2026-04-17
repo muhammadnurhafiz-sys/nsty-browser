@@ -68,7 +68,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
             className="flex-1 bg-transparent outline-none font-body text-sm"
             style={{ color: 'var(--on-surface)' }}
           />
-          <button
+          <button type="button"
             onClick={onClose}
             aria-label="Close history"
             className="font-label text-[10px] uppercase tracking-wider px-2 py-1 rounded-md cursor-pointer"
@@ -101,7 +101,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
           )}
 
           {entries.map(entry => (
-            <button
+            <button type="button"
               key={entry.id}
               onClick={() => { onNavigate(entry.url); onClose() }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-left transition-colors"

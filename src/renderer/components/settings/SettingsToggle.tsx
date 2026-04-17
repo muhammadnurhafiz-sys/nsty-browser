@@ -5,7 +5,7 @@ interface SettingsToggleProps {
 
 export function SettingsToggle({ checked, onChange }: SettingsToggleProps) {
   return (
-    <button
+    <button type="button"
       onClick={() => onChange(!checked)}
       role="switch"
       aria-checked={checked}

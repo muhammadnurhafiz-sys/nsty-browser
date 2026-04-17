@@ -84,7 +84,8 @@ export function Sidebar({
   const pinnedPages = activeSpace?.pinnedPages ?? []
 
   return (
-    <aside
+    <nav
+      aria-label="Workspaces and tabs"
       className="fixed left-0 top-0 h-full z-40 flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
       style={{ width: sidebarWidth }}
     >
@@ -112,7 +113,7 @@ export function Sidebar({
             )}
           </div>
           {isExpanded && (
-            <button
+            <button type="button"
               onClick={onToggleExpand}
               className="w-5 h-5 rounded flex items-center justify-center cursor-pointer transition-colors hover-surface"
               style={{ color: 'var(--outline)', opacity: 0.5, WebkitAppRegion: 'no-drag' } as React.CSSProperties}
@@ -180,7 +181,7 @@ export function Sidebar({
 
         {/* Section 6: New Tab Button */}
         <div className={`${isExpanded ? 'px-3' : 'flex justify-center'} py-1`}>
-          <button
+          <button type="button"
             onClick={onNewTab}
             className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors hover-surface`}
             style={{ color: 'rgba(206, 250, 5, 0.5)' }}
@@ -210,7 +211,7 @@ export function Sidebar({
                 onClose={() => setUserMenuOpen(false)}
               />
             )}
-            <button
+            <button type="button"
               onClick={() => setUserMenuOpen(prev => !prev)}
               className="cursor-pointer"
               aria-label={`User menu for ${userProfile.name}`}
@@ -233,6 +234,6 @@ export function Sidebar({
           </div>
         </div>
       </div>
-    </aside>
+    </nav>
   )
 }

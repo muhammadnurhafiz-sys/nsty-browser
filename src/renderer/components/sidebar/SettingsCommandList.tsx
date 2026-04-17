@@ -117,6 +117,7 @@ function SettingControl({ item }: { item: SettingItem }) {
           value={item.value as string}
           onChange={(e) => item.onChange(e.target.value)}
           placeholder="Enter key..."
+          aria-label={item.label}
           className="font-body text-[10px] px-2 py-1 rounded"
           style={{
             width: 80,

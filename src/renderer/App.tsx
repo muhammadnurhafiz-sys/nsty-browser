@@ -3,6 +3,7 @@ import { Sidebar } from './components/sidebar/Sidebar'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { HistoryPanel } from './components/history/HistoryPanel'
 import { UpdateNotification } from './components/UpdateNotification'
+import { SkipToContent } from './components/SkipToContent'
 import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
 import { useAi } from './hooks/useAi'
@@ -74,10 +75,7 @@ export function App() {
 
   return (
     <div className="h-screen w-screen flex overflow-hidden" style={{ background: 'var(--space-gradient-1)' }}>
-      {/* Skip to content link for keyboard users */}
-      <a href="#main-content" className="skip-to-content" aria-label="Skip to main content">
-        Skip to content
-      </a>
+      <SkipToContent />
 
       {/* Sidebar — Arc-style with command palette, inline tabs, spaces */}
       <Sidebar

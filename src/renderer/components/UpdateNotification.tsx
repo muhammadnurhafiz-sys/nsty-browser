@@ -46,7 +46,7 @@ export function UpdateNotification() {
               Update Available
             </span>
           </div>
-          <button
+          <button type="button"
             onClick={() => setDismissed(true)}
             className="w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
             style={{ color: 'var(--outline)' }}
@@ -77,7 +77,7 @@ export function UpdateNotification() {
         )}
 
         {downloaded ? (
-          <button
+          <button type="button"
             onClick={() => window.nsty?.installUpdate()}
             className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-all"
             style={{
@@ -88,7 +88,7 @@ export function UpdateNotification() {
             Restart to Update
           </button>
         ) : progress === null ? (
-          <button
+          <button type="button"
             onClick={() => window.nsty?.downloadUpdate()}
             className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-all"
             style={{

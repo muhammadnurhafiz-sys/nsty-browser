@@ -49,7 +49,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
       >
         {tab.title}
       </span>
-      <button
+      <button type="button"
         onClick={(e) => { e.stopPropagation(); onClose(tab.id) }}
         aria-label={`Close ${tab.title}`}
         className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex w-5 h-5 rounded items-center justify-center cursor-pointer hover:bg-white/10 transition-opacity"

@@ -48,7 +48,7 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
 
         {/* Actions */}
         <div className="flex gap-2 mt-3">
-          <button
+          <button type="button"
             onClick={onDisableForSite}
             className="flex-1 py-1.5 text-center rounded-lg font-label text-[10px] uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors"
             style={{
@@ -59,7 +59,7 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
           >
             Disable
           </button>
-          <button
+          <button type="button"
             onClick={onClose}
             className="flex-1 py-1.5 text-center rounded-lg font-label text-[10px] uppercase tracking-wider cursor-pointer hover:brightness-110 transition-all"
             style={{

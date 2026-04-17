@@ -90,7 +90,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
     // Collapsed sidebar: show just a search icon button
     return (
       <div className="flex justify-center py-2">
-        <button
+        <button type="button"
           onClick={() => { onExpandSidebar?.(); }}
           className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors"
           style={{ background: 'var(--command-bar-bg)', border: '1px solid var(--command-bar-border)' }}
@@ -145,6 +145,7 @@ export function CommandBar({ onNavigate, tabs, onSwitchTab, ai, isExpanded, onEx
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           placeholder="Search, URL, or @claude..."
+          aria-label="Search, URL, or AI prompt"
           className="flex-1 bg-transparent font-body text-xs outline-none"
           style={{ color: 'rgba(255, 255, 255, 0.8)' }}
           spellCheck={false}

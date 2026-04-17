@@ -36,7 +36,7 @@ export function NavControls({
       <NavButton icon="history" label="History" onClick={onOpenHistory} />
       {isExpanded && <div className="flex-1" />}
       <div className="relative">
-        <button
+        <button type="button"
           onClick={onToggleShieldPopup}
           className="w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors hover-surface"
           aria-label={`Shield: ${shieldCount} blocked`}
@@ -65,7 +65,7 @@ export function NavControls({
 
 function NavButton({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
   return (
-    <button
+    <button type="button"
       onClick={onClick}
       className="w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors hover-surface"
       aria-label={label}

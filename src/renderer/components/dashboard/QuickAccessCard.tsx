@@ -34,7 +34,7 @@ export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, anima
       {items.length > 0 ? (
         <div className="flex flex-col">
           {items.slice(0, 5).map((item, i) => (
-            <button
+            <button type="button"
               key={item.url}
               onClick={() => onItemClick(item.url)}
               className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors text-left hover-surface"

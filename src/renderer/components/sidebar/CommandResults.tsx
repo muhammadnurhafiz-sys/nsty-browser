@@ -25,7 +25,7 @@ export function CommandResults({ tabs, query, onSwitchTab }: CommandResultsProps
         Open Tabs
       </div>
       {matches.map(tab => (
-        <button
+        <button type="button"
           key={tab.id}
           onClick={() => onSwitchTab(tab.id)}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-lg cursor-pointer transition-colors text-left hover-surface"
