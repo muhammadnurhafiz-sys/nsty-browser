@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { createLogger } from '../../utils/logger'
+
+const log = createLogger('HistoryPanel')
 
 interface HistoryEntry {
   id: number
@@ -17,8 +21,12 @@ interface HistoryPanelProps {
 }
 
 export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps) {
+  log.debug('render', { isOpen })
   const [query, setQuery] = useState('')
   const [entries, _setEntries] = useState<HistoryEntry[]>([])
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useFocusTrap(panelRef, isOpen)
 
   // Search history when query changes
   useEffect(() => {
@@ -43,6 +51,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
 
       {/* Panel */}
       <div
+        ref={panelRef}
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-h-[70vh] rounded-xl flex flex-col shadow-2xl fade-in"
         style={{
           width: 'min(560px, calc(100vw - 120px))',

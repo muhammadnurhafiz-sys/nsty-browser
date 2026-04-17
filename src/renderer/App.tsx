@@ -8,6 +8,7 @@ import { useSpaces } from './hooks/useSpaces'
 import { useShield } from './hooks/useShield'
 import { useAi } from './hooks/useAi'
 import { useUserProfile } from './hooks/useUserProfile'
+import { useReducedMotion } from './hooks/useReducedMotion'
 
 export function App() {
   const {
@@ -28,6 +29,7 @@ export function App() {
   const { stats: shieldStats, totalBlocked, popupOpen: shieldPopupOpen, togglePopup: toggleShieldPopup, closePopup: closeShieldPopup, disableForSite } = useShield()
   const { messages: aiMessages, streamingContent, isStreaming, model: aiModel, sendMessage: sendAiMessage, changeModel: changeAiModel } = useAi()
   const { profile: userProfile } = useUserProfile()
+  const reducedMotion = useReducedMotion()
   const [historyOpen, setHistoryOpen] = useState(false)
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
 
@@ -119,7 +121,10 @@ export function App() {
       {/* Main content area — full height, offset by sidebar only */}
       <div
         className="flex-1 flex flex-col min-w-0"
-        style={{ marginLeft: sidebarWidth, transition: 'margin-left var(--transition-normal)' }}
+        style={{
+          marginLeft: sidebarWidth,
+          transition: reducedMotion ? 'none' : 'margin-left var(--transition-normal)',
+        }}
       >
         {/* Content area - BrowserViews are rendered here by Electron */}
         <main id="main-content" className="flex-1">

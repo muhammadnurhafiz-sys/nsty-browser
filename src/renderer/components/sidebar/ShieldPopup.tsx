@@ -1,4 +1,9 @@
+import { useEffect, useRef } from 'react'
 import type { ShieldStats } from '@shared/types'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { createLogger } from '../../utils/logger'
+
+const log = createLogger('ShieldPopup')
 
 interface ShieldPopupProps {
   stats: ShieldStats
@@ -8,17 +13,36 @@ interface ShieldPopupProps {
 }
 
 export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: ShieldPopupProps) {
+  log.debug('render', { isOpen })
+  const popupRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(popupRef, isOpen)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        log.debug('escape close')
+        e.preventDefault()
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden="true" />
 
       {/* Popup */}
       <div
+        ref={popupRef}
         className="absolute right-0 top-10 z-50 w-60 rounded-xl p-4 shadow-2xl glass-panel fade-in"
         role="dialog"
+        aria-modal="true"
         aria-label="Shield statistics"
       >
         {/* Header */}
