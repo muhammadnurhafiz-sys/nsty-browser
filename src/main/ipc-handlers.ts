@@ -4,13 +4,16 @@ import type { ClaudeClient } from './ai/claude-client'
 import { extractPageContext } from './ai/page-context'
 import { downloadUpdate, installUpdate } from './updater'
 import { safeOn, safeHandle } from './security/ipc-guard'
+import { createLogger } from './utils/logger'
+
+const log = createLogger('ipc-handlers')
 
 export function registerIpcHandlers(
   tabManager: TabManager,
   windowManager: WindowManager,
   claudeClient?: ClaudeClient,
 ): void {
-  console.info('[ipc-handlers] registering guarded IPC channels')
+  log.info('registering guarded IPC channels')
 
   // Tab management
   safeOn('tab:create', (event, ...args) => {

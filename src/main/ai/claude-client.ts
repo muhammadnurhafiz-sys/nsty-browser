@@ -3,6 +3,9 @@ import { type BrowserWindow, safeStorage } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { getSetting, setSetting } from '../store/settings'
 import { saveConversation, saveMessage, getConversationMessages } from '../store/database'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('ai')
 
 const MODEL_MAP = {
   sonnet: 'claude-sonnet-4-6',
@@ -27,7 +30,7 @@ export class ClaudeClient {
       this.client = new Anthropic({ apiKey })
       return true
     } catch {
-      console.error('[AI] Failed to decrypt API key')
+      log.error('failed to decrypt API key')
       return false
     }
   }
@@ -119,7 +122,7 @@ export class ClaudeClient {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      console.error('[AI] Stream error:', errorMessage)
+      log.error('stream error', { message: errorMessage })
       this.window.webContents.send('ai:error', `Failed to get response: ${errorMessage}`)
       this.window.webContents.send('ai:stream:end', convId)
     }

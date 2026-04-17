@@ -1,6 +1,9 @@
 import type { WebContents } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('shield-youtube')
 
 // YouTube ad blocking content script
 // Injected into youtube.com pages to handle ads that bypass network-level blocking
@@ -149,6 +152,6 @@ export function injectYouTubeScript(webContents: WebContents): void {
   }
 
   webContents.executeJavaScript(YOUTUBE_SHIELD_SCRIPT).catch(() => {
-    console.warn('[Shield] Failed to inject YouTube script')
+    log.warn('failed to inject YouTube shield script')
   })
 }

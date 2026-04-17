@@ -13,6 +13,10 @@ import { ClaudeClient } from './ai/claude-client'
 import { setupAutoUpdater } from './updater'
 import { installCsp } from './security/csp'
 import { applyNavigationGuard } from './security/navigation-guard'
+import { createLogger } from './utils/logger'
+import { installCrashHandlers } from './utils/crash-handlers'
+
+const log = createLogger('main')
 
 let mainWindow: BrowserWindow | null = null
 let tabManager: TabManager | null = null
@@ -22,13 +26,6 @@ let claudeClient: ClaudeClient | null = null
 
 const isDev = !app.isPackaged
 
-// Debug logger — writes to a file next to the exe so we can diagnose packaged builds
-const logFile = path.join(app.getPath('userData'), 'nsty-debug.log')
-function debugLog(msg: string): void {
-  const line = `[${new Date().toISOString()}] ${msg}\n`
-  fs.appendFileSync(logFile, line)
-  console.log(msg)
-}
 
 // Register custom protocol before app is ready — required for file:// CORS compat
 protocol.registerSchemesAsPrivileged([{
@@ -81,10 +78,10 @@ function createWindow(): void {
       shieldEngine.setupStatsTracking()
       setupInterceptor(mainWindow, shieldEngine)
       scheduleFilterUpdates()
-      console.log('[Nsty] Shield engine ready')
+      log.info('shield engine ready')
     }
   }).catch((err) => {
-    console.error('[Nsty] Failed to initialize shield:', err)
+    log.error('shield init failed', { message: err instanceof Error ? err.message : String(err) })
   })
 
   // Auto-updater (production only)
@@ -94,15 +91,15 @@ function createWindow(): void {
 
   // Error handling for renderer load failures
   mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
-    debugLog(`[FAIL-LOAD] code=${errorCode} desc=${errorDescription} url=${validatedURL}`)
+    log.error('renderer load failed', { errorCode, errorDescription, validatedURL })
   })
 
   mainWindow.webContents.on('did-finish-load', () => {
-    debugLog('[SUCCESS] Renderer finished loading')
+    log.info('renderer finished loading')
   })
 
   mainWindow.webContents.on('console-message', (_event, level, message) => {
-    if (level >= 2) debugLog(`[RENDERER-ERROR] ${message}`)
+    if (level >= 2) log.warn('renderer console', { level, message })
   })
 
   // Load renderer
@@ -111,11 +108,12 @@ function createWindow(): void {
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     const rendererPath = path.join(app.getAppPath(), 'dist', 'renderer', 'index.html')
-    debugLog(`[INIT] appPath=${app.getAppPath()}`)
-    debugLog(`[INIT] rendererPath=${rendererPath}`)
-    debugLog(`[INIT] rendererExists=${fs.existsSync(rendererPath)}`)
-    debugLog(`[INIT] __dirname=${__dirname}`)
-    debugLog(`[INIT] preloadPath=${path.join(__dirname, '../preload/index.js')}`)
+    log.info('loading renderer', {
+      appPath: app.getAppPath(),
+      rendererPath,
+      rendererExists: fs.existsSync(rendererPath),
+      preloadPath: path.join(__dirname, '../preload/index.js'),
+    })
 
     mainWindow.loadFile(rendererPath)
   }
@@ -158,6 +156,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  installCrashHandlers()
+
   // Serve renderer files via custom protocol (avoids file:// CORS issues with Vite's crossorigin attributes)
   protocol.handle('app', (request) => {
     const { pathname } = new URL(request.url)

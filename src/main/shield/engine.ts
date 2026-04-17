@@ -2,6 +2,9 @@ import { ElectronBlocker } from '@ghostery/adblocker-electron'
 import fetch from 'cross-fetch'
 import { session } from 'electron'
 import type { ShieldStats } from '../../shared/types'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('shield')
 
 export class ShieldEngine {
   private blocker: ElectronBlocker | null = null
@@ -12,21 +15,21 @@ export class ShieldEngine {
   async initialize(): Promise<void> {
     // Load blocker with default filter lists (EasyList, EasyPrivacy, uBlock, etc.)
     this.blocker = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch)
-    console.log('[Shield] Engine initialized with prebuilt filter lists')
+    log.info('engine initialized with prebuilt filter lists')
   }
 
   enableOnSession(ses?: Electron.Session): void {
     if (!this.blocker) return
     const target = ses ?? session.defaultSession
     this.blocker.enableBlockingInSession(target)
-    console.log('[Shield] Blocking enabled on session')
+    log.info('blocking enabled on session')
   }
 
   disableOnSession(ses?: Electron.Session): void {
     if (!this.blocker) return
     const target = ses ?? session.defaultSession
     this.blocker.disableBlockingInSession(target)
-    console.log('[Shield] Blocking disabled on session')
+    log.info('blocking disabled on session')
   }
 
   isEnabled(): boolean {

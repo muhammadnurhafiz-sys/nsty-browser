@@ -1,6 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { app } from 'electron'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('shield-filters')
 
 const FILTER_LISTS = [
   {
@@ -63,15 +66,15 @@ export async function updateFilterLists(): Promise<void> {
 
     // Skip if updated within last 24 hours
     if (existing && now - existing.lastUpdated < ONE_DAY && fs.existsSync(filePath)) {
-      console.log(`[Shield] ${list.name} is up to date`)
+      log.debug('filter list up to date', { name: list.name })
       continue
     }
 
     try {
-      console.log(`[Shield] Downloading ${list.name}...`)
+      log.info('downloading filter list', { name: list.name })
       const response = await fetch(list.url)
       if (!response.ok) {
-        console.warn(`[Shield] Failed to download ${list.name}: ${response.status}`)
+        log.warn('filter download failed', { name: list.name, status: response.status })
         continue
       }
 
@@ -83,9 +86,9 @@ export async function updateFilterLists(): Promise<void> {
         size: text.length,
       }
 
-      console.log(`[Shield] Updated ${list.name} (${(text.length / 1024).toFixed(0)} KB)`)
+      log.info('filter list updated', { name: list.name, sizeKb: Math.round(text.length / 1024) })
     } catch (err) {
-      console.warn(`[Shield] Error downloading ${list.name}:`, err)
+      log.warn('filter download error', { name: list.name, message: err instanceof Error ? err.message : String(err) })
     }
   }
 
@@ -100,11 +103,14 @@ export function getFilterListPaths(): string[] {
 }
 
 export function scheduleFilterUpdates(): void {
+  const handleError = (err: unknown): void => {
+    log.error('scheduled filter update failed', { message: err instanceof Error ? err.message : String(err) })
+  }
   // Update immediately on startup
-  updateFilterLists().catch(console.error)
+  updateFilterLists().catch(handleError)
 
   // Then check every 24 hours
   setInterval(() => {
-    updateFilterLists().catch(console.error)
+    updateFilterLists().catch(handleError)
   }, 86400000)
 }

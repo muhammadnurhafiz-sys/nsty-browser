@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import type { UserProfile } from '@shared/types'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('useUserProfile')
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'hafiz',
@@ -19,12 +22,12 @@ export function useUserProfile() {
     // 3. Exchange code for tokens
     // 4. Fetch user profile from Google API
     // 5. Update profile state
-    console.log('[Nsty] Google sign-in not yet implemented')
+    log.info('Google sign-in not yet implemented')
   }
 
   const signOut = () => {
     // TODO: Clear tokens, revert to default profile
-    console.log('[Nsty] Sign-out not yet implemented')
+    log.info('sign-out not yet implemented')
   }
 
   return { profile, signInWithGoogle, signOut }

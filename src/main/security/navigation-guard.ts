@@ -1,5 +1,8 @@
 import type { WebContents } from 'electron'
 import { shell } from 'electron'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('nav-guard')
 
 const ALLOWED_SCHEMES = /^(https?|app):/i
 
@@ -11,7 +14,7 @@ export function applyNavigationGuard(webContents: WebContents): void {
   webContents.on('will-navigate', (event, url) => {
     if (!isAllowedNavigationUrl(url)) {
       event.preventDefault()
-      console.warn(`[nav-guard] blocked will-navigate to ${url}`)
+      log.warn('blocked will-navigate', { url })
     }
   })
 
@@ -21,7 +24,7 @@ export function applyNavigationGuard(webContents: WebContents): void {
       // This keeps our window shell minimal and stops foreign pages from spawning chromeless popups.
       shell.openExternal(url).catch(() => undefined)
     } else {
-      console.warn(`[nav-guard] blocked new-window to ${url}`)
+      log.warn('blocked new-window', { url })
     }
     return { action: 'deny' as const }
   })

@@ -1,5 +1,8 @@
 import type { BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import { createLogger } from './utils/logger'
+
+const log = createLogger('updater')
 
 export function setupAutoUpdater(mainWindow: BrowserWindow): void {
   autoUpdater.autoDownload = false
@@ -26,13 +29,13 @@ export function setupAutoUpdater(mainWindow: BrowserWindow): void {
   })
 
   autoUpdater.on('error', (err) => {
-    console.error('[Nsty] Auto-update error:', err.message)
+    log.error('auto-update error', { message: err.message })
   })
 
   // Check for updates after a short delay on startup
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch((err) => {
-      console.error('[Nsty] Update check failed:', err.message)
+      log.error('update check failed', { message: err.message })
     })
   }, 5000)
 
@@ -44,7 +47,7 @@ export function setupAutoUpdater(mainWindow: BrowserWindow): void {
 
 export function downloadUpdate(): void {
   autoUpdater.downloadUpdate().catch((err) => {
-    console.error('[Nsty] Download update failed:', err.message)
+    log.error('download update failed', { message: err.message })
   })
 }
 
