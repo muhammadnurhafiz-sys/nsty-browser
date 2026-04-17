@@ -23,7 +23,6 @@ function StatCard({ value, label }: { value: string; label: string }) {
       style={{
         background: 'rgba(206, 250, 5, 0.04)',
         border: '1px solid rgba(206, 250, 5, 0.1)',
-        opacity: 0,
       }}
     >
       <div className="font-headline text-2xl font-semibold" style={{ color: 'var(--primary)' }}>

@@ -20,7 +20,6 @@ export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, anima
       style={{
         background: 'rgba(206, 250, 5, 0.04)',
         border: '1px solid rgba(206, 250, 5, 0.1)',
-        opacity: 0,
       }}
     >
       {/* Header */}

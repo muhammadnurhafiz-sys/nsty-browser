@@ -35,12 +35,17 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 fade-in" style={{ background: 'rgba(0, 0, 0, 0.5)' }} onClick={onClose} />
+      <div
+        className="fixed inset-0 z-40 fade-in"
+        style={{ background: 'var(--surface-overlay-dim)' }}
+        onClick={onClose}
+      />
 
       {/* Panel */}
       <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[560px] max-h-[70vh] rounded-xl flex flex-col shadow-2xl fade-in"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-h-[70vh] rounded-xl flex flex-col shadow-2xl fade-in"
         style={{
+          width: 'min(560px, calc(100vw - 120px))',
           background: 'rgba(206, 250, 5, 0.03)',
           backdropFilter: 'blur(30px)',
           WebkitBackdropFilter: 'blur(30px)',
@@ -59,6 +64,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search history..."
+            aria-label="Search history"
             className="flex-1 bg-transparent outline-none font-body text-sm"
             style={{ color: 'var(--on-surface)' }}
           />

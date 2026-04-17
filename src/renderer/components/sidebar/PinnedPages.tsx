@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -16,6 +17,10 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { PinnedPage } from '@shared/types'
+import { ConfirmDialog } from '../dialogs/ConfirmDialog'
+import { createLogger } from '../../utils/logger'
+
+const log = createLogger('PinnedPages')
 
 interface PinnedPagesProps {
   pages: PinnedPage[]
@@ -27,6 +32,9 @@ interface PinnedPagesProps {
 }
 
 export function PinnedPages({ pages, onReorder, onUnpin, onOpenInNewTab, onClickPin, isExpanded }: PinnedPagesProps) {
+  log.debug('render', { count: pages.length, isExpanded })
+  const [pendingUnpin, setPendingUnpin] = useState<PinnedPage | null>(null)
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -41,7 +49,16 @@ export function PinnedPages({ pages, onReorder, onUnpin, onOpenInNewTab, onClick
     const oldIndex = pages.findIndex(p => p.url === active.id)
     const newIndex = pages.findIndex(p => p.url === over.id)
     const reordered = arrayMove(pages, oldIndex, newIndex).map((p, i) => ({ ...p, order: i }))
+    log.debug('reordered pins', { from: oldIndex, to: newIndex })
     onReorder(reordered)
+  }
+
+  const confirmUnpin = (): void => {
+    if (pendingUnpin) {
+      log.info('unpinning', { url: pendingUnpin.url })
+      onUnpin(pendingUnpin.url)
+    }
+    setPendingUnpin(null)
   }
 
   return (
@@ -61,7 +78,7 @@ export function PinnedPages({ pages, onReorder, onUnpin, onOpenInNewTab, onClick
               <SortablePinItem
                 key={page.url}
                 page={page}
-                onUnpin={onUnpin}
+                onRequestUnpin={setPendingUnpin}
                 onOpenInNewTab={onOpenInNewTab}
                 onClick={onClickPin}
               />
@@ -69,21 +86,32 @@ export function PinnedPages({ pages, onReorder, onUnpin, onOpenInNewTab, onClick
           </div>
         </SortableContext>
       </DndContext>
+      <ConfirmDialog
+        isOpen={pendingUnpin !== null}
+        title={pendingUnpin ? `Unpin "${pendingUnpin.title}"?` : ''}
+        message="This will remove it from your sidebar. You can re-pin it from the tab's context menu."
+        confirmLabel="Unpin"
+        cancelLabel="Keep"
+        tone="danger"
+        onConfirm={confirmUnpin}
+        onCancel={() => setPendingUnpin(null)}
+      />
     </div>
   )
 }
 
 function SortablePinItem({
   page,
-  onUnpin,
+  onRequestUnpin,
   onOpenInNewTab,
   onClick,
 }: {
   page: PinnedPage
-  onUnpin: (url: string) => void
+  onRequestUnpin: (page: PinnedPage) => void
   onOpenInNewTab: (url: string) => void
   onClick: (url: string) => void
 }) {
+  log.debug('render pin item', { url: page.url })
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.url,
   })
@@ -94,10 +122,9 @@ function SortablePinItem({
     opacity: isDragging ? 0.5 : 1,
   }
 
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
-    const choice = window.confirm(`Unpin "${page.title}"?`)
-    if (choice) onUnpin(page.url)
+    onRequestUnpin(page)
   }
 
   return (

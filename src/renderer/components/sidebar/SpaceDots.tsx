@@ -41,22 +41,9 @@ export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace, isExpanded }: 
           />
         )
       })}
-      <button
-        className="rounded-full cursor-pointer flex items-center justify-center transition-colors"
-        style={{
-          width: 14,
-          height: 14,
-          border: '1px dashed rgba(206, 250, 5, 0.2)',
-          background: 'transparent',
-          color: 'rgba(206, 250, 5, 0.3)',
-          fontSize: 8,
-        }}
-        onClick={() => { /* Space creation not yet implemented */ }}
-        aria-label="Create new space"
-        title="New space (coming soon)"
-      >
-        +
-      </button>
+      {/* "+ new space" button hidden until the feature is wired — we intentionally
+         don't render a disabled-but-clickable affordance. Re-enable here when
+         space creation lands end-to-end. */}
     </div>
   )
 }

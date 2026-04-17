@@ -77,6 +77,15 @@
   --surface-translucent-active: rgba(206, 250, 5, 0.1);
   --border-subtle: rgba(206, 250, 5, 0.08);
   --border-active: rgba(206, 250, 5, 0.15);
+  --border-interactive: rgba(255, 255, 255, 0.1);
+
+  /* Accessible variants — used where token-on-surface text must meet WCAG AA (4.5:1).
+     Low-opacity primary (alpha 0.3-0.5) previously used for text fails contrast;
+     replace with these tokens instead. */
+  --primary-muted-accessible: #a8c804;
+
+  /* Overlay/backdrop for modals — replaces inline rgba(0,0,0,0.5) across dialogs. */
+  --surface-overlay-dim: rgba(0, 0, 0, 0.5);
 
   /* Command bar */
   --command-bar-bg: rgba(206, 250, 5, 0.06);
@@ -443,6 +452,43 @@ textarea:focus-visible,
     animation: none;
     box-shadow: 0 0 8px rgba(206, 250, 5, 0.4);
   }
+
+  /* Cards normally rely on cardFadeUp to animate from opacity 0 → 1. When
+     animations are disabled they'd be stuck invisible, so pin them to the
+     final state. */
+  .card-fade-up {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* === Range slider thumb (Obsidian Monolith) ===
+   Default native thumbs vary by platform and are invisible on some builds.
+   Explicit styling keeps sliders usable everywhere. */
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--surface-container-high);
+  box-shadow: 0 0 0 1px var(--primary-dim);
+  cursor: pointer;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--surface-container-high);
+  cursor: pointer;
+}
+
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(206, 250, 5, 0.4);
 }
 
 /* === Accessibility: Skip to Content === */
