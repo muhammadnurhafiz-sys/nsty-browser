@@ -51,6 +51,10 @@ function getOnHandler(channel: string): Function | undefined {
   return calls.find(([ch]) => ch === channel)?.[1]
 }
 
+// Trusted sender frame shape expected by security/ipc-guard — tests should
+// use this so the guard wrapper allows the call through to the business logic.
+const trustedEvent = { senderFrame: { url: 'app://./index.html' }, sender: { send: vi.fn() } }
+
 describe('IPC Handlers', () => {
   let mockTabManager: ReturnType<typeof createMockTabManager>
   let mockWindowManager: ReturnType<typeof createMockWindowManager>
@@ -72,7 +76,7 @@ describe('IPC Handlers', () => {
 
     it('should call tabManager.hideActiveView', () => {
       const handler = getOnHandler('overlay:show')!
-      handler({})
+      handler(trustedEvent)
       expect(mockTabManager.hideActiveView).toHaveBeenCalledTimes(1)
     })
   })
@@ -85,7 +89,7 @@ describe('IPC Handlers', () => {
 
     it('should call tabManager.showActiveView and windowManager.updateLayout', () => {
       const handler = getOnHandler('overlay:hide')!
-      handler({})
+      handler(trustedEvent)
       expect(mockTabManager.showActiveView).toHaveBeenCalledTimes(1)
       expect(mockWindowManager.updateLayout).toHaveBeenCalledTimes(1)
     })

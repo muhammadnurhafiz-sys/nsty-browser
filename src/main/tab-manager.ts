@@ -1,6 +1,7 @@
 import { BrowserView, type BrowserWindow } from 'electron'
 import { randomUUID } from 'node:crypto'
 import type { Tab, TabUpdateEvent } from '../shared/types'
+import { applyNavigationGuard } from './security/navigation-guard'
 
 interface ManagedTab {
   tab: Tab
@@ -24,6 +25,8 @@ export class TabManager {
         sandbox: true,
       },
     })
+
+    applyNavigationGuard(view.webContents)
 
     const tab: Tab = {
       id,

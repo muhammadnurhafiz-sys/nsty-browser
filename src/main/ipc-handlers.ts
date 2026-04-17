@@ -1,106 +1,113 @@
-import { ipcMain } from 'electron'
 import type { TabManager } from './tab-manager'
 import type { WindowManager } from './window-manager'
 import type { ClaudeClient } from './ai/claude-client'
 import { extractPageContext } from './ai/page-context'
 import { downloadUpdate, installUpdate } from './updater'
+import { safeOn, safeHandle } from './security/ipc-guard'
 
 export function registerIpcHandlers(
   tabManager: TabManager,
   windowManager: WindowManager,
   claudeClient?: ClaudeClient,
 ): void {
+  console.info('[ipc-handlers] registering guarded IPC channels')
+
   // Tab management
-  ipcMain.on('tab:create', (_event, url: string, spaceId: string) => {
+  safeOn('tab:create', (event, ...args) => {
+    const [url, spaceId] = args as [string, string]
     const tab = tabManager.createTab(url, spaceId)
     windowManager.updateLayout()
-    _event.sender.send('tab:created', tab)
+    event.sender.send('tab:created', tab)
   })
 
-  ipcMain.on('tab:close', (_event, tabId: string) => {
+  safeOn('tab:close', (_event, ...args) => {
+    const [tabId] = args as [string]
     tabManager.closeTab(tabId)
   })
 
-  ipcMain.on('tab:switch', (_event, tabId: string) => {
+  safeOn('tab:switch', (_event, ...args) => {
+    const [tabId] = args as [string]
     tabManager.switchTab(tabId)
     windowManager.updateLayout()
   })
 
-  ipcMain.on('tab:navigate', (_event, url: string) => {
+  safeOn('tab:navigate', (_event, ...args) => {
+    const [url] = args as [string]
     tabManager.navigateTo(url)
   })
 
-  ipcMain.on('tab:back', () => {
+  safeOn('tab:back', () => {
     tabManager.goBack()
   })
 
-  ipcMain.on('tab:forward', () => {
+  safeOn('tab:forward', () => {
     tabManager.goForward()
   })
 
-  ipcMain.on('tab:reload', () => {
+  safeOn('tab:reload', () => {
     tabManager.reload()
   })
 
   // Space management
-  ipcMain.on('space:switch', (_event, spaceId: string) => {
+  safeOn('space:switch', (_event, ...args) => {
+    const [spaceId] = args as [string]
     tabManager.switchSpace(spaceId)
     windowManager.updateLayout()
   })
 
   // Sidebar
-  ipcMain.on('sidebar:toggle', (event) => {
+  safeOn('sidebar:toggle', (event) => {
     const expanded = windowManager.toggleSidebar()
     event.sender.send('sidebar:toggled', expanded)
   })
 
   // Overlay (hide BrowserView so DOM modals are visible)
-  ipcMain.on('overlay:show', () => {
+  safeOn('overlay:show', () => {
     tabManager.hideActiveView()
   })
 
-  ipcMain.on('overlay:hide', () => {
+  safeOn('overlay:hide', () => {
     tabManager.showActiveView()
     windowManager.updateLayout()
   })
 
   // Session
-  ipcMain.handle('session:getSpaces', () => {
+  safeHandle('session:getSpaces', () => {
     // Will be implemented with session store
     return null
   })
 
-  ipcMain.handle('layout:info', () => {
+  safeHandle('layout:info', () => {
     return windowManager.getLayoutInfo()
   })
 
   // AI messages
-  ipcMain.on('ai:send', async (_event, message: string, conversationId: string | null) => {
+  safeOn('ai:send', async (_event, ...args) => {
+    const [message, conversationId] = args as [string, string | null]
     if (!claudeClient) return
 
-    // Extract page context from active tab
     const activeView = tabManager.getActiveView()
     const pageContext = await extractPageContext(activeView)
 
-    // Send to Claude (streaming handled inside client)
     await claudeClient.sendMessage(message, conversationId, pageContext, 'sonnet')
   })
 
   // AI API key setup
-  ipcMain.on('ai:setApiKey', (_event, apiKey: string) => {
+  safeOn('ai:setApiKey', (_event, ...args) => {
+    const [apiKey] = args as [string]
     claudeClient?.setApiKey(apiKey)
   })
 
-  ipcMain.handle('ai:isReady', () => {
+  safeHandle('ai:isReady', () => {
     return claudeClient?.isReady() ?? false
   })
 
   // Auto-update
-  ipcMain.on('update:download', () => {
+  safeOn('update:download', () => {
     downloadUpdate()
   })
 
-  ipcMain.on('update:install', () => {
+  safeOn('update:install', () => {
     installUpdate()
   })
 }

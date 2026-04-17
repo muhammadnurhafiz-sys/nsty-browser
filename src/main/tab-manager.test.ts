@@ -13,12 +13,14 @@ vi.mock('electron', () => {
       goForward: vi.fn(),
       reload: vi.fn(),
       getTitle: vi.fn().mockReturnValue('Test'),
+      setWindowOpenHandler: vi.fn(),
     }
     setBounds = vi.fn()
   }
   return {
     BrowserView: MockBrowserView,
     BrowserWindow: vi.fn(),
+    shell: { openExternal: vi.fn().mockResolvedValue(undefined) },
   }
 })
 

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut, protocol, net } from 'electron'
+import { app, BrowserWindow, globalShortcut, protocol, net, session } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
@@ -11,6 +11,8 @@ import { scheduleFilterUpdates } from './shield/filter-lists'
 import { closeDatabase } from './store/database'
 import { ClaudeClient } from './ai/claude-client'
 import { setupAutoUpdater } from './updater'
+import { installCsp } from './security/csp'
+import { applyNavigationGuard } from './security/navigation-guard'
 
 let mainWindow: BrowserWindow | null = null
 let tabManager: TabManager | null = null
@@ -56,9 +58,11 @@ function createWindow(): void {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
     },
   })
+
+  applyNavigationGuard(mainWindow.webContents)
 
   tabManager = new TabManager(mainWindow)
   windowManager = new WindowManager(mainWindow, tabManager)
@@ -160,6 +164,10 @@ app.whenReady().then(() => {
     const pathToServe = path.join(app.getAppPath(), 'dist', 'renderer', pathname)
     return net.fetch(pathToFileURL(pathToServe).toString())
   })
+
+  // Strict CSP for every response — blocks inline-script injection and
+  // prevents foreign origins from running code or embedding the window.
+  installCsp(session.defaultSession, isDev)
 
   createWindow()
 
