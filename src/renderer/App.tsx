@@ -38,12 +38,21 @@ export function App() {
 
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
 
-  // Listen for sidebar toggle from main process
+  // Main process is the source of truth for sidebar width (owns BrowserView bounds).
+  // Renderer subscribes to echoes so React state matches main after each toggle.
   useEffect(() => {
     if (!window.nsty) return
-    return window.nsty.onSidebarToggle(() => {
-      setSidebarExpanded(prev => !prev)
+    return window.nsty.onSidebarToggle((expanded) => {
+      setSidebarExpanded(expanded)
     })
+  }, [])
+
+  const handleToggleSidebar = useCallback(() => {
+    if (window.nsty?.toggleSidebar) {
+      window.nsty.toggleSidebar()
+    } else {
+      setSidebarExpanded(prev => !prev)
+    }
   }, [])
 
   // Listen for history toggle from main process
@@ -85,7 +94,7 @@ export function App() {
         activeSpaceId={activeSpaceId}
         activeTabId={activeTabId}
         isExpanded={sidebarExpanded}
-        onToggleExpand={() => setSidebarExpanded(prev => !prev)}
+        onToggleExpand={handleToggleSidebar}
         onSwitchSpace={switchSpace}
         onSwitchTab={switchTab}
         onCloseTab={closeTab}
