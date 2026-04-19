@@ -8,6 +8,29 @@ Nsty Browser is an Electron-based desktop browser built with:
 - Claude AI integration (@anthropic-ai/sdk)
 - Design system: "Obsidian Monolith" (dark theme, neon green #CEFA05 accent)
 
+## Build Environment (VPS, Headless Linux)
+This project is developed on a **headless Linux VPS**, not the user's local machine. The user does NOT run builds locally — they download finished installers from this VPS.
+
+**Implication for Claude:** after implementing changes, build the installers HERE and leave them in `release/` so the user can fetch them. Do not tell the user to "run `npm run package:*` locally" — they can't.
+
+### Platform build matrix (on this VPS)
+| Platform | Built here? | Command | Output in `release/` |
+|----------|-------------|---------|----------------------|
+| Linux AppImage | ✅ Native | `npm run package:linux` | `Nsty Browser-<ver>.AppImage` |
+| Windows NSIS `.exe` installer | ✅ If Wine installed | `npm run package:win` | `Nsty Browser Setup <ver>.exe` |
+| Windows portable `.tar.gz` | ✅ Fallback without Wine | `npx electron-builder --win portable` | `nsty-browser-v<ver>-win-x64-portable.tar.gz` |
+| macOS `.dmg` | ❌ CI only | (GitHub Actions) | — |
+
+### Wine prerequisite for `.exe` installer
+Building the NSIS `.exe` from Linux requires Wine. Check once with `which wine`; if missing, install:
+```bash
+sudo apt-get update && sudo apt-get install -y wine wine64
+```
+Without Wine, `npm run package:win` will fail or silently produce only the portable tar.gz.
+
+### Where the user downloads from
+Completed artifacts sit in `/root/nsty-browser/release/`. The user retrieves them via SCP/SFTP/HTTP from the VPS. After a build, always list the new artifact paths in the final response so the user knows what to download.
+
 ## Build & Release Pipeline
 After implementing changes, always follow this sequence:
 1. `npm run lint` — TypeScript typecheck (tsc --noEmit)
@@ -16,10 +39,11 @@ After implementing changes, always follow this sequence:
 4. Version bump in package.json
 5. Git commit with conventional prefix
 6. Git tag matching version
-7. Git push with tags → triggers GitHub Actions CI (builds Win/Mac/Linux)
-8. Local build: `npm run package:linux` + `npx electron-builder --win` (WSL2 can cross-compile Windows, macOS is CI-only)
+7. Git push with tags → triggers GitHub Actions CI (builds Win/Mac/Linux for GitHub Releases)
+8. **Build installers on this VPS** — `npm run package:linux` and `npm run package:win` (requires Wine for `.exe`, see above)
+9. Report new artifact paths in `release/` so the user can download
 
-Use `/release` skill to automate steps 4-7. Use `/deploy-desktop` skill to automate step 8 (auto-chained after `/release` for Electron apps).
+Use `/release` skill to automate steps 4-7. Use `/deploy-desktop` skill to automate step 8 (auto-chained after `/release` for Electron apps). macOS `.dmg` is CI-only.
 
 ## Pre-commit Hook Awareness
 The global TDD gate hook blocks `feat:` and `fix:` commits if test files are missing for changed modules.
