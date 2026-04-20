@@ -42,14 +42,25 @@ export function App() {
   // above DOM in its bounds) hides the popup. HistoryPanel already does
   // this; Settings and Shield wrap togglers below pipe through the same.
   const openSettings = useCallback(() => {
-    log.info('open settings')
+    log.info('[Settings] open click received')
+    // Show overlay synchronously; the IPC call is fire-and-forget, but we
+    // flip React state in the same tick so the panel mounts regardless of
+    // round-trip timing.
+    try {
+      window.nsty?.showOverlay()
+    } catch (err) {
+      log.warn('[Settings] showOverlay failed (non-fatal)', { err: String(err) })
+    }
     setSettingsOpen(true)
-    window.nsty?.showOverlay()
   }, [])
   const closeSettings = useCallback(() => {
-    log.info('close settings')
+    log.info('[Settings] close')
     setSettingsOpen(false)
-    window.nsty?.hideOverlay()
+    try {
+      window.nsty?.hideOverlay()
+    } catch (err) {
+      log.warn('[Settings] hideOverlay failed (non-fatal)', { err: String(err) })
+    }
   }, [])
 
   const handleToggleShield = useCallback(() => {

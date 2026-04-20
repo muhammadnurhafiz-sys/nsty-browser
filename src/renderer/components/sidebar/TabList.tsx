@@ -43,23 +43,7 @@ function groupTabsByDay(tabs: Tab[]): TabGroup[] {
 export function TabList({ tabs, activeTabId, onSwitchTab, onCloseTab, onPinTab }: TabListProps) {
   const groups = groupTabsByDay(tabs)
 
-  if (tabs.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="text-center">
-          <span
-            className="material-symbols-outlined mb-2 block"
-            style={{ fontSize: 24, color: 'var(--outline)', opacity: 0.4 }}
-          >
-            tab
-          </span>
-          <p className="font-body text-[11px]" style={{ color: 'var(--outline)' }}>
-            No open tabs in this space
-          </p>
-        </div>
-      </div>
-    )
-  }
+  if (tabs.length === 0) return <div className="flex-1" />
 
   return (
     <div className="flex-1 overflow-y-auto hide-scrollbar py-1">
