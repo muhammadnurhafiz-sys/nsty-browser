@@ -51,11 +51,11 @@ export function App() {
   }, [])
 
   const handleToggleSidebar = useCallback(() => {
-    if (window.nsty?.toggleSidebar) {
-      window.nsty.toggleSidebar()
-    } else {
-      setSidebarExpanded(prev => !prev)
-    }
+    // Optimistic flip so the click feels instant even if the IPC round-trip
+    // stalls. The `onSidebarToggle` subscription reconciles to main's truth.
+    setSidebarExpanded(prev => !prev)
+    window.nsty?.toggleSidebar()
+    log.info('toggle sidebar')
   }, [])
 
   useEffect(() => {
@@ -94,8 +94,6 @@ export function App() {
 
       <TopBar
         currentUrl={currentUrl}
-        sidebarExpanded={sidebarExpanded}
-        onToggleSidebar={handleToggleSidebar}
         onBack={() => window.nsty?.goBack()}
         onForward={() => window.nsty?.goForward()}
         onReload={() => window.nsty?.reload()}
@@ -115,6 +113,7 @@ export function App() {
           activeSpaceId={activeSpaceId}
           activeTabId={activeTabId}
           isExpanded={sidebarExpanded}
+          onToggleExpand={handleToggleSidebar}
           onSwitchSpace={switchSpace}
           onSwitchTab={switchTab}
           onCloseTab={closeTab}

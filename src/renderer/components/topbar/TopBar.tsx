@@ -2,11 +2,12 @@ import type { ShieldStats } from '@shared/types'
 import { NavControls } from './NavControls'
 import { ShieldButton } from './ShieldButton'
 import { AddressBar } from './AddressBar'
+import { createLogger } from '../../utils/logger'
+
+const log = createLogger('TopBar')
 
 interface TopBarProps {
   currentUrl: string
-  sidebarExpanded: boolean
-  onToggleSidebar: () => void
   onBack: () => void
   onForward: () => void
   onReload: () => void
@@ -30,8 +31,6 @@ const CHROME_RIGHT_PAD = isMac ? 8 : 148
 
 export function TopBar({
   currentUrl,
-  sidebarExpanded,
-  onToggleSidebar,
   onBack,
   onForward,
   onReload,
@@ -44,6 +43,7 @@ export function TopBar({
   onCloseShieldPopup,
   onDisableShieldForSite,
 }: TopBarProps) {
+  log.debug('render', { currentUrl, shieldCount })
   return (
     <header
       role="toolbar"
@@ -57,22 +57,16 @@ export function TopBar({
         paddingRight: CHROME_RIGHT_PAD,
       } as React.CSSProperties}
     >
-      <button
-        type="button"
-        onClick={onToggleSidebar}
-        className="w-7 h-7 rounded-md flex items-center justify-center cursor-pointer transition-colors hover-surface"
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-        aria-label={sidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-        title={sidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-      >
-        <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--outline)' }}>
-          {sidebarExpanded ? 'left_panel_close' : 'left_panel_open'}
-        </span>
-      </button>
-
       <NavControls onBack={onBack} onForward={onForward} onReload={onReload} />
 
-      <AddressBar currentUrl={currentUrl} onNavigate={onNavigate} />
+      {/* Arc-style: address bar is a centered pill, not a full-width input.
+          Flex-1 on both sides pushes it to the middle; max-width keeps it
+          from stretching on wide monitors. */}
+      <div className="flex-1 flex justify-end min-w-0" />
+      <div className="w-full max-w-[460px] flex-shrink">
+        <AddressBar currentUrl={currentUrl} onNavigate={onNavigate} />
+      </div>
+      <div className="flex-1 flex justify-start min-w-0" />
 
       <ShieldButton
         count={shieldCount}

@@ -14,6 +14,7 @@ interface SidebarProps {
   activeSpaceId: string
   activeTabId: string | null
   isExpanded: boolean
+  onToggleExpand: () => void
   onSwitchSpace: (spaceId: string) => void
   onSwitchTab: (tabId: string) => void
   onCloseTab: (tabId: string) => void
@@ -32,6 +33,7 @@ export function Sidebar({
   activeSpaceId,
   activeTabId,
   isExpanded,
+  onToggleExpand,
   onSwitchSpace,
   onSwitchTab,
   onCloseTab,
@@ -47,6 +49,21 @@ export function Sidebar({
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   log.debug('render', { isExpanded, activeSpaceId, userMenuOpen })
 
+  const handleUserMenuToggle = () => {
+    log.info('user menu toggle', { wasOpen: userMenuOpen, isExpanded })
+    // The BrowserView sits above DOM in its bounds, so the menu is only
+    // guaranteed visible when it stays within the sidebar's width. In
+    // collapsed mode there's not enough room for the labelled menu, so we
+    // expand the sidebar first and let the menu render inside it.
+    if (!userMenuOpen && !isExpanded) onToggleExpand()
+    setUserMenuOpen(prev => !prev)
+  }
+
+  const handleUserMenuClose = () => {
+    log.debug('user menu close')
+    setUserMenuOpen(false)
+  }
+
   const sidebarWidth = isExpanded ? 240 : 60
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
   const tabs = activeSpace?.tabs ?? []
@@ -59,7 +76,13 @@ export function Sidebar({
       style={{ width: sidebarWidth }}
     >
       <div className={`flex items-center ${isExpanded ? 'px-4' : 'justify-center'} pt-3 pb-2`}>
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className="flex items-center gap-2 bg-transparent border-0 p-0 appearance-none cursor-pointer"
+          aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+          title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
           <HexIcon size={isExpanded ? 22 : 20} />
           {isExpanded && (
             <span
@@ -69,7 +92,7 @@ export function Sidebar({
               nsty
             </span>
           )}
-        </div>
+        </button>
       </div>
 
       <div className={`flex ${isExpanded ? 'px-3 justify-start' : 'justify-center'} pb-2`}>
@@ -126,12 +149,12 @@ export function Sidebar({
           {userMenuOpen && (
             <UserMenu
               onOpenSettings={onOpenSettings}
-              onClose={() => setUserMenuOpen(false)}
+              onClose={handleUserMenuClose}
             />
           )}
           <button
             type="button"
-            onClick={() => setUserMenuOpen(prev => !prev)}
+            onClick={handleUserMenuToggle}
             className="cursor-pointer"
             aria-label={`User menu for ${userProfile.name}`}
             aria-expanded={userMenuOpen}

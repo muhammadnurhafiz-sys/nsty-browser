@@ -21,7 +21,7 @@ export function UserMenu({ onOpenSettings, onClose }: UserMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="absolute bottom-full left-1 mb-2 w-44 rounded-xl shadow-xl overflow-hidden glass-panel fade-in"
+      className="absolute bottom-full right-0 mb-2 w-44 rounded-xl shadow-xl overflow-hidden glass-panel fade-in"
     >
       <button type="button"
         onClick={() => { onOpenSettings(); onClose() }}
