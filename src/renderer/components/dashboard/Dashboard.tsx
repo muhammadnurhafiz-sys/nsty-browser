@@ -40,8 +40,11 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
   return (
     <div className="h-full overflow-y-auto hide-scrollbar flex items-center justify-center">
       <div style={{ maxWidth: 480, width: '100%', padding: '0 24px' }}>
-        {/* Greeting */}
-        <p className="font-body text-sm text-center mb-6" style={{ color: 'rgba(var(--primary-rgb), 0.6)' }}>
+        {/* Greeting — hero line, accessible muted primary, balanced wrap */}
+        <p
+          className="font-headline text-lg text-center mb-6 text-balance"
+          style={{ color: 'var(--primary-muted-accessible)', letterSpacing: '-0.01em' }}
+        >
           {getGreeting()}{userName ? `, ${userName}` : ''}
         </p>
 
@@ -54,7 +57,7 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
             title="Recent"
             icon="schedule"
             items={recentItems}
-            emptyMessage="No recent tabs"
+            emptyMessage="Nothing here yet. Open a tab and it'll show up."
             onItemClick={onNavigate}
           />
         </div>
@@ -66,7 +69,7 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
               title="Pinned"
               icon="push_pin"
               items={pinnedItems}
-              emptyMessage="No pinned pages"
+              emptyMessage="Pin a page from a tab's right-click menu to keep it here."
               onItemClick={onNavigate}
             />
           </div>
