@@ -142,7 +142,7 @@ export function Sidebar({
           type="button"
           onClick={onNewTab}
           className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors hover-surface`}
-          style={{ color: 'rgba(var(--primary-rgb), 0.55)' }}
+          style={{ color: 'var(--on-surface-variant)' }}
           aria-label="New tab"
           title="New tab"
         >

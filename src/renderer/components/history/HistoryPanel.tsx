@@ -71,7 +71,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
           className="flex items-center gap-3"
           style={{ padding: 'var(--menu-item-pad-y) var(--menu-item-pad-x)' }}
         >
-          <span className="material-symbols-outlined text-[18px]" style={{ color: 'rgba(var(--primary-rgb), 0.5)' }}>search</span>
+          <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--on-surface-variant)' }}>search</span>
           <input
             type="text"
             value={query}
@@ -106,19 +106,65 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
           style={{ gap: 'var(--menu-gap)' }}
         >
           {entries.length === 0 && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <span
-                  className="material-symbols-outlined mb-3 block"
-                  style={{ fontSize: 32, color: 'var(--outline)', opacity: 0.35 }}
+            query ? (
+              <div className="px-3 py-6">
+                <p
+                  className="font-body text-[11px]"
+                  style={{ color: 'var(--on-surface-variant)' }}
                 >
-                  history
-                </span>
-                <p className="font-body text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-                  {query ? 'No matches found' : 'Your browsing history will appear here'}
+                  No matches for <span className="font-mono" style={{ color: 'var(--on-surface)' }}>"{query}"</span>.
                 </p>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col gap-1 px-3 py-4">
+                {[
+                  'No entries yet in this space',
+                  'Private windows are not recorded',
+                  'Syncs locally only',
+                ].map(line => (
+                  <div
+                    key={line}
+                    className="flex items-center gap-2.5 py-1.5 font-body text-[11px]"
+                    style={{ color: 'var(--on-surface-variant)' }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: '50%',
+                        background: 'var(--outline)',
+                        flexShrink: 0,
+                      }}
+                    />
+                    {line}
+                  </div>
+                ))}
+                <div
+                  className="flex items-center gap-2 mt-3 pt-3 font-label text-[10px] uppercase"
+                  style={{
+                    borderTop: '1px solid var(--border-subtle)',
+                    color: 'var(--outline)',
+                    letterSpacing: '0.12em',
+                  }}
+                >
+                  Press
+                  <kbd
+                    className="font-mono text-[10px] normal-case"
+                    style={{
+                      background: 'var(--surface-container-highest)',
+                      color: 'var(--on-surface)',
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      letterSpacing: 0,
+                    }}
+                  >
+                    Esc
+                  </kbd>
+                  to close
+                </div>
+              </div>
+            )
           )}
 
           {entries.map(entry => (

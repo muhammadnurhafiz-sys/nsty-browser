@@ -184,7 +184,7 @@
   --text-muted: var(--outline);
   --accent: var(--primary);
   --accent-hover: var(--primary-dim);
-  --accent-subtle: rgba(206, 250, 5, 0.12);
+  --accent-subtle: rgba(var(--primary-hot-rgb), 0.12);
   --green: #34d399;
   --blue: #60a5fa;
   --orange: #fb923c;
@@ -201,7 +201,11 @@
   --surface-translucent-hover: rgba(255, 255, 255, 0.05);
   --surface-translucent-active: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-active: rgba(206, 250, 5, 0.25);
+  /* Active state border — now NEUTRAL (was the neon focus ring that
+     screamed AI). Used by AddressBar focus, TabItem active, user avatar.
+     For deliberate brand rings, use --border-active-hot instead. */
+  --border-active: rgba(255, 255, 255, 0.16);
+  --border-active-hot: rgba(var(--primary-hot-rgb), 0.35);
   --border-interactive: rgba(255, 255, 255, 0.1);
 
   /* Accessible variants — used where token-on-surface text must meet WCAG AA (4.5:1).
@@ -505,8 +509,8 @@ a[href]:active,
 
 /* Glow pulse for active sidebar icon */
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(206, 250, 5, 0.4); }
-  50% { box-shadow: 0 0 14px rgba(206, 250, 5, 0.6); }
+  0%, 100% { box-shadow: 0 0 8px rgba(var(--primary-hot-rgb), 0.4); }
+  50% { box-shadow: 0 0 14px rgba(var(--primary-hot-rgb), 0.6); }
 }
 
 .glow-pulse {
@@ -840,7 +844,7 @@ textarea:focus-visible,
 
   .glow-pulse {
     animation: none;
-    box-shadow: 0 0 8px rgba(206, 250, 5, 0.4);
+    box-shadow: 0 0 8px rgba(var(--primary-hot-rgb), 0.4);
   }
 
   /* Cards normally rely on cardFadeUp to animate from opacity 0 → 1. When
@@ -878,7 +882,7 @@ input[type='range']::-moz-range-thumb {
 }
 
 input[type='range']:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(206, 250, 5, 0.4);
+  box-shadow: 0 0 0 3px rgba(var(--primary-hot-rgb), 0.4);
 }
 
 /* === Accessibility: Skip to Content === */

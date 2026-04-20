@@ -55,11 +55,14 @@ export function AddressBar({ currentUrl, onNavigate }: AddressBarProps) {
         style={{
           background: 'var(--command-bar-bg)',
           border: `1px solid ${focused ? 'var(--border-active)' : 'var(--command-bar-border)'}`,
+          // Liquid-glass inset highlight per taste-skill §4 —
+          // anchors the pill in the top bar without another outer ring.
+          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
         }}
       >
         <span
           className="material-symbols-outlined flex-shrink-0"
-          style={{ fontSize: 14, color: 'rgba(var(--primary-rgb), 0.45)' }}
+          style={{ fontSize: 14, color: 'var(--on-surface-variant)' }}
         >
           {currentUrl.startsWith('https://') ? 'lock' : 'search'}
         </span>
