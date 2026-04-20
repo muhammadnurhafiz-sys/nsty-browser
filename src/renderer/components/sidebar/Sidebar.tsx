@@ -83,11 +83,11 @@ export function Sidebar({
           aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
           title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          <HexIcon size={isExpanded ? 22 : 20} />
+          <HexIcon size={isExpanded ? 22 : 20} color="var(--primary-hot)" />
           {isExpanded && (
             <span
               className="font-headline text-[13px] font-bold uppercase"
-              style={{ color: 'var(--primary)', letterSpacing: '0.18em' }}
+              style={{ color: 'var(--primary-hot)', letterSpacing: '0.18em' }}
             >
               nsty
             </span>
@@ -176,7 +176,7 @@ export function Sidebar({
               {userProfile.avatarUrl ? (
                 <img src={userProfile.avatarUrl} className="w-full h-full object-cover" alt={userProfile.name} />
               ) : (
-                <span className="font-headline text-[11px] font-bold" style={{ color: 'var(--primary)' }}>
+                <span className="font-headline text-[11px] font-bold" style={{ color: 'var(--primary-hot)' }}>
                   {userProfile.name?.charAt(0)?.toUpperCase() || '?'}
                 </span>
               )}

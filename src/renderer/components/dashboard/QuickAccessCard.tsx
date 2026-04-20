@@ -16,8 +16,11 @@ interface QuickAccessCardProps {
 export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, animationClass = '', onItemClick }: QuickAccessCardProps) {
   return (
     <div
-      className={`rounded-xl p-4 card-fade-up shadow-border ${animationClass}`}
-      style={{ background: 'var(--surface-container-high)' }}
+      className={`rounded-lg p-4 card-fade-up ${animationClass}`}
+      style={{
+        background: 'transparent',
+        border: '1px solid var(--border-subtle)',
+      }}
     >
       {/* Header */}
       <div

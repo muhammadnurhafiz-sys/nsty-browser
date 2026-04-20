@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nsty Browser — Taste Audit & Mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* ---- v2 Obsidian Monolith, retuned to taste-skill rules ---- */
+
+    /* Off-black base with a faint chromatic bias (NO #000000) */
+    --bg-0: #0b0c0d;
+    --bg-1: #121315;
+    --bg-2: #1a1c1e;
+    --bg-3: #24262a;
+
+    /* Text */
+    --fg-0: #f5f6f7;
+    --fg-1: #cfd0d2;
+    --fg-2: #8b8e92;
+    --fg-3: #5a5d61;
+
+    /* Borders — subtle, neutral, consistent */
+    --border: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.10);
+
+    /* Accent — desaturated from HSL 69/96/50 to 69/70/55 for daily use.
+       The pure neon is reserved as --accent-hot for ONE moment per screen. */
+    --accent: #c5dc5c;         /* desaturated daily-driver */
+    --accent-dim: #a8bc4a;
+    --accent-hot: #cefa05;     /* original neon — rare, high-signal */
+    --accent-tint: rgba(197, 220, 92, 0.10);
+    --accent-ink: #1b2001;
+
+    /* Typography scale (deterministic, 1.2 ratio) */
+    --t-11: 11px;
+    --t-12: 12px;
+    --t-13: 13px;
+    --t-15: 15px;
+    --t-18: 18px;
+    --t-22: 22px;
+    --t-28: 28px;
+    --t-34: 34px;
+
+    /* Radius */
+    --r-sm: 4px;
+    --r-md: 8px;
+    --r-lg: 12px;
+    --r-xl: 16px;
+
+    /* Menu tokens — mirror what shipped in 0.4.2 */
+    --menu-pad: 6px;
+    --menu-item-pad-x: 12px;
+    --menu-item-pad-y: 8px;
+    --menu-item-radius: 8px;
+    --menu-gap: 2px;
+    --menu-sep-inset: 8px;
+    --menu-sep-margin-y: 4px;
+    --menu-icon-gap: 10px;
+
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #08090a; color: var(--fg-0); }
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    padding: 40px 24px 120px;
+    max-width: 1280px;
+    margin: 0 auto;
+    font-size: var(--t-13);
+    line-height: 1.5;
+  }
+  .page-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: var(--t-28);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    color: var(--fg-2);
+    margin-bottom: 48px;
+    max-width: 65ch;
+  }
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: var(--t-11);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--fg-2);
+    margin: 56px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: ''; width: 18px; height: 1px; background: var(--fg-3);
+  }
+
+  /* Side-by-side compare grid */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+  }
+  .panel {
+    background: var(--bg-1);
+    border-radius: var(--r-lg);
+    box-shadow: 0 0 0 1px var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 320px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: var(--t-11);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--fg-2);
+  }
+  .tag { padding: 2px 8px; border-radius: 999px; font-size: 10px; letter-spacing: 0.1em; }
+  .tag--before { background: rgba(255, 90, 90, 0.12); color: #ff8f8f; border: 1px solid rgba(255, 90, 90, 0.25); }
+  .tag--after { background: var(--accent-tint); color: var(--accent); border: 1px solid rgba(197, 220, 92, 0.28); }
+  .demo { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-0); border-radius: var(--r-md); padding: 24px; position: relative; overflow: hidden; }
+  .note { color: var(--fg-2); font-size: var(--t-12); line-height: 1.55; }
+  .note b { color: var(--fg-0); font-weight: 500; }
+
+  /* ------- Demo 1: search input focus ring ------- */
+  .search-before, .search-after {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-2);
+    border-radius: 999px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-size: var(--t-13);
+  }
+  .search-before {
+    box-shadow: 0 0 0 2px var(--accent-hot), 0 0 24px rgba(206, 250, 5, 0.55);
+    color: var(--fg-1);
+  }
+  .search-after {
+    box-shadow: 0 0 0 1px var(--border-strong), inset 0 1px 0 rgba(255,255,255,0.03);
+    color: var(--fg-1);
+  }
+  .search-before .cursor, .search-after .cursor {
+    width: 8px; height: 14px; background: var(--accent); border-radius: 1px;
+    animation: blink 1.1s steps(2, start) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ------- Demo 2: dashboard before/after ------- */
+  .mini-dash {
+    width: 100%;
+    background: var(--bg-0);
+    border-radius: var(--r-md);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .dash-before { max-width: 360px; margin: 0 auto; /* centered, narrow */ }
+  .dash-before .card {
+    background: var(--bg-2); border-radius: var(--r-lg); padding: 14px 16px;
+    box-shadow: 0 0 0 1px var(--border), 0 12px 24px rgba(0, 0, 0, 0.35);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .dash-before .greet { font-family: 'Space Grotesk'; font-size: var(--t-22); font-weight: 600; }
+  .dash-before .metric-v { font-family: 'Space Grotesk'; font-size: var(--t-22); font-weight: 700; color: var(--accent-hot); }
+
+  /* After: left-aligned, edge-to-edge, divider-grouped, bento */
+  .dash-after {}
+  .dash-after .greet {
+    font-family: 'Space Grotesk';
+    font-size: var(--t-28);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    margin-bottom: 8px;
+  }
+  .dash-after .greet-sub { color: var(--fg-2); font-size: var(--t-12); margin-bottom: 20px; }
+  .dash-after .metrics-row {
+    display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .dash-after .metric {
+    padding: 14px 18px;
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .dash-after .metric:first-child { border-left: 0; padding-left: 0; }
+  .dash-after .metric-v {
+    font-family: 'Geist Mono', monospace;
+    font-size: var(--t-22);
+    font-weight: 500;
+    color: var(--fg-0);
+    letter-spacing: -0.01em;
+    line-height: 1;
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .dash-after .metric-v .pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 0 var(--accent);
+    animation: breathe 2.4s ease-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(197, 220, 92, 0.45); }
+    50% { box-shadow: 0 0 0 6px rgba(197, 220, 92, 0); }
+  }
+  .dash-after .metric-l {
+    font-family: 'Space Grotesk'; font-size: var(--t-11);
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-2);
+  }
+  .dash-after .bento {
+    display: grid; gap: 8px;
+    grid-template-columns: 1.4fr 1fr;
+    grid-auto-rows: 70px;
+    margin-top: 20px;
+  }
+  .dash-after .tile {
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--r-md);
+    padding: 12px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    color: var(--fg-1); font-size: var(--t-12);
+  }
+  .dash-after .tile.wide { grid-column: span 2; grid-row: span 1; }
+  .dash-after .tile .lbl { font-size: 10px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.14em; }
+
+  /* ------- Demo 3: shield status dot breathing ------- */
+  .shield-before, .shield-after {
+    padding: 12px 14px; border-radius: var(--r-md);
+    background: var(--bg-2);
+    display: flex; align-items: center; gap: 10px;
+    font-size: var(--t-13);
+  }
+  .shield-before {
+    box-shadow: 0 0 0 1px var(--border), 0 0 16px rgba(206, 250, 5, 0.4);
+  }
+  .shield-before .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent-hot);
+    box-shadow: 0 0 10px var(--accent-hot);
+  }
+  .shield-after { box-shadow: 0 0 0 1px var(--border); }
+  .shield-after .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    animation: breathe 2.4s ease-out infinite;
+  }
+
+  /* ------- Demo 4: empty state dense vs. airy ------- */
+  .empty-before, .empty-after {
+    width: 100%; max-width: 360px;
+    background: var(--bg-2);
+    border-radius: var(--r-md);
+    padding: 16px;
+  }
+  .empty-before .airy {
+    padding: 56px 16px; text-align: center; color: var(--fg-2);
+  }
+  .empty-before .airy .icon { font-family: 'Material Symbols Outlined'; font-size: 40px; color: var(--fg-3); display: block; margin-bottom: 12px; opacity: 0.5; }
+  .empty-after .dense { display: flex; flex-direction: column; gap: 6px; }
+  .empty-after .dense .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--r-sm);
+    color: var(--fg-2);
+  }
+  .empty-after .dense .row .mark {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--fg-3);
+  }
+  .empty-after .dense .hint {
+    font-size: var(--t-11); color: var(--fg-3); margin-top: 8px;
+    padding: 6px 10px; border-top: 1px solid var(--border);
+  }
+  .empty-after .dense .hint kbd {
+    background: var(--bg-3); padding: 1px 5px; border-radius: 3px;
+    font-family: 'Geist Mono'; font-size: 10px;
+  }
+
+  /* ------- Demo 5: menus (already shipped) ------- */
+  .menu-demo {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--menu-pad);
+    width: 220px;
+    display: flex; flex-direction: column; gap: var(--menu-gap);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+  .menu-demo .mi {
+    display: flex; align-items: center; gap: var(--menu-icon-gap);
+    padding: var(--menu-item-pad-y) var(--menu-item-pad-x);
+    border-radius: var(--menu-item-radius);
+    color: var(--fg-0); cursor: pointer;
+    transition: background 120ms var(--ease-out);
+  }
+  .menu-demo .mi:hover { background: rgba(255,255,255,0.05); }
+  .menu-demo .mi.disabled { color: var(--fg-3); cursor: not-allowed; }
+  .menu-demo .ic { font-family: 'Material Symbols Outlined'; font-size: 16px; color: var(--fg-2); }
+  .menu-demo hr {
+    border: 0; height: 1px; background: var(--border);
+    margin: var(--menu-sep-margin-y) var(--menu-sep-inset);
+  }
+
+  /* ------- Demo 6: full window preview ------- */
+  .window-shell {
+    width: 100%;
+    aspect-ratio: 16 / 9.2;
+    background: var(--bg-0);
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px var(--border-strong), 0 40px 80px -20px rgba(0,0,0,0.6);
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    overflow: hidden;
+    position: relative;
+  }
+  .ws-sidebar {
+    background: rgba(255,255,255,0.015);
+    border-right: 1px solid var(--border);
+    padding: 14px 10px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .ws-brand {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 6px; margin-bottom: 4px;
+  }
+  .ws-brand .hex {
+    width: 18px; height: 18px; background: var(--accent); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  }
+  .ws-brand .name {
+    font-family: 'Space Grotesk'; font-size: 11px; letter-spacing: 0.18em;
+    font-weight: 700; color: var(--fg-0);
+  }
+  .ws-dots { display: flex; gap: 6px; padding: 0 6px 6px; border-bottom: 1px solid var(--border); }
+  .ws-dots .d { width: 9px; height: 9px; border-radius: 50%; background: var(--fg-3); }
+  .ws-dots .d.active { background: var(--accent-hot); box-shadow: 0 0 8px rgba(206, 250, 5, 0.5); }
+  .ws-section {
+    font-family: 'Space Grotesk'; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.14em; color: var(--fg-3);
+    padding: 8px 6px 4px;
+  }
+  .ws-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px;
+    font-size: var(--t-12); color: var(--fg-1); cursor: pointer;
+  }
+  .ws-item:hover { background: rgba(255,255,255,0.04); }
+  .ws-item.current { background: rgba(255,255,255,0.06); color: var(--fg-0); }
+  .ws-item .fav { width: 12px; height: 12px; border-radius: 3px; background: var(--bg-3); }
+  .ws-item .fav.g { background: var(--accent-dim); }
+  .ws-item .fav.r { background: #d17a5a; }
+  .ws-item .fav.b { background: #7aa6d1; }
+  .ws-item .close {
+    margin-left: auto; color: var(--fg-3); font-size: 12px; opacity: 0; transition: opacity 120ms;
+  }
+  .ws-item:hover .close { opacity: 1; }
+  .ws-foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-top: 1px solid var(--border); }
+  .ws-foot .avatar {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--bg-3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk'; font-size: 10px; font-weight: 700; color: var(--fg-0);
+    box-shadow: 0 0 0 1px var(--border-strong);
+  }
+  .ws-foot .new { color: var(--fg-2); font-size: var(--t-12); display: flex; align-items: center; gap: 6px; margin-left: auto; cursor: pointer; }
+  .ws-foot .new:hover { color: var(--fg-0); }
+
+  .ws-main { display: flex; flex-direction: column; min-width: 0; }
+  .ws-top {
+    height: 40px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ws-nav { display: flex; gap: 4px; color: var(--fg-2); }
+  .ws-nav .ib {
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 16px;
+    cursor: pointer;
+  }
+  .ws-nav .ib:hover { background: rgba(255,255,255,0.05); color: var(--fg-0); }
+  .ws-pill {
+    max-width: 440px; justify-self: center; width: 100%;
+    background: rgba(255,255,255,0.02);
+    border-radius: 999px;
+    padding: 6px 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Geist Mono', monospace; font-size: var(--t-12);
+    color: var(--fg-1);
+    box-shadow: inset 0 0 0 1px var(--border), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .ws-pill .q { color: var(--fg-3); font-family: 'Material Symbols Outlined'; font-size: 14px; }
+  .ws-pill .sec { color: var(--fg-3); }
+  .ws-pill .host { color: var(--fg-0); }
+  .ws-actions { display: flex; gap: 4px; color: var(--fg-2); }
+  .ws-actions .ib {
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 16px;
+    cursor: pointer;
+  }
+  .ws-actions .ib:hover { background: rgba(255,255,255,0.05); color: var(--fg-0); }
+
+  .ws-body {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 48px 80px 40px;
+    gap: 18px;
+    overflow: hidden;
+  }
+  .ws-greet {
+    font-family: 'Space Grotesk'; font-size: 26px; font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+  .ws-greet .accent { color: var(--accent); }
+  .ws-greet-sub { color: var(--fg-2); font-size: var(--t-12); }
+  .ws-metrics {
+    display: grid; grid-template-columns: 1.3fr 1fr 1fr;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .ws-metrics .m {
+    padding: 14px 20px;
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .ws-metrics .m:first-child { border-left: 0; padding-left: 0; }
+  .ws-metrics .mv {
+    font-family: 'Geist Mono'; font-size: 22px; font-weight: 500; color: var(--fg-0);
+    letter-spacing: -0.02em; line-height: 1;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .ws-metrics .mv .pulse {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    animation: breathe 2.4s ease-out infinite;
+  }
+  .ws-metrics .ml {
+    font-family: 'Space Grotesk'; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.14em; color: var(--fg-2);
+  }
+  .ws-bento {
+    display: grid; grid-template-columns: 1.6fr 1fr; gap: 10px;
+    margin-top: 10px;
+  }
+  .ws-card {
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    background: transparent;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ws-card .head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Space Grotesk'; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--fg-2);
+  }
+  .ws-card .empty {
+    color: var(--fg-3); font-size: var(--t-12);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .ws-card .empty .k { font-size: 10px; color: var(--fg-2); }
+  .ws-card .empty kbd {
+    background: var(--bg-2); padding: 1px 5px; border-radius: 3px;
+    font-family: 'Geist Mono'; font-size: 10px; color: var(--fg-1);
+  }
+
+  /* ------- Rule checklist table ------- */
+  .rules { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .rules th, .rules td { text-align: left; padding: 10px 12px; font-size: var(--t-12); }
+  .rules thead th {
+    font-family: 'Space Grotesk'; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--fg-3);
+    border-bottom: 1px solid var(--border);
+  }
+  .rules tbody tr { border-bottom: 1px solid var(--border); }
+  .rules .status { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .rules .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .rules .pass .status { color: var(--accent); }
+  .rules .pass .status::before { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .rules .warn .status { color: #e8b75a; }
+  .rules .warn .status::before { background: #e8b75a; }
+  .rules .fail .status { color: #e87d5a; }
+  .rules .fail .status::before { background: #e87d5a; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Nsty Browser — Taste Audit v2</h1>
+<p class="page-sub">
+  Side-by-side mockup against the design-taste-frontend baseline
+  (DESIGN_VARIANCE 8, MOTION 6, DENSITY 4). Left column shows the current
+  shipped state; right column shows the taste-corrected direction. Open this
+  file in the browser (or in Nsty itself) to review.
+</p>
+
+<!-- ============== Full window preview ============== -->
+<div class="section-title">Full window — direction</div>
+<div class="window-shell">
+  <aside class="ws-sidebar">
+    <div class="ws-brand"><div class="hex"></div><div class="name">NSTY</div></div>
+    <div class="ws-dots">
+      <div class="d active"></div>
+      <div class="d"></div>
+      <div class="d"></div>
+    </div>
+
+    <div class="ws-section">Pinned</div>
+    <div class="ws-item"><div class="fav g"></div>GitHub</div>
+    <div class="ws-item"><div class="fav b"></div>Linear</div>
+    <div class="ws-item"><div class="fav r"></div>Figma</div>
+
+    <div class="ws-section">Tabs · 2</div>
+    <div class="ws-item current"><div class="fav"></div>Good morning · Dashboard<span class="close material-symbols-outlined" style="font-family:'Material Symbols Outlined'">close</span></div>
+    <div class="ws-item"><div class="fav b"></div>anthropic.com<span class="close material-symbols-outlined" style="font-family:'Material Symbols Outlined'">close</span></div>
+
+    <div class="ws-foot">
+      <div class="avatar">H</div>
+      <div class="new"><span class="material-symbols-outlined" style="font-family:'Material Symbols Outlined'; font-size:14px">add</span>New Tab</div>
+    </div>
+  </aside>
+
+  <main class="ws-main">
+    <div class="ws-top">
+      <div class="ws-nav">
+        <div class="ib">arrow_back</div>
+        <div class="ib">arrow_forward</div>
+        <div class="ib">refresh</div>
+      </div>
+      <div class="ws-pill">
+        <span class="q">search</span>
+        <span class="sec">https://</span><span class="host">nsty.app</span>
+      </div>
+      <div class="ws-actions">
+        <div class="ib">shield</div>
+        <div class="ib">history</div>
+      </div>
+    </div>
+
+    <div class="ws-body">
+      <div class="ws-greet">Good morning, <span class="accent">Hafiz</span></div>
+      <div class="ws-greet-sub">Three tabs open across two spaces. Shield blocked 47 requests this week.</div>
+
+      <div class="ws-metrics">
+        <div class="m">
+          <div class="mv">47.2% <span class="pulse"></span></div>
+          <div class="ml">Block efficiency · 7d</div>
+        </div>
+        <div class="m">
+          <div class="mv">1,284</div>
+          <div class="ml">Requests filtered</div>
+        </div>
+        <div class="m">
+          <div class="mv">2.3 MB</div>
+          <div class="ml">Data saved</div>
+        </div>
+      </div>
+
+      <div class="ws-bento">
+        <div class="ws-card">
+          <div class="head"><span>Recent</span><span style="color:var(--fg-3)">last 24h</span></div>
+          <div class="empty">
+            <div>No recent tabs yet in this space.</div>
+            <div class="k">Press <kbd>⌘T</kbd> to open one, or drag a link into the sidebar.</div>
+          </div>
+        </div>
+        <div class="ws-card">
+          <div class="head"><span>Shield</span><span style="color:var(--accent); display:inline-flex; align-items:center; gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent); animation: breathe 2.4s ease-out infinite;"></span>Active</span></div>
+          <div class="empty">
+            <div style="color:var(--fg-1); font-family: 'Geist Mono'; font-size: 13px;">easylist · ghostery · nsty/extra</div>
+            <div class="k">3 lists loaded</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============== C1 — focus ring ============== -->
+<div class="section-title">C1 · Focus ring — no neon glow</div>
+<div class="compare">
+  <div class="panel">
+    <div class="panel-head"><span>Current</span><span class="tag tag--before">before</span></div>
+    <div class="demo">
+      <div class="search-before">
+        <span class="material-symbols-outlined" style="font-family:'Material Symbols Outlined'; color: var(--accent-hot); font-size: 16px">search</span>
+        <span>Search history…</span><span class="cursor"></span>
+      </div>
+    </div>
+    <div class="note"><b>AI tell:</b> 2px neon ring + 24px blur glow. Screams "generative". Skill §7: NO Neon/Outer Glows.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Taste-corrected</span><span class="tag tag--after">after</span></div>
+    <div class="demo">
+      <div class="search-after">
+        <span class="material-symbols-outlined" style="font-family:'Material Symbols Outlined'; color: var(--fg-2); font-size: 16px">search</span>
+        <span>Search history…</span><span class="cursor"></span>
+      </div>
+    </div>
+    <div class="note"><b>Fix:</b> 1px <code>border-white/10</code> + inset highlight (Liquid-Glass refraction, skill §4). Focus signal without screaming.</div>
+  </div>
+</div>
+
+<!-- ============== C2+C5 — dashboard layout ============== -->
+<div class="section-title">C2 + C5 · Dashboard — kill centering & card overuse</div>
+<div class="compare">
+  <div class="panel">
+    <div class="panel-head"><span>Current</span><span class="tag tag--before">before</span></div>
+    <div class="demo" style="padding: 12px">
+      <div class="mini-dash dash-before">
+        <div class="greet">Good morning, Hafiz</div>
+        <div class="card">
+          <div>
+            <div class="metric-v">0</div>
+            <div style="font-size:10px;color:var(--fg-2);text-transform:uppercase;letter-spacing:0.14em">Ads blocked</div>
+          </div>
+          <div>
+            <div class="metric-v">0%</div>
+            <div style="font-size:10px;color:var(--fg-2);text-transform:uppercase;letter-spacing:0.14em">Effectiveness</div>
+          </div>
+        </div>
+        <div class="card" style="flex-direction:column; align-items:stretch; gap:6px">
+          <div style="font-size:10px;color:var(--fg-2);text-transform:uppercase;letter-spacing:0.14em">Recent</div>
+          <div style="color:var(--fg-3); font-size:12px">Nothing here yet. Open a tab and it'll show up.</div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Tells:</b> 720px centered column, stacked cards, neon accent on numeric metrics, first-run "0/0%" reads as broken.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Taste-corrected</span><span class="tag tag--after">after</span></div>
+    <div class="demo" style="padding: 12px">
+      <div class="mini-dash dash-after">
+        <div class="greet">Good morning, Hafiz</div>
+        <div class="greet-sub">Fresh session. Shield is watching.</div>
+        <div class="metrics-row">
+          <div class="metric">
+            <div class="metric-v">Ready <span class="pulse"></span></div>
+            <div class="metric-l">Shield · idle</div>
+          </div>
+          <div class="metric">
+            <div class="metric-v">47.2%</div>
+            <div class="metric-l">7-day efficiency</div>
+          </div>
+          <div class="metric">
+            <div class="metric-v">1,284</div>
+            <div class="metric-l">Requests filtered</div>
+          </div>
+        </div>
+        <div class="bento">
+          <div class="tile wide">
+            <div class="lbl">Recent</div>
+            <div style="color:var(--fg-3)">Empty. <kbd style="background:var(--bg-3);padding:1px 5px;border-radius:3px;font-family:'Geist Mono';font-size:10px;color:var(--fg-1)">⌘T</kbd> to open a tab.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Fix:</b> Left-aligned (anti-center), dividers instead of cards (anti-card), tabular numerals in Geist Mono, breathing pulse supplies life without neon. "Ready" replaces broken "0%".</div>
+  </div>
+</div>
+
+<!-- ============== C6 — perpetual motion ============== -->
+<div class="section-title">C6 · Perpetual micro-motion — shield status</div>
+<div class="compare">
+  <div class="panel">
+    <div class="panel-head"><span>Current</span><span class="tag tag--before">before</span></div>
+    <div class="demo"><div class="shield-before"><span class="dot"></span>Shield active</div></div>
+    <div class="note"><b>Tell:</b> Static glow ring around container. No sign of "aliveness".</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Taste-corrected</span><span class="tag tag--after">after</span></div>
+    <div class="demo"><div class="shield-after"><span class="dot"></span>Shield active · easylist + 2</div></div>
+    <div class="note"><b>Fix:</b> Quiet container, breathing dot (2.4s ease-out loop). Motion baseline 6 satisfied without chrome.</div>
+  </div>
+</div>
+
+<!-- ============== I1 — empty state ============== -->
+<div class="section-title">I1 · Empty state — compose, don't apologise</div>
+<div class="compare">
+  <div class="panel">
+    <div class="panel-head"><span>Current</span><span class="tag tag--before">before</span></div>
+    <div class="demo">
+      <div class="empty-before">
+        <div class="airy">
+          <span class="icon">history</span>
+          Your browsing history will appear here
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Tell:</b> Oversized muted icon, 56px vertical padding. Tells the user "nothing works" instead of "nothing yet".</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Taste-corrected</span><span class="tag tag--after">after</span></div>
+    <div class="demo">
+      <div class="empty-after">
+        <div class="dense">
+          <div class="row"><span class="mark"></span>No entries yet in this space</div>
+          <div class="row"><span class="mark"></span>Private windows aren't recorded</div>
+          <div class="row"><span class="mark"></span>Syncs locally only</div>
+          <div class="hint">Press <kbd>Esc</kbd> to close · <kbd>⌘Y</kbd> next time</div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Fix:</b> 3 factual lines + a hotkey hint. Teaches the user, tightens density, removes the "broken" feeling.</div>
+  </div>
+</div>
+
+<!-- ============== Shipped: menu primitives ============== -->
+<div class="section-title">Menus — the 0.4.2 primitive (already shipped)</div>
+<div class="compare">
+  <div class="panel">
+    <div class="panel-head"><span>UserMenu</span><span class="tag tag--after">after</span></div>
+    <div class="demo">
+      <div class="menu-demo">
+        <div class="mi"><span class="ic material-symbols-outlined">settings</span>Settings</div>
+        <hr />
+        <div class="mi disabled"><span class="ic material-symbols-outlined">logout</span>Sign out</div>
+      </div>
+    </div>
+    <div class="note">Container inset (<code>--menu-pad</code>), inset separator, rounded hover. Token-driven — one ruler for all menus.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>Shield dialog</span><span class="tag tag--after">after</span></div>
+    <div class="demo">
+      <div class="menu-demo" style="width: 240px">
+        <div style="display:flex;gap:10px;padding:8px 12px;align-items:center">
+          <div style="width:28px;height:28px;border-radius:6px;background:var(--accent-tint);display:flex;align-items:center;justify-content:center">
+            <span class="material-symbols-outlined" style="font-family:'Material Symbols Outlined';color:var(--accent);font-size:16px">shield</span>
+          </div>
+          <div>
+            <div style="font-family:'Space Grotesk';font-size:13px;font-weight:600">Nsty Shield</div>
+            <div style="font-family:'Space Grotesk';font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.14em;display:inline-flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:breathe 2.4s ease-out infinite"></span>Active</div>
+          </div>
+        </div>
+        <hr />
+        <div style="padding:0 12px;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-family:'Manrope';font-size:11px;color:var(--fg-2)"><span>Ads blocked</span><span style="color:var(--fg-0);font-family:'Geist Mono'">1,284</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-family:'Manrope';font-size:11px;color:var(--fg-2); border-top:1px solid var(--border)"><span>Trackers</span><span style="color:var(--fg-0);font-family:'Geist Mono'">412</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-family:'Manrope';font-size:11px;color:var(--fg-2); border-top:1px solid var(--border)"><span>Data saved</span><span style="color:var(--fg-0);font-family:'Geist Mono'">2.3 MB</span></div>
+        </div>
+        <hr />
+        <div style="display:flex;gap:6px;padding:0 6px 2px">
+          <button style="flex:1;padding:6px;border-radius:6px;background:var(--bg-3);color:var(--fg-1);font-family:'Space Grotesk';font-size:10px;text-transform:uppercase;letter-spacing:0.12em;border:0;cursor:pointer">Disable</button>
+          <button style="flex:1;padding:6px;border-radius:6px;background:var(--accent);color:var(--accent-ink);font-family:'Space Grotesk';font-size:10px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;border:0;cursor:pointer">Close</button>
+        </div>
+      </div>
+    </div>
+    <div class="note">Inset header, inset divider, inset stats, inset actions. Numbers in Geist Mono. Accent desaturated for daily use.</div>
+  </div>
+</div>
+
+<!-- ============== Rule scoreboard ============== -->
+<div class="section-title">Taste-skill rule scoreboard</div>
+<table class="rules">
+  <thead><tr><th style="width:32%">Rule (skill §)</th><th>Status</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr class="fail"><td>§3·R2 · Accent saturation &lt; 80%</td><td><span class="status">Fail</span></td><td>#CEFA05 is ~96% sat. Desaturate daily-driver, keep neon as <code>--accent-hot</code> for one moment per screen.</td></tr>
+    <tr class="fail"><td>§3·R3 · Anti-center bias</td><td><span class="status">Fail</span></td><td>Dashboard 720px centered. Switch to left-aligned edge-to-edge with divider groupings.</td></tr>
+    <tr class="fail"><td>§3·R4 · Anti-card overuse</td><td><span class="status">Fail</span></td><td>Stats + Recent + Pinned are three stacked cards. Use <code>border-t</code> and bento instead.</td></tr>
+    <tr class="fail"><td>§7 · NO Neon/Outer Glows</td><td><span class="status">Fail</span></td><td>History input focus, shield popup focus ring. Replace with inner border + inset shadow.</td></tr>
+    <tr class="warn"><td>§4 · Perpetual micro-motion</td><td><span class="status">Warn</span></td><td>Only fadeIn. Add 2.4s breathing dot for shield; shimmer for loading.</td></tr>
+    <tr class="warn"><td>§3·R1 · Deterministic typography</td><td><span class="status">Warn</span></td><td>Scale mostly consistent, but numbers should be Geist Mono (already loaded, unused).</td></tr>
+    <tr class="warn"><td>§3·R5 · Loading/Empty/Error states</td><td><span class="status">Warn</span></td><td>Empty exists. No skeleton loaders. No inline error state for nav failure.</td></tr>
+    <tr class="pass"><td>§2 · Grid over flex-math</td><td><span class="status">Pass</span></td><td>TopBar already uses <code>grid-template-columns: auto minmax(0,1fr) auto</code>.</td></tr>
+    <tr class="pass"><td>§3·R5 · Tactile feedback</td><td><span class="status">Pass</span></td><td>Global <code>:active { transform: scale(0.97) }</code> in place.</td></tr>
+    <tr class="pass"><td>§5 · Viewport stability</td><td><span class="status">Pass</span></td><td>Using <code>dvh</code> already.</td></tr>
+    <tr class="pass"><td>§7 · Anti-emoji</td><td><span class="status">Pass</span></td><td>Material Symbols throughout. No emoji in code.</td></tr>
+    <tr class="pass"><td>Menu primitives</td><td><span class="status">Pass</span></td><td>Shipped in 0.4.2 — tokens + container/item/separator primitives.</td></tr>
+  </tbody>
+</table>
+
+<!-- ============== Prioritized plan ============== -->
+<div class="section-title">Prioritized fix plan</div>
+<ol style="padding-left: 22px; color: var(--fg-1); display: flex; flex-direction: column; gap: 8px; font-size: var(--t-13); line-height: 1.6;">
+  <li><b>Desaturate accent</b> — add <code>--accent</code> (#c5dc5c) and <code>--accent-hot</code> (#cefa05). Move 90% of current <code>var(--primary)</code> usages to <code>--accent</code>. Reserve hot for: active space dot, CTA primary button, focus ring on real CTAs.</li>
+  <li><b>Replace neon focus rings</b> — global <code>:focus-visible</code> from <code>outline: 2px solid var(--primary)</code> to <code>outline: 1px solid var(--border-strong); box-shadow: 0 0 0 2px rgba(255,255,255,0.04)</code>. Keep the hot ring only on primary CTAs.</li>
+  <li><b>Rebuild Dashboard layout</b> — drop <code>max-w-720</code>. Use <code>max-w-7xl mx-auto px-12</code>; greet left; stats as <code>border-t/border-b</code> 3-col divided row; Recent + Shield as 2-col bento (not equal cards).</li>
+  <li><b>Geist Mono on all numbers</b> — metrics, counters, visit counts, file sizes, timestamps. Already loaded in globals.css:88-101.</li>
+  <li><b>Breathing status dot</b> — add <code>@keyframes breathe</code> and apply to shield-active indicator, live tab indicator, recording indicator.</li>
+  <li><b>Skeleton loaders</b> — Recent and Pinned show 3 skeleton rows on mount until IPC responds.</li>
+  <li><b>Dense empty states</b> — replace 12-pad centered icons with 3-line factual lists + hotkey hints.</li>
+  <li><b>Collapse the collapsed sidebar</b> — go from 60px to 0 with a 4px hover-reveal stripe. Recovers 60px of web content on every session.</li>
+  <li><b>Anchor the address pill</b> — subtle <code>bg-white/2</code> container under the whole top bar so the pill reads as "inside" chrome, not floating.</li>
+  <li><b>Remove hard-coded rgba(206,250,5,*)</b> — grep and migrate; fail CI on new occurrences.</li>
+</ol>
+
+<p style="color: var(--fg-3); margin-top: 60px; font-size: 11px; text-align: center;">Mockup generated for Nsty Browser · Opus · 2026-04-20</p>
+
+</body>
+</html>

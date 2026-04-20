@@ -9,37 +9,34 @@ interface ShieldStatusCardProps {
 }
 
 export function ShieldStatusCard({ stats: _stats, totalBlocked }: ShieldStatusCardProps) {
-  const effectiveness = totalBlocked > 0 ? Math.min(Math.round((totalBlocked / (totalBlocked + 20)) * 100), 99) : 0
-  log.debug('render', { totalBlocked, effectiveness })
+  const isLive = totalBlocked > 0
+  const effectiveness = isLive ? Math.min(Math.round((totalBlocked / (totalBlocked + 20)) * 100), 99) : 0
+  log.debug('render', { totalBlocked, effectiveness, isLive })
 
   return (
-    <div
-      className="card-fade-up card-fade-up-1 rounded-xl flex items-stretch overflow-hidden shadow-border"
-      style={{ background: 'var(--surface-container-high)' }}
-    >
-      <Metric value={totalBlocked.toLocaleString()} label="Ads blocked" />
-      <div style={{ width: 1, background: 'var(--border-subtle)' }} aria-hidden="true" />
-      <Metric value={`${effectiveness}%`} label="Effectiveness" />
+    <div className="metrics-row card-fade-up card-fade-up-1">
+      <Metric
+        value={isLive ? totalBlocked.toLocaleString() : 'Ready'}
+        label={isLive ? 'Requests filtered' : 'Shield · idle'}
+        showPulse={!isLive}
+      />
+      <Metric
+        value={isLive ? `${effectiveness}%` : '—'}
+        label="Block efficiency"
+      />
     </div>
   )
 }
 
-function Metric({ value, label }: { value: string; label: string }) {
+function Metric({ value, label, showPulse }: { value: string; label: string; showPulse?: boolean }) {
   log.debug('metric', { label, value })
   return (
-    <div className="flex-1 flex flex-col items-start gap-1.5 px-5 py-4">
-      <div
-        className="font-headline font-semibold tabular-nums"
-        style={{ color: 'var(--on-surface)', letterSpacing: '-0.02em', fontSize: '28px', lineHeight: 1 }}
-      >
+    <div className="metrics-row__cell">
+      <div className="metrics-row__value">
         {value}
+        {showPulse && <span className="pulse-dot" aria-hidden="true" />}
       </div>
-      <div
-        className="font-label text-[10px] uppercase"
-        style={{ color: 'var(--on-surface-variant)', letterSpacing: '0.14em' }}
-      >
-        {label}
-      </div>
+      <div className="metrics-row__label">{label}</div>
     </div>
   )
 }

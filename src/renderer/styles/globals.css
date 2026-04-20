@@ -121,17 +121,26 @@
   --surface-variant: #262626;
   --surface-bright: #2c2c2c;
 
-  /* Primary accent (neon green) */
-  --primary: #CEFA05;
-  /* RGB channels — enables rgba(var(--primary-rgb), X) at arbitrary alpha
-     without hardcoding the hex. Use this when a component needs a primary
-     tint at an opacity not covered by the named translucent tokens below. */
-  --primary-rgb: 206, 250, 5;
+  /* Primary accent — two-tier system.
+     --primary is the daily-driver (desaturated from 96% to ~60% saturation)
+     used for all routine surfaces, hovers, tints, and muted signals.
+     --primary-hot is the signature neon reserved for deliberate brand
+     moments — the wordmark, the active-space dot, the primary CTA button,
+     and any real-time "live" indicator. Using hot sparingly keeps the
+     brand recognizable while stopping the "bathed-in-accent" look that
+     taste-skill §3 Rule 2 (saturation < 80%) flagged. */
+  --primary: #c5dc5c;
+  --primary-rgb: 197, 220, 92;
+  --primary-dim: #b3c94a;
+
+  --primary-hot: #CEFA05;
+  --primary-hot-rgb: 206, 250, 5;
+  --primary-hot-dim: #c0ea00;
+
   --neutral-rgb: 255, 255, 255;
-  --primary-dim: #c0ea00;
   --primary-container: #cdf901;
   --primary-fixed: #cdf901;
-  --on-primary: #526500;
+  --on-primary: #1b2001;
   --on-primary-container: #4a5c00;
 
   /* Secondary (warm yellow) */
@@ -633,6 +642,66 @@ a[href]:active,
   box-shadow: var(--shadow-border);
 }
 
+/* === Metrics Row ===
+   Divider-grouped metrics (no card wrapper) — per taste-skill §3·R4. */
+.metrics-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.metrics-row__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px 20px;
+  border-left: 1px solid var(--border-subtle);
+}
+.metrics-row__cell:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.metrics-row__value {
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 500;
+  color: var(--on-surface);
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.metrics-row__label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--on-surface-variant);
+}
+
+/* Breathing pulse — 2.4s ease-out loop for live indicators.
+   Replaces static neon glow. Applied via <span class="pulse-dot" /> or
+   composed into any element. */
+@keyframes pulseBreath {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.55); }
+  50%      { box-shadow: 0 0 0 6px rgba(var(--primary-rgb), 0); }
+}
+.pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: pulseBreath 2.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot { animation: none; }
+}
+
 .badge-active {
   display: inline-flex;
   align-items: center;
@@ -704,7 +773,12 @@ a[href]:active,
   overflow: hidden;
 }
 
-/* === Accessibility: Focus Visible === */
+/* === Accessibility: Focus Visible ===
+   Neutral white outline + soft halo instead of a neon-green ring. The
+   previous 2px solid var(--primary) was one of the AI tells flagged by
+   taste-skill §7 — replace with a WCAG-visible-but-quiet indicator.
+   Elements that want the hot brand ring on focus can opt in via
+   .focus-ring-hot. */
 
 button:focus-visible,
 a:focus-visible,
@@ -712,9 +786,16 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 1px solid rgba(255, 255, 255, 0.28);
   outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
+}
+
+.focus-ring-hot:focus-visible {
+  outline: 2px solid var(--primary-hot);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 /* === Accessibility: Reduced Motion === */
