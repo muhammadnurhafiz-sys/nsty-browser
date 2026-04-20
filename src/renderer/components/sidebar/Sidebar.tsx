@@ -75,7 +75,7 @@ export function Sidebar({
       className="h-full flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
       style={{ width: sidebarWidth }}
     >
-      <div className={`flex items-center ${isExpanded ? 'px-4' : 'justify-center'} pt-3 pb-2`}>
+      <div className={`flex items-center ${isExpanded ? 'justify-between px-4' : 'justify-center'} pt-4 pb-3`}>
         <button
           type="button"
           onClick={onToggleExpand}
@@ -87,21 +87,30 @@ export function Sidebar({
           {isExpanded && (
             <span
               className="font-headline text-[13px] font-bold uppercase"
-              style={{ color: 'var(--primary)', letterSpacing: '0.15em' }}
+              style={{ color: 'var(--primary)', letterSpacing: '0.18em' }}
             >
               nsty
             </span>
           )}
         </button>
+        {isExpanded && (
+          <SpaceDots
+            spaces={spaces}
+            activeSpaceId={activeSpaceId}
+            onSwitchSpace={onSwitchSpace}
+          />
+        )}
       </div>
 
-      <div className={`flex ${isExpanded ? 'px-3 justify-start' : 'justify-center'} pb-2`}>
-        <SpaceDots
-          spaces={spaces}
-          activeSpaceId={activeSpaceId}
-          onSwitchSpace={onSwitchSpace}
-        />
-      </div>
+      {!isExpanded && (
+        <div className="flex justify-center pb-3">
+          <SpaceDots
+            spaces={spaces}
+            activeSpaceId={activeSpaceId}
+            onSwitchSpace={onSwitchSpace}
+          />
+        </div>
+      )}
 
       <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
 

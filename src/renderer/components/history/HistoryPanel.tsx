@@ -80,11 +80,14 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
           <button type="button"
             onClick={onClose}
             aria-label="Close history"
-            className="font-label text-[10px] uppercase tracking-wider px-2 py-1 rounded-md cursor-pointer"
+            className="font-label text-[10px] uppercase cursor-pointer flex-shrink-0"
             style={{
               background: 'var(--surface-translucent-hover)',
-              color: 'rgba(var(--primary-rgb), 0.4)',
+              color: 'var(--on-surface-variant)',
               border: '1px solid var(--border-subtle)',
+              letterSpacing: '0.1em',
+              padding: '3px 8px',
+              borderRadius: 6,
             }}
           >
             ESC
@@ -94,16 +97,16 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
         {/* Results */}
         <div className="flex-1 overflow-y-auto px-2 py-2">
           {entries.length === 0 && (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <span
-                  className="material-symbols-outlined mb-2 block"
-                  style={{ fontSize: 28, color: 'var(--outline)', opacity: 0.4 }}
+                  className="material-symbols-outlined mb-3 block"
+                  style={{ fontSize: 32, color: 'var(--outline)', opacity: 0.35 }}
                 >
                   history
                 </span>
-                <p className="font-body text-xs" style={{ color: 'var(--outline)' }}>
-                  {query ? 'No matching history entries' : 'Browse history will appear here'}
+                <p className="font-body text-xs" style={{ color: 'var(--on-surface-variant)' }}>
+                  {query ? 'No matches found' : 'Your browsing history will appear here'}
                 </p>
               </div>
             </div>

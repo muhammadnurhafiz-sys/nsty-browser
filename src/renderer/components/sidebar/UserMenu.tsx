@@ -21,11 +21,17 @@ export function UserMenu({ onOpenSettings, onClose }: UserMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="absolute bottom-full right-0 mb-2 w-44 rounded-xl shadow-xl overflow-hidden glass-panel fade-in"
+      className="absolute bottom-full right-0 mb-2 w-44 rounded-xl overflow-hidden fade-in"
+      style={{
+        zIndex: 50,
+        background: 'var(--surface-container-high)',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04)',
+      }}
     >
       <button type="button"
         onClick={() => { onOpenSettings(); onClose() }}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs cursor-pointer transition-colors hover-bg"
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs cursor-pointer transition-colors hover-surface"
         style={{ color: 'var(--on-surface)' }}
       >
         <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--outline)' }}>settings</span>
@@ -33,7 +39,7 @@ export function UserMenu({ onOpenSettings, onClose }: UserMenuProps) {
       </button>
       <div
         className="w-full flex items-center gap-2.5 px-3 py-2.5 font-body text-xs"
-        style={{ color: 'var(--outline)', borderTop: '1px solid rgba(73, 72, 71, 0.1)' }}
+        style={{ color: 'var(--outline)', borderTop: '1px solid var(--border-subtle)' }}
         title="Coming soon"
       >
         <span className="material-symbols-outlined text-[16px]">logout</span>
