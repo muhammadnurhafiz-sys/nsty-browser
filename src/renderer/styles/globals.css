@@ -183,12 +183,16 @@
   --border: var(--ghost-border);
   --border-strong: rgba(73, 72, 71, 0.3);
 
-  /* Arc-inspired translucent surfaces */
-  --surface-translucent: rgba(206, 250, 5, 0.03);
-  --surface-translucent-hover: rgba(206, 250, 5, 0.06);
-  --surface-translucent-active: rgba(206, 250, 5, 0.1);
-  --border-subtle: rgba(206, 250, 5, 0.08);
-  --border-active: rgba(206, 250, 5, 0.15);
+  /* Arc-inspired translucent surfaces.
+     Neutral white alpha instead of primary-tinted — accent restraint rule:
+     the tint was bleeding the neon green into every border, hover, and panel
+     background, producing the "bathed in accent" look. Reserve the primary
+     for deliberate moments (active pin, focus ring, CTA, badge). */
+  --surface-translucent: rgba(255, 255, 255, 0.02);
+  --surface-translucent-hover: rgba(255, 255, 255, 0.05);
+  --surface-translucent-active: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(206, 250, 5, 0.25);
   --border-interactive: rgba(255, 255, 255, 0.1);
 
   /* Accessible variants — used where token-on-surface text must meet WCAG AA (4.5:1).
@@ -200,13 +204,16 @@
   --surface-overlay-dim: rgba(0, 0, 0, 0.5);
 
   /* Command bar */
-  --command-bar-bg: rgba(206, 250, 5, 0.06);
-  --command-bar-border: rgba(206, 250, 5, 0.12);
+  --command-bar-bg: rgba(255, 255, 255, 0.04);
+  --command-bar-border: rgba(255, 255, 255, 0.08);
 
-  /* Space gradients (green-tinted) */
-  --space-gradient-1: linear-gradient(135deg, #0a1a0a 0%, #132613 40%, #0d1f0d 80%, #0a150a 100%);
-  --space-gradient-2: linear-gradient(135deg, #0a1a1a 0%, #0d2a1a 40%, #0a1f1a 80%, #0a1510 100%);
-  --space-gradient-3: linear-gradient(135deg, #1a1a0a 0%, #2a2d0a 40%, #1f1f0d 80%, #15150a 100%);
+  /* Space gradients.
+     Default space (1) is neutral obsidian — the "Monolith" half of the design
+     system name. Spaces 2 and 3 keep subtle hue so users can distinguish
+     workspaces, but far below the saturation of the previous defaults. */
+  --space-gradient-1: linear-gradient(135deg, #0a0a0b 0%, #121214 40%, #0d0d0f 80%, #08080a 100%);
+  --space-gradient-2: linear-gradient(135deg, #0a1012 0%, #0d1518 40%, #0a1013 80%, #08090a 100%);
+  --space-gradient-3: linear-gradient(135deg, #100f0a 0%, #15140d 40%, #100f0a 80%, #0a0908 100%);
 
   /* Layout */
   --sidebar-width: 60px;

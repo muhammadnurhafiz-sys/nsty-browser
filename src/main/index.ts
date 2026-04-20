@@ -115,7 +115,11 @@ function createWindow(): void {
       preloadPath: path.join(__dirname, '../preload/index.js'),
     })
 
-    mainWindow.loadFile(rendererPath)
+    // Load via the app:// custom protocol (registered below) instead of file://.
+    // file:// is treated as an opaque origin under CSP, which caused self-hosted
+    // fonts to fail load — icons then fell back to their ligature names as text
+    // ("search", "arrow_back", ...) and overflowed their button containers.
+    mainWindow.loadURL('app://bundle/index.html')
   }
 
   // Register global shortcuts
@@ -158,7 +162,9 @@ function createWindow(): void {
 app.whenReady().then(() => {
   installCrashHandlers()
 
-  // Serve renderer files via custom protocol (avoids file:// CORS issues with Vite's crossorigin attributes)
+  // Serve renderer files via custom protocol. Using app:// instead of file://
+  // gives the renderer a real origin that CSP's 'self' can match — otherwise
+  // font/style/script loads under file:// are treated as opaque and rejected.
   protocol.handle('app', (request) => {
     const { pathname } = new URL(request.url)
     const pathToServe = path.join(app.getAppPath(), 'dist', 'renderer', pathname)
