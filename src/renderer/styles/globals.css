@@ -408,6 +408,37 @@ a[href]:active,
   background: var(--surface-translucent-hover);
 }
 
+/* === Skeleton loaders ===
+   Replaces generic spinners per taste-skill §3·R5 — "Skeletal loaders
+   matching layout sizes". Uses a left-to-right shimmer on a low-contrast
+   base so the placeholder reads as "loading" without drawing the eye.
+   Animate transform+opacity only (hardware-accelerated §5). */
+@keyframes skeletonShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-translucent-hover);
+  border-radius: var(--radius-sm);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%
+  );
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
 /* === Menu primitives ===
    Shared visual rules so UserMenu, ShieldPopup, and HistoryPanel look identical
    where they should. The container handles the inset-from-border gap; items

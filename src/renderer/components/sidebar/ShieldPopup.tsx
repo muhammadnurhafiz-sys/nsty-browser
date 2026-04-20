@@ -58,7 +58,11 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
             <div className="font-headline text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
               Nsty Shield
             </div>
-            <div className="font-label text-[10px] uppercase tracking-wider" style={{ color: 'var(--primary)' }}>
+            <div
+              className="font-label text-[10px] uppercase tracking-wider inline-flex items-center gap-1.5"
+              style={{ color: 'var(--primary)' }}
+            >
+              <span className="pulse-dot" aria-hidden="true" />
               Active
             </div>
           </div>
@@ -112,7 +116,7 @@ function StatRow({ label, value, first }: { label: string; value: number | strin
   return (
     <div className="flex justify-between py-2" style={borderStyle}>
       <span className="font-body text-[11px]" style={{ color: 'var(--on-surface-variant)' }}>{label}</span>
-      <span className="font-headline text-[11px] font-semibold" style={{ color: 'var(--on-surface)' }}>{value}</span>
+      <span className="font-mono text-[11px] font-medium tabular-nums" style={{ color: 'var(--on-surface)' }}>{value}</span>
     </div>
   )
 }

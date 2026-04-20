@@ -23,7 +23,7 @@ export function ShieldButton({ count, stats, popupOpen, onToggle, onClose, onDis
         <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--outline)' }}>shield</span>
         {count > 0 && (
           <span
-            className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[7px] font-bold"
+            className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center font-mono text-[8px] font-medium tabular-nums"
             style={{ background: 'var(--primary)', color: 'var(--on-primary)', padding: '0 3px' }}
           >
             {count > 99 ? '99+' : count}

@@ -146,7 +146,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
                 </div>
               </div>
               {entry.visit_count > 1 && (
-                <div className="font-label text-[10px] flex-shrink-0" style={{ color: 'var(--outline)' }}>
+                <div className="font-mono text-[10px] flex-shrink-0 tabular-nums" style={{ color: 'var(--outline)' }}>
                   {entry.visit_count}x
                 </div>
               )}

@@ -1,3 +1,7 @@
+import { createLogger } from '../../utils/logger'
+
+const log = createLogger('QuickAccessCard')
+
 interface QuickAccessItem {
   title: string
   url: string
@@ -11,9 +15,11 @@ interface QuickAccessCardProps {
   emptyMessage: string
   animationClass?: string
   onItemClick: (url: string) => void
+  loading?: boolean
 }
 
-export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, animationClass = '', onItemClick }: QuickAccessCardProps) {
+export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, animationClass = '', onItemClick, loading = false }: QuickAccessCardProps) {
+  log.debug('render', { title, count: items.length, loading })
   return (
     <div
       className={`rounded-lg p-4 card-fade-up ${animationClass}`}
@@ -22,7 +28,6 @@ export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, anima
         border: '1px solid var(--border-subtle)',
       }}
     >
-      {/* Header */}
       <div
         className="font-label text-[10px] uppercase mb-3"
         style={{ color: 'var(--on-surface-variant)', letterSpacing: '0.14em' }}
@@ -30,8 +35,19 @@ export function QuickAccessCard({ title, icon: _icon, items, emptyMessage, anima
         {title}
       </div>
 
-      {/* Items */}
-      {items.length > 0 ? (
+      {loading ? (
+        <div className="flex flex-col gap-2" aria-busy="true" aria-live="polite">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="flex items-center gap-2.5 px-2 py-2">
+              <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 3 }} />
+              <div
+                className="skeleton"
+                style={{ height: 10, flex: 1, maxWidth: `${70 - i * 12}%` }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : items.length > 0 ? (
         <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
           {items.slice(0, 5).map((item) => (
             <button type="button"
