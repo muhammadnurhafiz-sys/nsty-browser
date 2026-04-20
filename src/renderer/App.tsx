@@ -3,6 +3,7 @@ import { Sidebar } from './components/sidebar/Sidebar'
 import { TopBar } from './components/topbar/TopBar'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { HistoryPanel } from './components/history/HistoryPanel'
+import { SettingsPanel } from './components/settings/SettingsPanel'
 import { UpdateNotification } from './components/UpdateNotification'
 import { SkipToContent } from './components/SkipToContent'
 import { useSpaces } from './hooks/useSpaces'
@@ -33,7 +34,35 @@ export function App() {
   const { profile: userProfile } = useUserProfile()
   const reducedMotion = useReducedMotion()
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
+
+  // Any DOM surface that extends below the TopBar has to ask main to raise
+  // the transparent overlay first — otherwise the BrowserView (which sits
+  // above DOM in its bounds) hides the popup. HistoryPanel already does
+  // this; Settings and Shield wrap togglers below pipe through the same.
+  const openSettings = useCallback(() => {
+    log.info('open settings')
+    setSettingsOpen(true)
+    window.nsty?.showOverlay()
+  }, [])
+  const closeSettings = useCallback(() => {
+    log.info('close settings')
+    setSettingsOpen(false)
+    window.nsty?.hideOverlay()
+  }, [])
+
+  const handleToggleShield = useCallback(() => {
+    log.info('toggle shield', { wasOpen: shieldPopupOpen })
+    if (!shieldPopupOpen) window.nsty?.showOverlay()
+    else window.nsty?.hideOverlay()
+    toggleShieldPopup()
+  }, [shieldPopupOpen, toggleShieldPopup])
+  const handleCloseShield = useCallback(() => {
+    log.debug('close shield')
+    window.nsty?.hideOverlay()
+    closeShieldPopup()
+  }, [closeShieldPopup])
 
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
   const activeTab = activeSpace?.tabs.find(t => t.id === activeTabId)
@@ -102,8 +131,8 @@ export function App() {
         shieldCount={totalBlocked}
         shieldStats={shieldStats}
         shieldPopupOpen={shieldPopupOpen}
-        onToggleShieldPopup={toggleShieldPopup}
-        onCloseShieldPopup={closeShieldPopup}
+        onToggleShieldPopup={handleToggleShield}
+        onCloseShieldPopup={handleCloseShield}
         onDisableShieldForSite={disableForSite}
       />
 
@@ -123,7 +152,7 @@ export function App() {
           onReorderPins={reorderPins}
           onClickPin={clickPin}
           onOpenPinInNewTab={openPinInNewTab}
-          onOpenSettings={() => {}}
+          onOpenSettings={openSettings}
           userProfile={userProfile}
         />
 
@@ -152,6 +181,12 @@ export function App() {
         isOpen={historyOpen}
         onClose={() => { setHistoryOpen(false); window.nsty?.hideOverlay() }}
         onNavigate={handleNavigate}
+      />
+
+      <SettingsPanel
+        isOpen={settingsOpen}
+        onClose={closeSettings}
+        userProfile={userProfile}
       />
 
       <UpdateNotification />

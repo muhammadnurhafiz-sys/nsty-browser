@@ -64,11 +64,19 @@ export function PinnedPages({ pages, onReorder, onUnpin, onOpenInNewTab, onClick
   return (
     <div className="py-1">
       {isExpanded && (
-        <div
-          className="font-label text-[10px] uppercase px-3 pb-2"
-          style={{ color: 'var(--outline)', letterSpacing: '0.12em' }}
-        >
-          Pinned
+        <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-1">
+          <span
+            className="font-label text-[10px] uppercase"
+            style={{ color: 'var(--outline)', letterSpacing: '0.14em' }}
+          >
+            Pinned
+          </span>
+          <span
+            className="font-mono text-[10px] tabular-nums"
+            style={{ color: 'var(--outline)' }}
+          >
+            {pages.length}
+          </span>
         </div>
       )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

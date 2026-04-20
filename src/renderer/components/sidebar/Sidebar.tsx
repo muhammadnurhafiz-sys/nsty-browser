@@ -51,10 +51,6 @@ export function Sidebar({
 
   const handleUserMenuToggle = () => {
     log.info('user menu toggle', { wasOpen: userMenuOpen, isExpanded })
-    // The BrowserView sits above DOM in its bounds, so the menu is only
-    // guaranteed visible when it stays within the sidebar's width. In
-    // collapsed mode there's not enough room for the labelled menu, so we
-    // expand the sidebar first and let the menu render inside it.
     if (!userMenuOpen && !isExpanded) onToggleExpand()
     setUserMenuOpen(prev => !prev)
   }
@@ -75,7 +71,8 @@ export function Sidebar({
       className="h-full flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
       style={{ width: sidebarWidth }}
     >
-      <div className={`flex items-center ${isExpanded ? 'justify-between px-4' : 'justify-center'} pt-4 pb-3`}>
+      {/* Header — brand + space dots */}
+      <div className={`flex items-center ${isExpanded ? 'justify-between px-4' : 'justify-center'} pt-4 pb-2`}>
         <button
           type="button"
           onClick={onToggleExpand}
@@ -83,11 +80,11 @@ export function Sidebar({
           aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
           title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          <HexIcon size={isExpanded ? 22 : 20} color="var(--primary-hot)" />
+          <HexIcon size={isExpanded ? 20 : 18} color="var(--primary-hot)" />
           {isExpanded && (
             <span
-              className="font-headline text-[13px] font-bold uppercase"
-              style={{ color: 'var(--primary-hot)', letterSpacing: '0.18em' }}
+              className="font-headline text-[12px] font-bold uppercase"
+              style={{ color: 'var(--primary-hot)', letterSpacing: '0.2em' }}
             >
               nsty
             </span>
@@ -103,7 +100,7 @@ export function Sidebar({
       </div>
 
       {!isExpanded && (
-        <div className="flex justify-center pb-3">
+        <div className="flex justify-center pb-2">
           <SpaceDots
             spaces={spaces}
             activeSpaceId={activeSpaceId}
@@ -112,7 +109,29 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+      {/* Active space heading — expanded only */}
+      {isExpanded && activeSpace && (
+        <div className="px-4 pt-1 pb-3">
+          <div
+            className="font-headline text-[13px] font-medium truncate"
+            style={{ color: 'var(--on-surface)', letterSpacing: '-0.01em' }}
+            title={activeSpace.name}
+          >
+            {activeSpace.name}
+          </div>
+          <div
+            className="font-body text-[10px] mt-0.5"
+            style={{ color: 'var(--outline)' }}
+          >
+            {tabs.length} tab{tabs.length === 1 ? '' : 's'} · {pinnedPages.length} pinned
+          </div>
+        </div>
+      )}
+
+      <div
+        className="mx-3"
+        style={{ height: 1, background: 'var(--border-subtle)', marginBottom: 4 }}
+      />
 
       <PinnedPages
         pages={pinnedPages}
@@ -122,10 +141,6 @@ export function Sidebar({
         onClickPin={onClickPin}
         isExpanded={isExpanded}
       />
-
-      {pinnedPages.length > 0 && (
-        <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
-      )}
 
       <div className="flex-1 min-h-0 overflow-hidden">
         <TabList
@@ -137,40 +152,36 @@ export function Sidebar({
         />
       </div>
 
-      <div className={`${isExpanded ? 'px-3' : 'flex justify-center'} py-1`}>
+      {/* New Tab — contained button so it doesn't float */}
+      <div className={`${isExpanded ? 'px-3 pt-2 pb-2' : 'flex justify-center pt-2 pb-2'}`}>
         <button
           type="button"
           onClick={onNewTab}
-          className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors hover-surface`}
-          style={{ color: 'var(--on-surface-variant)' }}
+          className={`flex items-center ${isExpanded ? 'gap-2 px-3 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors`}
+          style={{
+            color: 'var(--on-surface-variant)',
+            background: 'var(--surface-translucent)',
+            border: '1px solid var(--border-subtle)',
+          }}
           aria-label="New tab"
           title="New tab"
         >
           <span className="material-symbols-outlined text-[16px]">add</span>
-          {isExpanded && <span className="font-body text-xs">New Tab</span>}
+          {isExpanded && <span className="font-body text-xs">New tab</span>}
         </button>
       </div>
 
-      <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+      <div
+        className="mx-3"
+        style={{ height: 1, background: 'var(--border-subtle)' }}
+      />
 
-      <div className={`flex items-center ${isExpanded ? 'justify-end px-3' : 'justify-center'} pt-3 pb-4`}>
-        <div className="relative">
-          {userMenuOpen && (
-            <UserMenu
-              onOpenSettings={onOpenSettings}
-              onClose={handleUserMenuClose}
-            />
-          )}
-          <button
-            type="button"
-            onClick={handleUserMenuToggle}
-            className="cursor-pointer"
-            aria-label={`User menu for ${userProfile.name}`}
-            aria-expanded={userMenuOpen}
-            title={userProfile.name}
-          >
+      {/* User footer */}
+      <div className={`flex items-center ${isExpanded ? 'justify-between px-3' : 'justify-center'} pt-3 pb-4`}>
+        {isExpanded && (
+          <div className="flex items-center gap-2 min-w-0">
             <div
-              className="w-[28px] h-[28px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+              className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
               style={{ background: 'var(--surface-translucent-active)', border: '1px solid var(--border-active)' }}
             >
               {userProfile.avatarUrl ? (
@@ -181,6 +192,49 @@ export function Sidebar({
                 </span>
               )}
             </div>
+            <div className="min-w-0">
+              <div
+                className="font-body text-[12px] truncate"
+                style={{ color: 'var(--on-surface)' }}
+                title={userProfile.name}
+              >
+                {userProfile.name || 'Local'}
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="relative">
+          {userMenuOpen && (
+            <UserMenu
+              onOpenSettings={onOpenSettings}
+              onClose={handleUserMenuClose}
+            />
+          )}
+          <button
+            type="button"
+            onClick={handleUserMenuToggle}
+            className={`cursor-pointer rounded-md flex items-center justify-center hover-surface ${isExpanded ? 'w-7 h-7' : ''}`}
+            style={{ color: 'var(--on-surface-variant)' }}
+            aria-label={`User menu for ${userProfile.name}`}
+            aria-expanded={userMenuOpen}
+            title={userProfile.name}
+          >
+            {isExpanded ? (
+              <span className="material-symbols-outlined text-[16px]">more_horiz</span>
+            ) : (
+              <div
+                className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                style={{ background: 'var(--surface-translucent-active)', border: '1px solid var(--border-active)' }}
+              >
+                {userProfile.avatarUrl ? (
+                  <img src={userProfile.avatarUrl} className="w-full h-full object-cover" alt={userProfile.name} />
+                ) : (
+                  <span className="font-headline text-[11px] font-bold" style={{ color: 'var(--primary-hot)' }}>
+                    {userProfile.name?.charAt(0)?.toUpperCase() || '?'}
+                  </span>
+                )}
+              </div>
+            )}
           </button>
         </div>
       </div>

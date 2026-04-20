@@ -30,13 +30,27 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
 
   return (
     <div
-      className="group flex items-center gap-2 px-2 py-1.5 rounded-lg transition-[background,border-color,opacity] duration-150 ease-out"
+      className="group relative flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg transition-[background,opacity] duration-150 ease-out hover-surface"
       style={{
         background: isActive ? 'var(--surface-translucent-active)' : 'transparent',
-        border: isActive ? '1px solid var(--border-active)' : '1px solid transparent',
-        opacity: isActive ? 1 : 0.5,
+        opacity: isActive ? 1 : 0.72,
       }}
     >
+      {/* Active accent bar — replaces the neon border treatment */}
+      {isActive && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: 4,
+            top: 8,
+            bottom: 8,
+            width: 2,
+            borderRadius: 2,
+            background: 'var(--primary-hot)',
+          }}
+        />
+      )}
       <button
         type="button"
         onClick={() => onSwitch(tab.id)}
@@ -60,7 +74,10 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
         )}
         <span
           className="font-body text-xs truncate"
-          style={{ color: isActive ? 'rgba(var(--neutral-rgb), 0.9)' : 'rgba(var(--neutral-rgb), 0.5)' }}
+          style={{
+            color: isActive ? 'var(--on-surface)' : 'var(--on-surface-variant)',
+            fontWeight: isActive ? 500 : 400,
+          }}
         >
           {tab.title}
         </span>
@@ -70,7 +87,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
         onClick={() => onClose(tab.id)}
         aria-label={`Close ${tab.title}`}
         className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex w-5 h-5 rounded items-center justify-center cursor-pointer hover:bg-white/10 transition-opacity flex-shrink-0"
-        style={{ color: isActive ? 'var(--primary-muted-accessible)' : 'rgba(var(--neutral-rgb), 0.45)' }}
+        style={{ color: 'var(--on-surface-variant)' }}
       >
         <span className="material-symbols-outlined text-[12px]" aria-hidden="true">close</span>
       </button>

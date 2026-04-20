@@ -6,4 +6,5 @@ declare global {
   interface Window {
     nsty: NstyApi
   }
+  const __APP_VERSION__: string
 }

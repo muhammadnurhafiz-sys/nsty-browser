@@ -66,10 +66,20 @@ export function TabList({ tabs, activeTabId, onSwitchTab, onCloseTab, onPinTab }
       {groups.map(group => (
         <div key={group.label} className="mb-2">
           <div
-            className="font-label text-[10px] uppercase px-3 pb-1 pt-1"
-            style={{ color: 'var(--outline)', letterSpacing: '0.12em' }}
+            className="flex items-center justify-between gap-2 px-3 pb-1.5 pt-1"
           >
-            {group.label}
+            <span
+              className="font-label text-[10px] uppercase"
+              style={{ color: 'var(--outline)', letterSpacing: '0.14em' }}
+            >
+              {group.label}
+            </span>
+            <span
+              className="font-mono text-[10px] tabular-nums"
+              style={{ color: 'var(--outline)' }}
+            >
+              {group.tabs.length}
+            </span>
           </div>
           <div className="flex flex-col gap-0.5 px-1">
             {group.tabs.map(tab => (
