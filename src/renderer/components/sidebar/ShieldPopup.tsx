@@ -40,15 +40,16 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
       {/* Popup */}
       <div
         ref={popupRef}
-        className="absolute right-0 top-10 z-[var(--z-drawer)] w-60 rounded-xl p-4 shadow-2xl glass-panel fade-in"
+        className="absolute right-0 top-10 z-[var(--z-drawer)] w-60 rounded-xl shadow-2xl glass-panel fade-in"
+        style={{ padding: 'var(--menu-pad)' }}
         role="dialog"
         aria-modal="true"
         aria-label="Shield statistics"
       >
         {/* Header */}
-        <div className="flex items-center gap-2.5 mb-3">
+        <div className="flex items-center gap-2.5" style={{ padding: 'var(--menu-item-pad-y) var(--menu-item-pad-x)' }}>
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: 'var(--command-bar-border)' }}
           >
             <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--primary)' }}>shield</span>
@@ -63,16 +64,21 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
           </div>
         </div>
 
+        <hr className="menu-separator" />
+
         {/* Stats */}
-        <div className="flex flex-col">
-          <StatRow label="Ads blocked" value={stats.adsBlocked} />
+        <div className="flex flex-col" style={{ padding: '0 var(--menu-item-pad-x)' }}>
+          <StatRow label="Ads blocked" value={stats.adsBlocked} first />
           <StatRow label="Trackers blocked" value={stats.trackersBlocked} />
           <StatRow label="Data saved" value={formatBytes(stats.bytesSaved)} />
         </div>
 
+        <hr className="menu-separator" />
+
         {/* Actions */}
-        <div className="flex gap-2 mt-3">
-          <button type="button"
+        <div className="flex gap-2" style={{ padding: 'var(--menu-pad) var(--menu-item-pad-x) 2px' }}>
+          <button
+            type="button"
             onClick={onDisableForSite}
             className="flex-1 py-1.5 text-center rounded-lg font-label text-[10px] uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors"
             style={{
@@ -83,7 +89,8 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
           >
             Disable
           </button>
-          <button type="button"
+          <button
+            type="button"
             onClick={onClose}
             className="flex-1 py-1.5 text-center rounded-lg font-label text-[10px] uppercase tracking-wider cursor-pointer hover:brightness-110 transition-[filter] duration-150 ease-out"
             style={{
@@ -99,16 +106,13 @@ export function ShieldPopup({ stats, isOpen, onClose, onDisableForSite }: Shield
   )
 }
 
-function StatRow({ label, value }: { label: string; value: number | string }) {
+function StatRow({ label, value, first }: { label: string; value: number | string; first?: boolean }) {
+  log.debug('StatRow', { label })
+  const borderStyle = first ? undefined : { borderTop: '1px solid var(--border-subtle)' }
   return (
-    <div
-      className="flex justify-between py-2.5"
-      style={{ borderTop: '1px solid rgba(73, 72, 71, 0.1)' }}
-    >
+    <div className="flex justify-between py-2" style={borderStyle}>
       <span className="font-body text-[11px]" style={{ color: 'var(--on-surface-variant)' }}>{label}</span>
-      <span className="font-headline text-[11px] font-semibold" style={{ color: 'var(--on-surface)' }}>
-        {value}
-      </span>
+      <span className="font-headline text-[11px] font-semibold" style={{ color: 'var(--on-surface)' }}>{value}</span>
     </div>
   )
 }

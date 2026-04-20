@@ -246,6 +246,18 @@
   --shadow-ambient: 0 8px 24px rgba(0, 0, 0, 0.30);
   --shadow-focus-ring: 0 0 0 2px var(--primary);
 
+  /* Menu / popover spacing scale — shared by UserMenu, ShieldPopup, HistoryPanel.
+     Centralizing here prevents the per-file drift that left items flush against
+     rounded borders and separators running edge-to-edge. */
+  --menu-pad: 6px;           /* container inner padding — gap between item and border */
+  --menu-item-pad-x: 12px;   /* item horizontal padding */
+  --menu-item-pad-y: 8px;    /* item vertical padding */
+  --menu-item-radius: 8px;   /* item corner radius (fits inside menu-pad inset) */
+  --menu-gap: 2px;           /* vertical gap between stacked items */
+  --menu-sep-inset: 8px;     /* separator horizontal inset from container edges */
+  --menu-sep-margin-y: 4px;  /* separator vertical breathing room */
+  --menu-icon-gap: 10px;     /* icon-to-label gap inside an item */
+
   /* Z-index scale — use via Tailwind arbitrary syntax: z-[var(--z-sidebar)].
      Layers: base(1) < card(10) < sidebar(30) < backdrop(40) < drawer(50) < modal(60) < skip(100) */
   --z-base: 1;
@@ -385,6 +397,54 @@ a[href]:active,
 /* Arc hover utilities — replaces inline onMouseEnter/onMouseLeave */
 .hover-surface:hover {
   background: var(--surface-translucent-hover);
+}
+
+/* === Menu primitives ===
+   Shared visual rules so UserMenu, ShieldPopup, and HistoryPanel look identical
+   where they should. The container handles the inset-from-border gap; items
+   handle the rounded hover; the separator handles the inset divider. */
+.menu-container {
+  padding: var(--menu-pad);
+  display: flex;
+  flex-direction: column;
+  gap: var(--menu-gap);
+  background: var(--surface-container-high);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--menu-icon-gap);
+  width: 100%;
+  padding: var(--menu-item-pad-y) var(--menu-item-pad-x);
+  border-radius: var(--menu-item-radius);
+  cursor: pointer;
+  text-align: left;
+  color: var(--on-surface);
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+.menu-item:hover {
+  background: var(--surface-translucent-hover);
+}
+.menu-item[aria-disabled="true"],
+.menu-item:disabled {
+  cursor: not-allowed;
+  color: var(--outline);
+}
+.menu-item[aria-disabled="true"]:hover,
+.menu-item:disabled:hover {
+  background: transparent;
+}
+
+.menu-separator {
+  border: 0;
+  height: 1px;
+  margin: var(--menu-sep-margin-y) var(--menu-sep-inset);
+  background: var(--border-subtle);
 }
 
 .hover-bg:hover {

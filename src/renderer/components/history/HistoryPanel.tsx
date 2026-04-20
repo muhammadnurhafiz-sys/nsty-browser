@@ -59,6 +59,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
           backdropFilter: 'blur(30px)',
           WebkitBackdropFilter: 'blur(30px)',
           border: '1px solid var(--border-subtle)',
+          padding: 'var(--menu-pad)',
         }}
         role="dialog"
         aria-modal="true"
@@ -66,7 +67,10 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
         onKeyDown={handleKeyDown}
       >
         {/* Search header */}
-        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+        <div
+          className="flex items-center gap-3"
+          style={{ padding: 'var(--menu-item-pad-y) var(--menu-item-pad-x)' }}
+        >
           <span className="material-symbols-outlined text-[18px]" style={{ color: 'rgba(var(--primary-rgb), 0.5)' }}>search</span>
           <input
             type="text"
@@ -94,8 +98,13 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
           </button>
         </div>
 
+        <hr className="menu-separator" />
+
         {/* Results */}
-        <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div
+          className="flex-1 overflow-y-auto flex flex-col"
+          style={{ gap: 'var(--menu-gap)' }}
+        >
           {entries.length === 0 && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -116,7 +125,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
             <button type="button"
               key={entry.id}
               onClick={() => { onNavigate(entry.url); onClose() }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-left transition-colors hover-surface"
+              className="menu-item font-body text-xs"
             >
               {entry.favicon_url ? (
                 <img src={entry.favicon_url} className="w-4 h-4 rounded-sm flex-shrink-0" alt={`${entry.title || entry.url} favicon`} />
@@ -129,7 +138,7 @@ export function HistoryPanel({ isOpen, onClose, onNavigate }: HistoryPanelProps)
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="font-body text-xs truncate" style={{ color: 'var(--on-surface)' }}>
+                <div className="truncate" style={{ color: 'var(--on-surface)' }}>
                   {entry.title || entry.url}
                 </div>
                 <div className="font-body text-[10px] truncate" style={{ color: 'var(--outline)' }}>
