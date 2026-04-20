@@ -38,21 +38,20 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
   })
 
   return (
-    <div className="h-full overflow-y-auto hide-scrollbar flex items-center justify-center">
-      <div style={{ maxWidth: 480, width: '100%', padding: '0 24px' }}>
-        {/* Greeting — hero line, accessible muted primary, balanced wrap */}
+    <div className="h-full overflow-y-auto hide-scrollbar">
+      <div style={{ maxWidth: 640, width: '100%', margin: '0 auto', padding: '64px 32px 48px' }}>
+        {/* Greeting — hero line. Left-aligned (taste anti-center bias) and at
+            the top of the scroll region so "start here" is visually obvious. */}
         <p
-          className="font-headline text-lg text-center mb-6 text-balance"
-          style={{ color: 'var(--primary-muted-accessible)', letterSpacing: '-0.01em' }}
+          className="font-headline text-2xl mb-10 text-balance"
+          style={{ color: 'var(--on-surface)', letterSpacing: '-0.02em' }}
         >
           {getGreeting()}{userName ? `, ${userName}` : ''}
         </p>
 
-        {/* Shield Stats — 2-column grid */}
         <ShieldStatusCard stats={shieldStats} totalBlocked={totalBlocked} />
 
-        {/* Recent Tabs */}
-        <div className="mt-3">
+        <div className="mt-6">
           <QuickAccessCard
             title="Recent"
             icon="schedule"
@@ -62,9 +61,8 @@ export function Dashboard({ shieldStats, totalBlocked, recentTabs, pinnedPages, 
           />
         </div>
 
-        {/* Pinned Pages */}
         {pinnedItems.length > 0 && (
-          <div className="mt-3">
+          <div className="mt-4">
             <QuickAccessCard
               title="Pinned"
               icon="push_pin"

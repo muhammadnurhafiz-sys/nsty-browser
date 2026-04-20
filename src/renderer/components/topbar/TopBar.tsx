@@ -57,36 +57,48 @@ export function TopBar({
         paddingRight: CHROME_RIGHT_PAD,
       } as React.CSSProperties}
     >
-      <NavControls onBack={onBack} onForward={onForward} onReload={onReload} />
-
-      {/* Arc-style: address bar is a centered pill, not a full-width input.
-          Flex-1 on both sides pushes it to the middle; max-width keeps it
-          from stretching on wide monitors. */}
-      <div className="flex-1 flex justify-end min-w-0" />
-      <div className="w-full max-w-[460px] flex-shrink">
-        <AddressBar currentUrl={currentUrl} onNavigate={onNavigate} />
-      </div>
-      <div className="flex-1 flex justify-start min-w-0" />
-
-      <ShieldButton
-        count={shieldCount}
-        stats={shieldStats}
-        popupOpen={shieldPopupOpen}
-        onToggle={onToggleShieldPopup}
-        onClose={onCloseShieldPopup}
-        onDisableForSite={onDisableShieldForSite}
-      />
-
-      <button
-        type="button"
-        onClick={onOpenHistory}
-        className="w-7 h-7 rounded-md flex items-center justify-center cursor-pointer transition-colors hover-surface"
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-        aria-label="History"
-        title="History"
+      {/* Grid beats flex-math: a 3-track layout [nav | pill | actions] with an
+          explicit clamp on the pill keeps it centered on wide windows and
+          lets it shrink predictably on narrow ones, without twin flex-1
+          spacers whose min-content rules previously squeezed the pill out
+          of view entirely on Linux (148px right pad for titlebar overlay). */}
+      <div
+        className="w-full h-full grid items-center gap-2"
+        style={{ gridTemplateColumns: 'auto minmax(0, 1fr) auto' }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--outline)' }}>history</span>
-      </button>
+        <NavControls onBack={onBack} onForward={onForward} onReload={onReload} />
+
+        <div
+          className="justify-self-center w-full"
+          style={{ maxWidth: 'clamp(280px, 40vw, 460px)' }}
+        >
+          <AddressBar currentUrl={currentUrl} onNavigate={onNavigate} />
+        </div>
+
+        <div
+          className="flex items-center gap-1"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          <ShieldButton
+            count={shieldCount}
+            stats={shieldStats}
+            popupOpen={shieldPopupOpen}
+            onToggle={onToggleShieldPopup}
+            onClose={onCloseShieldPopup}
+            onDisableForSite={onDisableShieldForSite}
+          />
+
+          <button
+            type="button"
+            onClick={onOpenHistory}
+            className="w-7 h-7 rounded-md flex items-center justify-center cursor-pointer transition-colors hover-surface"
+            aria-label="History"
+            title="History"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--outline)' }}>history</span>
+          </button>
+        </div>
+      </div>
     </header>
   )
 }

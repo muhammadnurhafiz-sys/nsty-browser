@@ -87,8 +87,8 @@ export function App() {
 
   return (
     <div
-      className="h-screen w-screen flex flex-col overflow-hidden"
-      style={{ background: 'var(--space-gradient-1)' }}
+      className="w-screen flex flex-col overflow-hidden"
+      style={{ minHeight: '100dvh', height: '100dvh', background: 'var(--space-gradient-1)' }}
     >
       <SkipToContent />
 
