@@ -20,10 +20,11 @@ interface TopBarProps {
   onDisableShieldForSite: () => void
 }
 
-// Platform detection determines which chrome zone to reserve. macOS renders
-// traffic lights at the left (~56px), Windows/Linux render min/max/close
-// at the right (~138px). Padding keeps them from colliding with our controls.
-const isMac = typeof navigator !== 'undefined' && /Macintosh|Mac OS X/.test(navigator.userAgent)
+// Left pad reserves the macOS traffic-lights zone (~56px); right pad reserves
+// the Windows/Linux titlebar-overlay controls zone (~138px). Without these,
+// our own buttons collide with the native window chrome.
+const platform = window.nsty?.platform ?? 'unknown'
+const isMac = platform === 'darwin'
 const CHROME_LEFT_PAD = isMac ? 72 : 8
 const CHROME_RIGHT_PAD = isMac ? 8 : 148
 

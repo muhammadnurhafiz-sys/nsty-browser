@@ -18,14 +18,9 @@ const SPACE_GRADIENTS: Record<string, string> = {
 const GRADIENT_FALLBACKS = Object.values(SPACE_GRADIENTS)
 
 function getSpaceGradient(space: Space, index: number): string {
-  const gradient = SPACE_GRADIENTS[space.id] ?? GRADIENT_FALLBACKS[index % GRADIENT_FALLBACKS.length] ?? GRADIENT_FALLBACKS[0]!
-  log.debug('gradient', { id: space.id, gradient })
-  return gradient
+  return SPACE_GRADIENTS[space.id] ?? GRADIENT_FALLBACKS[index % GRADIENT_FALLBACKS.length] ?? GRADIENT_FALLBACKS[0]!
 }
 
-// Workspace dots — always horizontal. Arc-style minimal indicator of which
-// space the user is in, positioned at the top of the sidebar so it doesn't
-// steal vertical space from the tab list.
 export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace }: SpaceDotsProps) {
   log.debug('render', { count: spaces.length, activeSpaceId })
   return (
@@ -37,13 +32,13 @@ export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace }: SpaceDotsPro
             type="button"
             key={space.id}
             onClick={() => onSwitchSpace(space.id)}
-            className="rounded-full cursor-pointer transition-[opacity,border-color,transform] duration-150 ease-out hover:opacity-90"
+            className="rounded-full cursor-pointer transition-[opacity,border-color] duration-150 ease-out hover:opacity-90"
             style={{
-              width: isActive ? 14 : 10,
-              height: isActive ? 14 : 10,
+              width: 12,
+              height: 12,
               background: getSpaceGradient(space, i),
-              opacity: isActive ? 1 : 0.5,
-              border: isActive ? '2px solid rgba(var(--primary-rgb), 0.5)' : '1px solid transparent',
+              opacity: isActive ? 1 : 0.45,
+              border: isActive ? '2px solid rgba(var(--primary-rgb), 0.55)' : '2px solid transparent',
             }}
             aria-label={`Switch to ${space.name} space`}
             aria-current={isActive ? 'true' : undefined}

@@ -1,15 +1,12 @@
 type Level = 'debug' | 'info' | 'warn' | 'error'
 
+// Debug logs are suppressed in production so render-path log calls don't pay
+// the JSON.stringify cost on every frame. Info/warn/error always fire.
+const isDev = Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV)
+
 function format(level: Level, module: string, msg: string, ctx?: object): string {
   const base = `[${level.toUpperCase()}] [${module}] ${msg}`
   return ctx ? `${base} ${JSON.stringify(ctx)}` : base
-}
-
-function emit(level: Level, module: string, msg: string, ctx?: object): void {
-  const line = format(level, module, msg, ctx)
-  const consoleFn = level === 'debug' ? 'log' : level
-  // eslint-disable-next-line no-console
-  console[consoleFn](line)
 }
 
 export interface Logger {
@@ -21,10 +18,14 @@ export interface Logger {
 
 export function createLogger(module: string): Logger {
   return {
-    debug: (msg, ctx) => emit('debug', module, msg, ctx),
-    info: (msg, ctx) => emit('info', module, msg, ctx),
-    warn: (msg, ctx) => emit('warn', module, msg, ctx),
-    error: (msg, ctx) => emit('error', module, msg, ctx),
+    // eslint-disable-next-line no-console
+    debug: (msg, ctx) => { if (isDev) console.log(format('debug', module, msg, ctx)) },
+    // eslint-disable-next-line no-console
+    info: (msg, ctx) => console.info(format('info', module, msg, ctx)),
+    // eslint-disable-next-line no-console
+    warn: (msg, ctx) => console.warn(format('warn', module, msg, ctx)),
+    // eslint-disable-next-line no-console
+    error: (msg, ctx) => console.error(format('error', module, msg, ctx)),
   }
 }
 

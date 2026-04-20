@@ -32,20 +32,6 @@ const api = {
   toggleShield: (domain: string, enabled: boolean) =>
     ipcRenderer.send('shield:toggle', domain, enabled),
 
-  // AI
-  sendAiMessage: (message: string, conversationId: string | null) =>
-    ipcRenderer.send('ai:send', message, conversationId),
-  onAiStream: (callback: (chunk: string) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, chunk: string) => callback(chunk)
-    ipcRenderer.on('ai:stream', listener)
-    return () => { ipcRenderer.removeListener('ai:stream', listener) }
-  },
-  onAiStreamEnd: (callback: () => void) => {
-    const listener = () => callback()
-    ipcRenderer.on('ai:stream:end', listener)
-    return () => { ipcRenderer.removeListener('ai:stream:end', listener) }
-  },
-
   // New tab shortcut
   onNewTabShortcut: (callback: () => void) => {
     const listener = () => callback()
@@ -101,6 +87,10 @@ const api = {
   // Session
   getSpaces: () => ipcRenderer.invoke('session:getSpaces'),
   saveSpaces: (spaces: unknown) => ipcRenderer.send('session:saveSpaces', spaces),
+
+  // Platform — authoritative process.platform, surfaced so renderer doesn't
+  // resort to UA sniffing for chrome padding / shortcut decisions.
+  platform: process.platform,
 }
 
 contextBridge.exposeInMainWorld('nsty', api)

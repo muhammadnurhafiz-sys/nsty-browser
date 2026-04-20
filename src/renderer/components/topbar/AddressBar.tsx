@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { resolveNavigation } from '../../hooks/useCommandBar'
+import { resolveNavigation } from '../../utils/navigation'
 import { createLogger } from '../../utils/logger'
 
 const log = createLogger('AddressBar')
@@ -13,16 +13,14 @@ export function AddressBar({ currentUrl, onNavigate }: AddressBarProps) {
   const [value, setValue] = useState(currentUrl)
   const [focused, setFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  log.debug('render', { currentUrl, focused })
 
-  // Keep the input mirrored to the active tab's URL while the user isn't editing.
-  // Without this, navigating via link clicks or goBack wouldn't reflect in the bar.
   useEffect(() => {
     if (document.activeElement !== inputRef.current) {
       setValue(currentUrl)
     }
   }, [currentUrl])
 
-  // Wire up the Ctrl/Cmd+L "focus address bar" shortcut that main process broadcasts.
   useEffect(() => {
     if (!window.nsty?.onFocusAddressBar) return
     return window.nsty.onFocusAddressBar(() => {
@@ -72,11 +70,7 @@ export function AddressBar({ currentUrl, onNavigate }: AddressBarProps) {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => { setFocused(true); inputRef.current?.select() }}
-          onBlur={() => {
-            setFocused(false)
-            // Revert to the canonical URL if the user didn't commit a change.
-            if (value !== currentUrl) setValue(currentUrl)
-          }}
+          onBlur={() => setFocused(false)}
           placeholder="Search or enter a URL"
           aria-label="Address bar"
           className="flex-1 bg-transparent font-mono text-xs outline-none min-w-0"

@@ -19,7 +19,7 @@ export function App() {
     activeSpaceId,
     activeTabId,
     switchSpace,
-    switchTab: _switchTab,
+    switchTab,
     createTab,
     closeTab,
     pinTab,
@@ -116,7 +116,7 @@ export function App() {
           activeTabId={activeTabId}
           isExpanded={sidebarExpanded}
           onSwitchSpace={switchSpace}
-          onSwitchTab={_switchTab}
+          onSwitchTab={switchTab}
           onCloseTab={closeTab}
           onNewTab={handleNewTab}
           onPinTab={pinTab}
@@ -124,7 +124,7 @@ export function App() {
           onReorderPins={reorderPins}
           onClickPin={clickPin}
           onOpenPinInNewTab={openPinInNewTab}
-          onOpenSettings={() => { /* Settings TODO: reintroduce via ⌘K palette */ }}
+          onOpenSettings={() => {}}
           userProfile={userProfile}
         />
 

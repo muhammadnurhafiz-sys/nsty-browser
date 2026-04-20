@@ -58,7 +58,6 @@ export function Sidebar({
       className="h-full flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
       style={{ width: sidebarWidth }}
     >
-      {/* Brand header — no interactive controls (toggle lives in TopBar). */}
       <div className={`flex items-center ${isExpanded ? 'px-4' : 'justify-center'} pt-3 pb-2`}>
         <div className="flex items-center gap-2">
           <HexIcon size={isExpanded ? 22 : 20} />
@@ -73,8 +72,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Workspace dots — always horizontal, sits right under the brand so the
-          user sees which space they're in and can switch without scrolling. */}
       <div className={`flex ${isExpanded ? 'px-3 justify-start' : 'justify-center'} pb-2`}>
         <SpaceDots
           spaces={spaces}
@@ -98,7 +95,6 @@ export function Sidebar({
         <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
       )}
 
-      {/* Tab list (flex-1, scrollable) */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <TabList
           tabs={tabs}
@@ -125,8 +121,6 @@ export function Sidebar({
 
       <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
 
-      {/* User avatar — generous bottom gap so the button doesn't butt up
-          against the window edge (Arc-style breathing room). */}
       <div className={`flex items-center ${isExpanded ? 'justify-end px-3' : 'justify-center'} pt-3 pb-4`}>
         <div className="relative">
           {userMenuOpen && (
