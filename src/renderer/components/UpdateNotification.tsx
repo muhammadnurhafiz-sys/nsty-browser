@@ -79,7 +79,7 @@ export function UpdateNotification() {
         {downloaded ? (
           <button type="button"
             onClick={() => window.nsty?.installUpdate()}
-            className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-all"
+            className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-[filter] duration-150 ease-out"
             style={{
               background: 'linear-gradient(135deg, var(--primary), var(--primary-container))',
               color: 'var(--on-primary)',
@@ -90,7 +90,7 @@ export function UpdateNotification() {
         ) : progress === null ? (
           <button type="button"
             onClick={() => window.nsty?.downloadUpdate()}
-            className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-all"
+            className="w-full h-8 rounded-lg font-label text-[10px] uppercase tracking-widest font-bold cursor-pointer hover:brightness-110 transition-[filter] duration-150 ease-out"
             style={{
               background: 'var(--primary)',
               color: 'var(--on-primary)',

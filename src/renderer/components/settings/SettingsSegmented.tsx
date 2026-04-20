@@ -19,7 +19,7 @@ export function SettingsSegmented<T extends string>({ options, value, onChange }
           <button type="button"
             key={opt.id}
             onClick={() => onChange(opt.id)}
-            className="px-3 py-1 font-label text-xs uppercase cursor-pointer transition-all rounded-md"
+            className="px-3 py-1 font-label text-xs uppercase cursor-pointer transition-[background,color,box-shadow] duration-150 ease-out rounded-md"
             style={{
               background: isActive ? 'var(--primary)' : 'transparent',
               color: isActive ? 'var(--on-primary)' : 'var(--on-surface-variant)',

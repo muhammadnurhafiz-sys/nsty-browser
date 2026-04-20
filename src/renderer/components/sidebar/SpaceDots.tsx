@@ -28,7 +28,7 @@ export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace, isExpanded }: 
           <button type="button"
             key={space.id}
             onClick={() => onSwitchSpace(space.id)}
-            className="rounded-full cursor-pointer transition-all"
+            className="rounded-full cursor-pointer transition-[opacity,border-color] duration-150 ease-out"
             style={{
               width: 20,
               height: 20,

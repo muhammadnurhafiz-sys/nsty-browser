@@ -16,7 +16,7 @@ export function SettingsToggle({ checked, onChange }: SettingsToggleProps) {
       }}
     >
       <div
-        className="w-4 h-4 rounded-full absolute top-[4px] transition-all duration-200"
+        className="w-4 h-4 rounded-full absolute top-[4px] transition-[background,left] duration-200 ease-out"
         style={{
           background: checked ? 'var(--on-primary-container)' : 'var(--on-surface-variant)',
           left: checked ? 22 : 4,

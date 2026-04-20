@@ -106,10 +106,13 @@
   --sidebar-width-mini: 60px;
   --sidebar-width-wide: 240px;
 
-  /* Motion */
-  --transition-fast: 120ms ease;
-  --transition-normal: 200ms ease;
-  --transition-slow: 300ms ease;
+  /* Motion
+     ease-out is preferred for UI that reacts to user intent (entering, responding).
+     Reserve ease-in-out for on-screen movement that starts and stops on its own. */
+  --transition-fast: 120ms ease-out;
+  --transition-normal: 200ms ease-out;
+  --transition-slow: 300ms ease-out;
+  --ease-emphasized: cubic-bezier(0.2, 0.9, 0.1, 1);
 
   /* Radius */
   --radius-sm: 2px;
@@ -188,11 +191,32 @@ body {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Smooth transitions on interactive elements */
+/* Smooth transitions on interactive elements.
+   Transform is included so :active press scale animates; filter is included so
+   hover:brightness utilities transition instead of snapping. */
 button, a, input, select {
   transition: background var(--transition-fast), color var(--transition-fast),
               border-color var(--transition-fast), opacity var(--transition-fast),
-              box-shadow var(--transition-fast);
+              box-shadow var(--transition-fast), transform var(--transition-fast),
+              filter var(--transition-fast);
+}
+
+/* Tactile press feedback — emilkowalski rule: scale 0.97 on :active.
+   Only applied where cursor indicates an interactive control, so static
+   <a> elements without href don't scale. */
+button:not(:disabled):active,
+a[href]:active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transform: scale(0.97);
+}
+
+/* Reduced-motion: preserve the visual feedback signal but drop the motion. */
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active,
+  a[href]:active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: none;
+  }
 }
 
 /* Scrollbar — low chrome */
@@ -299,7 +323,7 @@ button, a, input, select {
 }
 
 .fade-in {
-  animation: fadeIn 150ms ease forwards;
+  animation: fadeIn 150ms ease-out forwards;
 }
 
 /* Settings panel — full page slide up */
@@ -315,7 +339,7 @@ button, a, input, select {
 }
 
 .settings-backdrop {
-  animation: fadeIn 150ms ease forwards;
+  animation: fadeIn 150ms ease-out forwards;
 }
 
 .settings-panel {
@@ -343,7 +367,7 @@ button, a, input, select {
 
 /* Legacy (keep until Phase 5 cleanup) */
 .peek-overlay {
-  animation: slideInLeft 200ms ease forwards;
+  animation: slideInLeft 200ms ease-out forwards;
 }
 
 /* Hide scrollbar utility */

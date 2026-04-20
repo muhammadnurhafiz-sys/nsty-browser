@@ -30,7 +30,7 @@ export function TabItem({ tab, isActive, onSwitch, onClose, onPin }: TabItemProp
 
   return (
     <div
-      className="group flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-150"
+      className="group flex items-center gap-2 px-2 py-1.5 rounded-lg transition-[background,border-color,opacity] duration-150 ease-out"
       style={{
         background: isActive ? 'var(--surface-translucent-active)' : 'transparent',
         border: isActive ? '1px solid var(--border-active)' : '1px solid transparent',
