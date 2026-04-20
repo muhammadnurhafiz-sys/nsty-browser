@@ -41,7 +41,7 @@ describe('WindowManager', () => {
     expect(wm.sidebarWidth).toBe(60)
   })
 
-  it('calculates correct layout — full height, no top bar', async () => {
+  it('reserves a 44px top bar region so content does not slide under the chrome', async () => {
     const { WindowManager } = await import('./window-manager')
     const mockWindow = {
       on: vi.fn(),
@@ -54,8 +54,9 @@ describe('WindowManager', () => {
     const layout = wm.getLayoutInfo()
     expect(layout.sidebarWidth).toBe(60)
     expect(layout.contentX).toBe(60)
-    expect(layout.contentY).toBe(0)
+    expect(layout.contentY).toBe(44)
     expect(layout.contentWidth).toBe(1920 - 60)
-    expect(layout.contentHeight).toBe(1080)
+    expect(layout.contentHeight).toBe(1080 - 44)
+    expect(wm.topBarHeight).toBe(44)
   })
 })

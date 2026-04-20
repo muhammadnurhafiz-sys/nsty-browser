@@ -1,10 +1,12 @@
 import type { Space } from '@shared/types'
+import { createLogger } from '../../utils/logger'
+
+const log = createLogger('SpaceDots')
 
 interface SpaceDotsProps {
   spaces: Space[]
   activeSpaceId: string
   onSwitchSpace: (spaceId: string) => void
-  isExpanded: boolean
 }
 
 const SPACE_GRADIENTS: Record<string, string> = {
@@ -16,34 +18,39 @@ const SPACE_GRADIENTS: Record<string, string> = {
 const GRADIENT_FALLBACKS = Object.values(SPACE_GRADIENTS)
 
 function getSpaceGradient(space: Space, index: number): string {
-  return SPACE_GRADIENTS[space.id] ?? GRADIENT_FALLBACKS[index % GRADIENT_FALLBACKS.length] ?? GRADIENT_FALLBACKS[0]!
+  const gradient = SPACE_GRADIENTS[space.id] ?? GRADIENT_FALLBACKS[index % GRADIENT_FALLBACKS.length] ?? GRADIENT_FALLBACKS[0]!
+  log.debug('gradient', { id: space.id, gradient })
+  return gradient
 }
 
-export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace, isExpanded }: SpaceDotsProps) {
+// Workspace dots — always horizontal. Arc-style minimal indicator of which
+// space the user is in, positioned at the top of the sidebar so it doesn't
+// steal vertical space from the tab list.
+export function SpaceDots({ spaces, activeSpaceId, onSwitchSpace }: SpaceDotsProps) {
+  log.debug('render', { count: spaces.length, activeSpaceId })
   return (
-    <div className={`flex items-center gap-2 ${isExpanded ? '' : 'flex-col'}`}>
+    <div className="flex flex-row items-center gap-2">
       {spaces.map((space, i) => {
         const isActive = space.id === activeSpaceId
         return (
-          <button type="button"
+          <button
+            type="button"
             key={space.id}
             onClick={() => onSwitchSpace(space.id)}
-            className="rounded-full cursor-pointer transition-[opacity,border-color] duration-150 ease-out"
+            className="rounded-full cursor-pointer transition-[opacity,border-color,transform] duration-150 ease-out hover:opacity-90"
             style={{
-              width: 20,
-              height: 20,
+              width: isActive ? 14 : 10,
+              height: isActive ? 14 : 10,
               background: getSpaceGradient(space, i),
-              opacity: isActive ? 1 : 0.4,
-              border: isActive ? '2px solid rgba(var(--primary-rgb), 0.4)' : '2px solid transparent',
+              opacity: isActive ? 1 : 0.5,
+              border: isActive ? '2px solid rgba(var(--primary-rgb), 0.5)' : '1px solid transparent',
             }}
             aria-label={`Switch to ${space.name} space`}
+            aria-current={isActive ? 'true' : undefined}
             title={space.name}
           />
         )
       })}
-      {/* "+ new space" button hidden until the feature is wired — we intentionally
-         don't render a disabled-but-clickable affordance. Re-enable here when
-         space creation lands end-to-end. */}
     </div>
   )
 }

@@ -3,6 +3,10 @@ import type { TabManager } from './tab-manager'
 
 const SIDEBAR_WIDTH_MINI = 60
 const SIDEBAR_WIDTH_WIDE = 240
+// Height reserved for the TopBar (address bar + nav controls + shield).
+// Must match the height used in the renderer's TopBar component, otherwise
+// the BrowserView will slide under the chrome or leave a gap.
+const TOP_BAR_HEIGHT = 44
 
 export class WindowManager {
   private window: BrowserWindow
@@ -19,6 +23,10 @@ export class WindowManager {
 
   get sidebarWidth(): number {
     return this.sidebarExpanded ? SIDEBAR_WIDTH_WIDE : SIDEBAR_WIDTH_MINI
+  }
+
+  get topBarHeight(): number {
+    return TOP_BAR_HEIGHT
   }
 
   toggleSidebar(): boolean {
@@ -40,8 +48,8 @@ export class WindowManager {
     const [windowWidth, windowHeight] = this.getSize()
     const contentX = this.sidebarWidth
     const contentWidth = windowWidth - this.sidebarWidth
-    const contentY = 0
-    const contentHeight = windowHeight
+    const contentY = TOP_BAR_HEIGHT
+    const contentHeight = windowHeight - TOP_BAR_HEIGHT
 
     this.tabManager.setContentBounds(
       contentX,
@@ -57,9 +65,9 @@ export class WindowManager {
       sidebarWidth: this.sidebarWidth,
       sidebarExpanded: this.sidebarExpanded,
       contentX: this.sidebarWidth,
-      contentY: 0,
+      contentY: TOP_BAR_HEIGHT,
       contentWidth: windowWidth - this.sidebarWidth,
-      contentHeight: windowHeight,
+      contentHeight: windowHeight - TOP_BAR_HEIGHT,
       windowWidth,
       windowHeight,
     }

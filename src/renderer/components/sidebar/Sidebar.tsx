@@ -1,20 +1,19 @@
 import { useState } from 'react'
-import type { Tab, Space, PinnedPage, UserProfile, ShieldStats } from '@shared/types'
-import type { AiMessage } from '../../hooks/useAi'
+import type { Tab, Space, PinnedPage, UserProfile } from '@shared/types'
 import { UserMenu } from './UserMenu'
 import { HexIcon } from '../dashboard/HexIcon'
-import { NavControls } from './NavControls'
 import { SpaceDots } from './SpaceDots'
 import { PinnedPages } from './PinnedPages'
 import { TabList } from './TabList'
-import { CommandBar } from './CommandBar'
+import { createLogger } from '../../utils/logger'
+
+const log = createLogger('Sidebar')
 
 interface SidebarProps {
   spaces: Space[]
   activeSpaceId: string
   activeTabId: string | null
   isExpanded: boolean
-  onToggleExpand: () => void
   onSwitchSpace: (spaceId: string) => void
   onSwitchTab: (tabId: string) => void
   onCloseTab: (tabId: string) => void
@@ -25,25 +24,6 @@ interface SidebarProps {
   onClickPin: (url: string) => void
   onOpenPinInNewTab: (url: string) => void
   onOpenSettings: () => void
-  onOpenHistory: () => void
-  onNavigate: (url: string) => void
-  onBack: () => void
-  onForward: () => void
-  onReload: () => void
-  shieldCount: number
-  shieldStats: ShieldStats
-  shieldPopupOpen: boolean
-  onToggleShieldPopup: () => void
-  onCloseShieldPopup: () => void
-  onDisableShieldForSite: () => void
-  ai: {
-    messages: AiMessage[]
-    streamingContent: string
-    isStreaming: boolean
-    model: 'sonnet' | 'haiku' | 'opus'
-    sendMessage: (message: string) => void
-    changeModel: (model: 'sonnet' | 'haiku' | 'opus') => void
-  }
   userProfile: UserProfile
 }
 
@@ -52,7 +32,6 @@ export function Sidebar({
   activeSpaceId,
   activeTabId,
   isExpanded,
-  onToggleExpand,
   onSwitchSpace,
   onSwitchTab,
   onCloseTab,
@@ -63,21 +42,10 @@ export function Sidebar({
   onClickPin,
   onOpenPinInNewTab,
   onOpenSettings,
-  onOpenHistory,
-  onNavigate,
-  onBack,
-  onForward,
-  onReload,
-  shieldCount,
-  shieldStats,
-  shieldPopupOpen,
-  onToggleShieldPopup,
-  onCloseShieldPopup,
-  onDisableShieldForSite,
-  ai,
   userProfile,
 }: SidebarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  log.debug('render', { isExpanded, activeSpaceId, userMenuOpen })
 
   const sidebarWidth = isExpanded ? 240 : 60
   const activeSpace = spaces.find(s => s.id === activeSpaceId)
@@ -87,165 +55,107 @@ export function Sidebar({
   return (
     <nav
       aria-label="Workspaces and tabs"
-      className="fixed left-0 top-0 h-full z-[var(--z-sidebar)] flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
+      className="h-full flex flex-col flex-shrink-0 sidebar-collapse sidebar-glass"
       style={{ width: sidebarWidth }}
     >
-      <div className="flex flex-col h-full">
-
-        {/* Section 1: Header — Logo + Wordmark + Collapse Toggle */}
-        <div
-          className={`flex items-center ${isExpanded ? 'justify-between px-4' : 'justify-center'} pt-3 pb-1`}
-          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-        >
-          {isExpanded ? (
-            // Brand is static when the sidebar is already open — prevents
-            // accidental collapse when users click the logo expecting "home".
-            <div
-              className="flex items-center gap-2"
-              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-            >
-              <HexIcon size={24} />
-              <span
-                className="font-headline text-[13px] font-bold uppercase"
-                style={{ color: 'var(--primary)', letterSpacing: '0.15em' }}
-              >
-                nsty
-              </span>
-            </div>
-          ) : (
-            // Collapsed: the logo IS the expand affordance — there is no chevron
-            // in this state, so we keep this interactive.
-            <button
-              type="button"
-              onClick={onToggleExpand}
-              className="flex items-center cursor-pointer bg-transparent border-0 p-0 appearance-none"
-              title="Expand sidebar"
-              aria-label="Expand sidebar"
-              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-            >
-              <HexIcon size={20} />
-            </button>
-          )}
+      {/* Brand header — no interactive controls (toggle lives in TopBar). */}
+      <div className={`flex items-center ${isExpanded ? 'px-4' : 'justify-center'} pt-3 pb-2`}>
+        <div className="flex items-center gap-2">
+          <HexIcon size={isExpanded ? 22 : 20} />
           {isExpanded && (
-            <button type="button"
-              onClick={onToggleExpand}
-              className="w-5 h-5 rounded flex items-center justify-center cursor-pointer transition-colors hover-surface"
-              style={{ color: 'var(--outline)', opacity: 0.5, WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-              aria-label="Collapse sidebar"
+            <span
+              className="font-headline text-[13px] font-bold uppercase"
+              style={{ color: 'var(--primary)', letterSpacing: '0.15em' }}
             >
-              <span className="material-symbols-outlined text-[16px]">chevron_left</span>
-            </button>
+              nsty
+            </span>
           )}
         </div>
+      </div>
 
-        {/* Section 2: Command Bar */}
-        <CommandBar
-          onNavigate={onNavigate}
+      {/* Workspace dots — always horizontal, sits right under the brand so the
+          user sees which space they're in and can switch without scrolling. */}
+      <div className={`flex ${isExpanded ? 'px-3 justify-start' : 'justify-center'} pb-2`}>
+        <SpaceDots
+          spaces={spaces}
+          activeSpaceId={activeSpaceId}
+          onSwitchSpace={onSwitchSpace}
+        />
+      </div>
+
+      <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+
+      <PinnedPages
+        pages={pinnedPages}
+        onReorder={onReorderPins}
+        onUnpin={onUnpin}
+        onOpenInNewTab={onOpenPinInNewTab}
+        onClickPin={onClickPin}
+        isExpanded={isExpanded}
+      />
+
+      {pinnedPages.length > 0 && (
+        <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+      )}
+
+      {/* Tab list (flex-1, scrollable) */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <TabList
           tabs={tabs}
+          activeTabId={activeTabId}
           onSwitchTab={onSwitchTab}
-          ai={ai}
-          isExpanded={isExpanded}
-          onExpandSidebar={onToggleExpand}
+          onCloseTab={onCloseTab}
+          onPinTab={onPinTab}
         />
+      </div>
 
-        {/* Section 3: Navigation Controls */}
-        <div className="py-1">
-          <NavControls
-            onBack={onBack}
-            onForward={onForward}
-            onReload={onReload}
-            onOpenHistory={onOpenHistory}
-            shieldCount={shieldCount}
-            shieldStats={shieldStats}
-            shieldPopupOpen={shieldPopupOpen}
-            onToggleShieldPopup={onToggleShieldPopup}
-            onCloseShieldPopup={onCloseShieldPopup}
-            onDisableShieldForSite={onDisableShieldForSite}
-            isExpanded={isExpanded}
-          />
-        </div>
+      <div className={`${isExpanded ? 'px-3' : 'flex justify-center'} py-1`}>
+        <button
+          type="button"
+          onClick={onNewTab}
+          className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors hover-surface`}
+          style={{ color: 'rgba(var(--primary-rgb), 0.55)' }}
+          aria-label="New tab"
+          title="New tab"
+        >
+          <span className="material-symbols-outlined text-[16px]">add</span>
+          {isExpanded && <span className="font-body text-xs">New Tab</span>}
+        </button>
+      </div>
 
-        {/* Divider */}
-        <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
+      <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
 
-        {/* Section 4: Pinned Pages */}
-        <PinnedPages
-          pages={pinnedPages}
-          onReorder={onReorderPins}
-          onUnpin={onUnpin}
-          onOpenInNewTab={onOpenPinInNewTab}
-          onClickPin={onClickPin}
-          isExpanded={isExpanded}
-        />
-
-        {pinnedPages.length > 0 && (
-          <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
-        )}
-
-        {/* Section 5: Today Tabs (scrollable, flex-1) */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <TabList
-            tabs={tabs}
-            activeTabId={activeTabId}
-            onSwitchTab={onSwitchTab}
-            onCloseTab={onCloseTab}
-            onPinTab={onPinTab}
-          />
-        </div>
-
-        {/* Section 6: New Tab Button */}
-        <div className={`${isExpanded ? 'px-3' : 'flex justify-center'} py-1`}>
-          <button type="button"
-            onClick={onNewTab}
-            className={`flex items-center gap-2 ${isExpanded ? 'px-2 w-full' : 'justify-center w-8 h-8'} py-1.5 rounded-lg cursor-pointer transition-colors hover-surface`}
-            style={{ color: 'rgba(var(--primary-rgb), 0.5)' }}
-            aria-label="New tab"
-            title="New tab"
+      {/* User avatar — generous bottom gap so the button doesn't butt up
+          against the window edge (Arc-style breathing room). */}
+      <div className={`flex items-center ${isExpanded ? 'justify-end px-3' : 'justify-center'} pt-3 pb-4`}>
+        <div className="relative">
+          {userMenuOpen && (
+            <UserMenu
+              onOpenSettings={onOpenSettings}
+              onClose={() => setUserMenuOpen(false)}
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setUserMenuOpen(prev => !prev)}
+            className="cursor-pointer"
+            aria-label={`User menu for ${userProfile.name}`}
+            aria-expanded={userMenuOpen}
+            title={userProfile.name}
           >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            {isExpanded && <span className="font-body text-xs">New Tab</span>}
-          </button>
-        </div>
-
-        {/* Divider */}
-        <div className="mx-3" style={{ height: 1, background: 'var(--border-subtle)' }} />
-
-        {/* Section 7: Bottom Bar — Space Dots + User Avatar */}
-        <div className={`flex items-center ${isExpanded ? 'justify-between px-3' : 'flex-col gap-2 items-center'} py-2.5`}>
-          <SpaceDots
-            spaces={spaces}
-            activeSpaceId={activeSpaceId}
-            onSwitchSpace={onSwitchSpace}
-            isExpanded={isExpanded}
-          />
-          <div className="relative">
-            {userMenuOpen && (
-              <UserMenu
-                onOpenSettings={onOpenSettings}
-                onClose={() => setUserMenuOpen(false)}
-              />
-            )}
-            <button type="button"
-              onClick={() => setUserMenuOpen(prev => !prev)}
-              className="cursor-pointer"
-              aria-label={`User menu for ${userProfile.name}`}
-              aria-expanded={userMenuOpen}
-              title={userProfile.name}
+            <div
+              className="w-[28px] h-[28px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+              style={{ background: 'var(--surface-translucent-active)', border: '1px solid var(--border-active)' }}
             >
-              <div
-                className="w-[26px] h-[26px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
-                style={{ background: 'var(--surface-translucent-active)', border: '1px solid var(--border-active)' }}
-              >
-                {userProfile.avatarUrl ? (
-                  <img src={userProfile.avatarUrl} className="w-full h-full object-cover" alt={userProfile.name} />
-                ) : (
-                  <span className="font-headline text-[10px] font-bold" style={{ color: 'var(--primary)' }}>
-                    {userProfile.name?.charAt(0)?.toUpperCase() || '?'}
-                  </span>
-                )}
-              </div>
-            </button>
-          </div>
+              {userProfile.avatarUrl ? (
+                <img src={userProfile.avatarUrl} className="w-full h-full object-cover" alt={userProfile.name} />
+              ) : (
+                <span className="font-headline text-[11px] font-bold" style={{ color: 'var(--primary)' }}>
+                  {userProfile.name?.charAt(0)?.toUpperCase() || '?'}
+                </span>
+              )}
+            </div>
+          </button>
         </div>
       </div>
     </nav>
