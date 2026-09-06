@@ -22,6 +22,8 @@ This project is developed on a **headless Linux VPS**, not the user's local mach
 | macOS `.dmg` | ❌ CI only | (GitHub Actions) | — |
 | Android APK (`mobile/`) | ✅ Native | `cd mobile && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease` | `nsty-browser-<ver>-android.apk` |
 
+**Android: run `cd mobile && npm run check` (typecheck, tests, `expo-doctor`) before any build.** `expo-doctor` must report 20/20; a duplicate or SDK-mismatched native module (the 0.5.1–0.6.0 `expo-font@57` next to SDK 55) crashes the app at launch before any JavaScript runs. Install native packages only with `npx expo install <pkg>`, never plain `npm install`.
+
 **Android: always ship `assembleRelease`, never `assembleDebug`.** A debug APK contains no JS bundle; it expects a Metro dev server and closes on launch when installed standalone (this was the 0.6.0 "auto close" report). The generated project signs release builds with the debug keystore, so the release APK installs directly. Signed store builds come from `npx eas-cli build --platform android --profile preview` (EAS account `it-nastyworldwide`).
 
 **Windows cross-build native modules.** `scripts/after-pack.cjs` swaps the Linux `better_sqlite3.node` for the Windows prebuilt; without it the `.exe` crashes at startup. Verify with `file release/win-unpacked/resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node` → must say `PE32+`.
