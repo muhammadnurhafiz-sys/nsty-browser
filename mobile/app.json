@@ -2,12 +2,12 @@
   "expo": {
     "name": "Nsty Browser",
     "slug": "nsty-browser",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.nsty.browser",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "INTERNET"
       ],
@@ -16,13 +16,24 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png",
+        "backgroundColor": "#CEFA05"
+      }
     },
     "owner": "it-nastyworldwide",
     "extra": {
       "eas": {
         "projectId": "7284a161-81ae-43b1-bea8-668063f2b7a9"
       }
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#CEFA05"
     }
   }
 }
