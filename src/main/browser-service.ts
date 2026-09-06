@@ -1,4 +1,4 @@
-import { app, BrowserView, BrowserWindow, dialog, ipcMain, nativeTheme, session, shell } from 'electron'
+import { app, BrowserWindow, WebContentsView, dialog, ipcMain, nativeTheme, session, shell } from 'electron'
 import type { DownloadItem, Session, WebContents } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -13,7 +13,7 @@ import { createLogger } from './utils/logger'
 const log = createLogger('browser')
 const STATE_VERSION = 1
 let youtubeScript: string | null = null
-interface ManagedTab { tab: BrowserTab; view: BrowserView }
+interface ManagedTab { tab: BrowserTab; view: WebContentsView }
 interface ExtensionRecord { path: string; id: string; enabled: boolean; pinned: boolean; name: string; version: string }
 interface PendingPermission { request: BrowserPermission; callback: (allow: boolean) => void; timer: ReturnType<typeof setTimeout> }
 
@@ -145,7 +145,7 @@ export class BrowserService {
     log.info('create native tab', { private: isPrivate })
     const url = normalizeAddress(input, this.state.preferences.searchEngine)
     const id = randomUUID()
-    const view = new BrowserView({ webPreferences: { session: this.getSession(isPrivate), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } })
+    const view = new WebContentsView({ webPreferences: { session: this.getSession(isPrivate), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } })
     const tab: BrowserTab = { id, url, space, private: isPrivate, title: 'New tab', loading: false, canGoBack: false, canGoForward: false, muted: false, zoom: 1, error: null, blocked: 0 }
     const wc = view.webContents
     this.views.set(id, { tab, view })
@@ -187,7 +187,7 @@ export class BrowserService {
     return tab
   }
 
-  private load(tab: BrowserTab, view: BrowserView, url: string): void {
+  private load(tab: BrowserTab, view: WebContentsView, url: string): void {
     log.info('navigate native tab')
     tab.url = url; tab.error = null
     if (url === 'nsty://newtab') { view.webContents.stop(); tab.loading = false; this.layout(); return }
@@ -203,7 +203,7 @@ export class BrowserService {
   private active(): ManagedTab | undefined { return this.views.get(this.state.activeTabId ?? '') }
 
   /** Native view of the active tab, for page-context extraction (AI). */
-  getActiveView(): BrowserView | null { return this.active()?.view ?? null }
+  getActiveView(): WebContentsView | null { return this.active()?.view ?? null }
 
   private closeTab(id: string): void {
     log.info('close native tab')
@@ -211,7 +211,7 @@ export class BrowserService {
     if (!managed) return
     if (!managed.tab.private) this.closedTabs = [{ url: managed.tab.url, space: managed.tab.space }, ...this.closedTabs].slice(0, 20)
     for (const pending of [...this.permissionQueue]) if (pending.request.tabId === id) this.respondPermission(pending.request.id, false, false)
-    this.window.removeBrowserView(managed.view); managed.view.webContents.close(); this.views.delete(id)
+    this.window.contentView.removeChildView(managed.view); managed.view.webContents.close(); this.views.delete(id)
     if (this.state.activeTabId === id) this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === this.state.activeSpace).at(-1)?.tab.id ?? null
     if (managed.tab.private && ![...this.views.values()].some(v => v.tab.private)) {
       const privateSession = session.fromPartition(this.privatePartition)
@@ -228,9 +228,9 @@ export class BrowserService {
     log.debug('update native content bounds')
     const [width = 0, height = 0] = this.window.getContentSize()
     for (const { tab, view } of this.views.values()) {
-      this.window.removeBrowserView(view)
+      this.window.contentView.removeChildView(view)
       if (tab.id === this.state.activeTabId && tab.url !== 'nsty://newtab' && !tab.error && !this.overlayOpen && !this.permissionQueue.length) {
-        this.window.addBrowserView(view)
+        this.window.contentView.addChildView(view)
         view.setBounds({ x: 240, y: 54, width: Math.max(100, width - 240), height: Math.max(100, height - 54) })
       }
     }

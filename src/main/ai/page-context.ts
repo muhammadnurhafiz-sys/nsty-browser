@@ -1,8 +1,11 @@
-import type { BrowserView } from 'electron'
+import type { WebContents } from 'electron'
+
+/** Anything that owns a WebContents (WebContentsView, BrowserWindow). */
+type ContentsHost = { webContents: WebContents }
 
 const MAX_CONTEXT_LENGTH = 32000 // ~8000 tokens
 
-export async function extractPageContext(view: BrowserView | null): Promise<string | null> {
+export async function extractPageContext(view: ContentsHost | null): Promise<string | null> {
   if (!view) return null
 
   try {
@@ -32,7 +35,7 @@ export async function extractPageContext(view: BrowserView | null): Promise<stri
   }
 }
 
-export async function extractSelectedText(view: BrowserView | null): Promise<string | null> {
+export async function extractSelectedText(view: ContentsHost | null): Promise<string | null> {
   if (!view) return null
 
   try {

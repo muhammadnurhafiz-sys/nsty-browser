@@ -14,13 +14,13 @@ vi.mock('electron', async () => {
     stop = vi.fn(); reload = vi.fn(); send = vi.fn()
   }
   const ses = { webRequest: { onBeforeRequest: vi.fn() }, setPermissionRequestHandler: vi.fn(), setPermissionCheckHandler: vi.fn(), on: vi.fn(), clearStorageData: vi.fn(async () => {}), clearCache: vi.fn(async () => {}), extensions: { loadExtension: vi.fn(), removeExtension: vi.fn() } }
-  return { BrowserView: class { webContents = new Contents(); setBounds = vi.fn() }, BrowserWindow: vi.fn(), session: { fromPartition: () => ses }, app: { getPath: () => os.tmpdir(), getAppPath: () => process.cwd(), isPackaged: true }, nativeTheme: { shouldUseDarkColors: true, on: vi.fn() }, dialog: {}, shell: {}, ipcMain: { handle: vi.fn(), removeHandler: vi.fn() } }
+  return { WebContentsView: class { webContents = new Contents(); setBounds = vi.fn() }, BrowserWindow: vi.fn(), session: { fromPartition: () => ses }, app: { getPath: () => os.tmpdir(), getAppPath: () => process.cwd(), isPackaged: true }, nativeTheme: { shouldUseDarkColors: true, on: vi.fn() }, dialog: {}, shell: {}, ipcMain: { handle: vi.fn(), removeHandler: vi.fn() } }
 })
 import { BrowserService } from './browser-service'
 
 describe('BrowserService native state ownership', () => {
   let dir: string
-  const window = { addBrowserView: vi.fn(), removeBrowserView: vi.fn(), getContentSize: () => [1200, 800], on: vi.fn(), isDestroyed: () => false, setBackgroundColor: vi.fn(), setTitleBarOverlay: vi.fn(), webContents: { send: vi.fn(), isDestroyed: () => false, id: 1, mainFrame: { url: 'app://bundle/index.html' } } }
+  const window = { contentView: { addChildView: vi.fn(), removeChildView: vi.fn() }, getContentSize: () => [1200, 800], on: vi.fn(), isDestroyed: () => false, setBackgroundColor: vi.fn(), setTitleBarOverlay: vi.fn(), webContents: { send: vi.fn(), isDestroyed: () => false, id: 1, mainFrame: { url: 'app://bundle/index.html' } } }
   beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nsty-browser-test-')) })
   afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }) })
   it('uses real tab IDs for creation, switching and closing', async () => {
