@@ -8,6 +8,7 @@ import { closeDatabase } from './store/database'
 import { ClaudeClient } from './ai/claude-client'
 import { setupAutoUpdater } from './updater'
 import { installCsp } from './security/csp'
+import { configureIpcGuard } from './security/ipc-guard'
 import { applyNavigationGuard } from './security/navigation-guard'
 import { createLogger } from './utils/logger'
 import { installCrashHandlers } from './utils/crash-handlers'
@@ -122,6 +123,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   installCrashHandlers()
+  configureIpcGuard({ dev: isDev })
 
   // Serve renderer files via custom protocol. Using app:// instead of file://
   // gives the renderer a real origin that CSP's 'self' can match — otherwise

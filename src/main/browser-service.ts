@@ -25,6 +25,7 @@ export class BrowserService {
   private overlayOpen = false
   private blocker: ElectronBlocker | null = null
   private saveTimer: ReturnType<typeof setTimeout> | null = null
+  private sendScheduled = false
   private disposed = false
   private restoring = true
   private privatePartition = `private-${randomUUID()}`
@@ -82,7 +83,14 @@ export class BrowserService {
     this.state.revision++
     this.state.pendingPermission = this.permissionQueue[0]?.request ?? null
     this.state.extensions = this.extensionRecords.map(({ id, name, version, enabled, pinned }): BrowserExtension => ({ id, name, version, enabled, pinned }))
-    if (!this.window.isDestroyed()) this.window.webContents.send('browser:snapshot', this.snapshot())
+    if (!this.sendScheduled) {
+      // Coalesce: one IPC send per event-loop turn, however many events published.
+      this.sendScheduled = true
+      setImmediate(() => {
+        this.sendScheduled = false
+        if (!this.disposed && !this.window.isDestroyed()) this.window.webContents.send('browser:snapshot', this.snapshot())
+      })
+    }
     if (save && !this.restoring) {
       if (this.saveTimer) clearTimeout(this.saveTimer)
       this.saveTimer = setTimeout(() => { this.saveTimer = null; this.persist() }, 250)
@@ -156,7 +164,7 @@ export class BrowserService {
     wc.on('before-input-event', (event, input) => {
       if (input.type !== 'keyDown' || !(input.control || input.meta)) return
       const key = input.key.toLowerCase()
-      if (['l', 't', 'w', 'f', 'h', 'j'].includes(key)) {
+      if (['l', 't', 'w', 'f', 'h', 'j', 'd', 'p'].includes(key)) {
         event.preventDefault()
         if (key === 't') void this.dispatch({ type: input.shift ? 'tab:reopen' : 'tab:new' })
         else if (key === 'w') void this.dispatch({ type: 'tab:close', id })
@@ -198,6 +206,7 @@ export class BrowserService {
     if (managed.tab.private && ![...this.views.values()].some(v => v.tab.private)) {
       const privateSession = session.fromPartition(this.privatePartition)
       void privateSession.clearStorageData(); void privateSession.clearCache()
+      this.sessions.delete(privateSession)
       this.privatePartition = `private-${randomUUID()}`
     }
     if (!this.active()) this.createTab()
@@ -308,11 +317,17 @@ export class BrowserService {
       if (this.active()?.tab.private) throw new Error('Extensions are not available in private tabs')
       const manifest = JSON.parse(fs.readFileSync(path.join(item.path, 'manifest.json'), 'utf8'))
       const popup = manifest.action?.default_popup ?? manifest.browser_action?.default_popup ?? manifest.options_ui?.page ?? manifest.options_page
-      if (typeof popup !== 'string' || !popup || popup.includes('..') || /^[a-z]+:/i.test(popup)) throw new Error('This extension has no supported popup or options page')
+      if (typeof popup !== 'string' || !popup || /^[a-z]+:/i.test(popup)) throw new Error('This extension has no supported popup or options page')
+      // Resolve and confirm containment inside the extension directory rather than
+      // blacklisting '..' substrings (encoded/backslash variants would slip through).
+      const root = path.resolve(item.path)
+      const target = path.resolve(root, popup.replace(/^[\\/]+/, ''))
+      if (target !== root && !target.startsWith(root + path.sep)) throw new Error('Extension page path is outside the extension')
+      const page = path.relative(root, target).split(path.sep).join('/')
       const popupWindow = new BrowserWindow({ width: 420, height: 600, parent: this.window, autoHideMenuBar: true, webPreferences: { session: ses, sandbox: true, contextIsolation: true, nodeIntegration: false } })
       popupWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
       popupWindow.webContents.on('will-navigate', (event, destination) => { if (!destination.startsWith(`chrome-extension://${item.id}/`)) event.preventDefault() })
-      await popupWindow.loadURL(`chrome-extension://${item.id}/${popup.replace(/^\//, '')}`)
+      await popupWindow.loadURL(`chrome-extension://${item.id}/${page}`)
     }
   }
 

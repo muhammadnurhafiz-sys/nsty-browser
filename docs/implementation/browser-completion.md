@@ -6,7 +6,8 @@ User approved the complete Liquid Glass browser UI, Graphite + Sage dark theme, 
 
 1. Replace the disconnected desktop renderer/native tab state with a main-owned browser service and versioned snapshots. Validate IPC sender identity and action payloads.
 2. Connect the approved desktop panels to actual navigation, bookmarks/history, native downloads, compatible unpacked extensions, site permissions, Shield, find, zoom, print and saved settings. Use truthful empty and unavailable states.
-3. Build a native Kotlin Android WebView browser with mobile controls and the same palettes. It is a Chromium WebView browser, not Electron or a Chrome extension runtime. Do not represent shared-storage browsing as private.
+3. Build an Android WebView browser with mobile controls and the same palettes. It is a Chromium (Android System WebView) browser, not Electron or a Chrome extension runtime. Do not represent shared-storage browsing as private.
+   Deviation (2026-09-06): the plan named a native Kotlin app; the shipped `mobile/` app is Expo + react-native-webview, built locally with `expo prebuild` and Gradle. Same WebView engine and capability labels; a Kotlin rewrite remains an option if native-only APIs are needed.
 4. Verify with meaningful failing tests first, then integration checks, desktop packaging and Android compilation. Root is authorized by deploy-permissions.json. Record artifact signing and device-test limits.
 5. Review before push; preserve unrelated workspace changes.
 

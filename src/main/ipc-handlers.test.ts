@@ -31,7 +31,7 @@ function getHandleHandler(channel: string): Function | undefined {
 }
 
 // Trusted sender frame shape expected by security/ipc-guard.
-const trustedEvent = { senderFrame: { url: 'app://./index.html' }, sender: { send: vi.fn() } }
+const trustedEvent = { senderFrame: { url: 'app://bundle/index.html' }, sender: { send: vi.fn() } }
 
 describe('IPC handlers (AI + updater only; browser state lives in BrowserService)', () => {
   const view = { webContents: {} }

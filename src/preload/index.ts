@@ -1,66 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 const api = {
-  // Tab management
-  createTab: (url: string, spaceId: string) =>
-    ipcRenderer.send('tab:create', url, spaceId),
-  closeTab: (tabId: string) =>
-    ipcRenderer.send('tab:close', tabId),
-  switchTab: (tabId: string) =>
-    ipcRenderer.send('tab:switch', tabId),
-  navigateTo: (url: string) =>
-    ipcRenderer.send('tab:navigate', url),
-  goBack: () => ipcRenderer.send('tab:back'),
-  goForward: () => ipcRenderer.send('tab:forward'),
-  reload: () => ipcRenderer.send('tab:reload'),
-  onTabUpdated: (callback: (event: unknown) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
-    ipcRenderer.on('tab:updated', listener)
-    return () => { ipcRenderer.removeListener('tab:updated', listener) }
-  },
-
-  // Space management
-  switchSpace: (spaceId: string) =>
-    ipcRenderer.send('space:switch', spaceId),
-
-  // Shield
-  onShieldStats: (callback: (event: unknown) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
-    ipcRenderer.on('shield:stats', listener)
-    return () => { ipcRenderer.removeListener('shield:stats', listener) }
-  },
-  toggleShield: (domain: string, enabled: boolean) =>
-    ipcRenderer.send('shield:toggle', domain, enabled),
-
-  // New tab shortcut
-  onNewTabShortcut: (callback: () => void) => {
-    const listener = () => callback()
-    ipcRenderer.on('shortcut:newTab', listener)
-    return () => { ipcRenderer.removeListener('shortcut:newTab', listener) }
-  },
-
-  // History
-  onHistoryToggle: (callback: () => void) => {
-    const listener = () => callback()
-    ipcRenderer.on('shortcut:toggleHistory', listener)
-    return () => { ipcRenderer.removeListener('shortcut:toggleHistory', listener) }
-  },
-
-  // Address bar focus
-  onFocusAddressBar: (callback: () => void) => {
-    const listener = () => callback()
-    ipcRenderer.on('shortcut:focusAddressBar', listener)
-    return () => { ipcRenderer.removeListener('shortcut:focusAddressBar', listener) }
-  },
-
-  // Sidebar
-  toggleSidebar: () => ipcRenderer.send('sidebar:toggle'),
-  onSidebarToggle: (callback: (expanded: boolean) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, expanded: boolean) => callback(expanded)
-    ipcRenderer.on('sidebar:toggled', listener)
-    return () => { ipcRenderer.removeListener('sidebar:toggled', listener) }
-  },
-
   // Auto-update
   onUpdateAvailable: (callback: (info: { version: string; releaseNotes: string }) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, info: { version: string; releaseNotes: string }) => callback(info)
@@ -79,14 +19,6 @@ const api = {
   },
   downloadUpdate: () => ipcRenderer.send('update:download'),
   installUpdate: () => ipcRenderer.send('update:install'),
-
-  // Overlay (hide BrowserView for modals)
-  showOverlay: () => ipcRenderer.send('overlay:show'),
-  hideOverlay: () => ipcRenderer.send('overlay:hide'),
-
-  // Session
-  getSpaces: () => ipcRenderer.invoke('session:getSpaces'),
-  saveSpaces: (spaces: unknown) => ipcRenderer.send('session:saveSpaces', spaces),
 
   // Main-owned browser state (BrowserService). The renderer never creates
   // tabs or IDs itself: it renders snapshots and submits typed actions.

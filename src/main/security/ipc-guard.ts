@@ -1,16 +1,23 @@
 import { ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
+import { isShellUrl } from '../../shared/browser-policy'
 import { createLogger } from '../utils/logger'
 
 const log = createLogger('ipc-guard')
 
-const ALLOWED_ORIGINS = ['app://', 'http://localhost:5173']
+// Dev origin (Vite) is only trusted when main opts in at startup; packaged
+// builds accept the exact app://bundle/index.html shell frame and nothing else.
+let allowDevOrigin = false
+export function configureIpcGuard(options: { dev: boolean }): void {
+  allowDevOrigin = options.dev
+  log.info('ipc guard configured', { dev: options.dev })
+}
 
 function isTrustedSender(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
   const frame = event.senderFrame
   if (!frame) return false
   const url = frame.url
   if (!url) return false
-  return ALLOWED_ORIGINS.some(prefix => url.startsWith(prefix))
+  return isShellUrl(url, allowDevOrigin)
 }
 
 type SendHandler = (event: IpcMainEvent, ...args: unknown[]) => void
@@ -36,4 +43,4 @@ export function safeHandle(channel: string, handler: InvokeHandler): void {
   })
 }
 
-export const __testing = { isTrustedSender, ALLOWED_ORIGINS }
+export const __testing = { isTrustedSender }

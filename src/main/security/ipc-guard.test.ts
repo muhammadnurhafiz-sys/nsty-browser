@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { __testing } from './ipc-guard'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { __testing, configureIpcGuard } from './ipc-guard'
 
 const { isTrustedSender } = __testing
 
@@ -8,13 +8,21 @@ function makeEvent(url: string | null | undefined) {
   return { senderFrame: frame } as unknown as Electron.IpcMainEvent
 }
 
-describe('isTrustedSender', () => {
-  it('accepts the custom app:// protocol', () => {
-    expect(isTrustedSender(makeEvent('app://./index.html'))).toBe(true)
+describe('isTrustedSender (exact shell identity, shared with BrowserService)', () => {
+  beforeEach(() => configureIpcGuard({ dev: false }))
+
+  it('accepts only the packaged shell frame', () => {
+    expect(isTrustedSender(makeEvent('app://bundle/index.html'))).toBe(true)
+    expect(isTrustedSender(makeEvent('app://attacker/index.html'))).toBe(false)
+    expect(isTrustedSender(makeEvent('app://bundle/other.html'))).toBe(false)
   })
 
-  it('accepts the Vite HMR origin', () => {
+  it('accepts the Vite origin only when dev is enabled and never a prefix spoof', () => {
+    expect(isTrustedSender(makeEvent('http://localhost:5173/'))).toBe(false)
+    configureIpcGuard({ dev: true })
     expect(isTrustedSender(makeEvent('http://localhost:5173/'))).toBe(true)
+    expect(isTrustedSender(makeEvent('http://localhost:5173.attacker/'))).toBe(false)
+    expect(isTrustedSender(makeEvent('http://localhost:51730/'))).toBe(false)
   })
 
   it('rejects arbitrary external origins', () => {
@@ -22,11 +30,8 @@ describe('isTrustedSender', () => {
     expect(isTrustedSender(makeEvent('file:///etc/passwd'))).toBe(false)
   })
 
-  it('rejects events with no senderFrame', () => {
+  it('rejects events with no senderFrame or empty url', () => {
     expect(isTrustedSender(makeEvent(null))).toBe(false)
-  })
-
-  it('rejects events with empty url', () => {
     expect(isTrustedSender(makeEvent(undefined))).toBe(false)
     expect(isTrustedSender(makeEvent(''))).toBe(false)
   })
