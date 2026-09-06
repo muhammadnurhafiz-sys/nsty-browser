@@ -119,7 +119,7 @@ function Browser() {
   }
   function closeTab(id: string) {
     log('Closing tab');
-    setSession(old => { const tabs = old.tabs.filter(tab => tab.id !== id); if (!tabs.length) { const tab = newTab(); return { tabs: [tab], activeId: tab.id }; } return { tabs, activeId: old.activeId === id ? tabs[tabs.length - 1].id : old.activeId }; });
+    setSession(old => { const closing = old.tabs.find(tab => tab.id === id); const tabs = old.tabs.filter(tab => tab.id !== id); if (!tabs.length) { const tab = newTab(); return { tabs: [tab], activeId: tab.id }; } const sameKind = tabs.filter(tab => !!tab.privateTab === !!closing?.privateTab); return { tabs, activeId: old.activeId === id ? (sameKind[sameKind.length - 1] ?? tabs[tabs.length - 1]).id : old.activeId }; });
     setSources(old => { const next = { ...old }; delete next[id]; return next; });
   }
   function onNavigation(id: string, state: WebViewNavigation) {
@@ -148,7 +148,7 @@ function Browser() {
     }
     return false;
   }
-  function openPanel(next: Panel) { log('Opening browser panel'); setFilter(''); if (next === 'tabs') void snapshotActive(); setPanel(next); Keyboard.dismiss(); }
+  function openPanel(next: Panel) { log('Opening browser panel'); setFilter(''); setEditing(false); if (next === 'tabs') void snapshotActive(); setPanel(next); Keyboard.dismiss(); }
   async function snapshotActive() {
     const node = pageRefs.current[active.id];
     if (!node || !active.url) return;
@@ -201,7 +201,7 @@ function Browser() {
     {finding && <View style={styles.addressRow}><TextInput accessibilityLabel="Find in page" placeholder="Find in page" placeholderTextColor={colors.muted} value={find} onChangeText={setFind} style={[styles.address, { color: colors.text, backgroundColor: colors.panel }]} /><Button label="Find next" icon="arrow-downward" onPress={() => webviews.current[active.id]?.injectJavaScript(`window.find(${JSON.stringify(find)}, false, false, true); true;`)} /><Button label="Close find" icon="close" onPress={() => setFinding(false)} /></View>}
     <View style={{ flex: 1 }}>
       {loaded && session.tabs.map(tab => tab.url && <View key={tab.id} ref={node => { pageRefs.current[tab.id] = node; }} collapsable={false} style={[StyleSheet.absoluteFill, { display: tab.id === active.id ? 'flex' : 'none' }]}>
-        <WebView ref={ref => { webviews.current[tab.id] = ref; }} source={{ uri: sources[tab.id] || tab.url }} style={{ flex: 1, backgroundColor: colors.panel }} incognito={!!tab.privateTab}
+        <WebView ref={ref => { webviews.current[tab.id] = ref; }} source={{ uri: sources[tab.id] || tab.url }} style={{ flex: 1, backgroundColor: colors.panel }}
           onLoadProgress={event => { if (tab.id === active.id) setProgress(event.nativeEvent.progress); }} onScroll={event => { if (tab.id === active.id) onScroll(event.nativeEvent.contentOffset.y); }}
           onNavigationStateChange={state => onNavigation(tab.id, state)} onShouldStartLoadWithRequest={event => request(event.url, tab.id)}
           onOpenWindow={event => { const url = address(event.nativeEvent.targetUrl); if (url) { log('Opening requested link in current tab'); navigate(url); } }}
@@ -239,7 +239,7 @@ function Browser() {
       <Button label={`${session.tabs.length} tabs`} icon="tab" text={String(session.tabs.length)} onPress={() => openPanel('tabs')} />
       <Button label="Browser menu" icon="menu" onPress={() => openPanel('menu')} />
     </BlurView></Animated.View>
-    <TabSwitcher visible={panel === 'tabs'} tabs={session.tabs} activeId={active.id} colors={colors} onSelect={id => { setSession(old => ({ ...old, activeId: id })); setPanel(null); }} onClose={closeTab} onNew={privateTab => { addTab(privateTab); setPanel(null); }} onDismiss={() => setPanel(null)} />
+    <TabSwitcher visible={panel === 'tabs'} tabs={session.tabs} activeId={active.id} colors={colors} onSelect={id => { setEditing(false); setSession(old => ({ ...old, activeId: id })); setPanel(null); }} onClose={closeTab} onNew={privateTab => { addTab(privateTab); setPanel(null); }} onDismiss={() => setPanel(null)} />
     <Modal visible={panel !== null && panel !== 'tabs'} animationType="slide" transparent onRequestClose={() => setPanel(null)}>
       <View style={styles.modalBackdrop}><Pressable accessibilityLabel="Close panel" style={{ flex: 1 }} onPress={() => setPanel(null)} /><SafeAreaView edges={['bottom']} style={[styles.sheet, { backgroundColor: colors.base, borderColor: colors.border }]}>
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
@@ -254,7 +254,7 @@ function Browser() {
             <Row title="Desktop site" detail="Request a desktop page layout" right={<Switch accessibilityLabel="Desktop site" value={desktop} trackColor={{ true: colors.accent }} onValueChange={value => { setDesktop(value); setPanel(null); setTimeout(reload, 150); }} />} />
             <Row title="Nsty Shield" detail={shield ? 'Controls enabled' : 'Optional controls · off'} action={() => openPanel('shield')} />
             <Row title="Extensions" detail="Unavailable on Android WebView" action={() => explain('Extensions on Android', 'This Android build uses Chromium through Android System WebView. It cannot install Chrome Web Store extensions. Desktop Nsty supports a limited subset of extensions.')} />
-            <Row title="New private tab" detail="Separate cookies, nothing saved to history" action={() => { addTab(true); setPanel(null); }} />
+            <Row title="New private tab" detail="Nothing saved to history or restored later. Cookies are shared with other tabs on Android." action={() => { addTab(true); setPanel(null); }} />
             <Row title="Settings" detail="Appearance, privacy and browser information" action={() => openPanel('settings')} />
           </>}
           {(panel === 'bookmarks' || panel === 'history') && <>

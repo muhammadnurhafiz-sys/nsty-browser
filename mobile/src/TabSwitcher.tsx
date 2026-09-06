@@ -40,7 +40,7 @@ export function TabSwitcher({ visible, tabs, activeId, colors, onSelect, onClose
       {shown.length === 0 && <View style={styles.empty}>
         <MaterialIcons name={isPrivate ? 'visibility-off' : 'tab'} size={44} color={accent} />
         <Text style={[styles.emptyTitle, { color: text }]}>{isPrivate ? 'Private tabs stay out of history' : 'No open tabs'}</Text>
-        <Text style={[styles.emptyBody, { color: muted }]}>{isPrivate ? 'Pages you open here are not saved to history or restored next time. Cookies are kept separate from your other tabs.' : 'Open a new tab to get started.'}</Text>
+        <Text style={[styles.emptyBody, { color: muted }]}>{isPrivate ? 'Pages you open here are not saved to history or restored next time. Android WebView shares cookies and site data with your other tabs, so sign-ins carry over.' : 'Open a new tab to get started.'}</Text>
         <Pressable accessibilityRole="button" onPress={() => onNew(isPrivate)} style={[styles.primary, { backgroundColor: accent }]}><Text style={{ color: isPrivate ? PRIVATE.base : colors.accentText, fontWeight: '700' }}>{isPrivate ? 'New private tab' : 'New tab'}</Text></Pressable>
       </View>}
       <FlatList data={shown} numColumns={2} keyExtractor={tab => tab.id} contentContainerStyle={styles.grid} columnWrapperStyle={{ gap: 16 }}
