@@ -34,6 +34,9 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#CEFA05"
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
