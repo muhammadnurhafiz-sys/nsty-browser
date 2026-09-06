@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.5.1 (2026-09-06) — Review follow-ups, user spaces, dependency bumps
+
+### Desktop
+- User-defined spaces: create and remove workspaces from the sidebar; tabs of a removed
+  space move to the first space. Spaces persist across restarts.
+- History no longer rides inside every snapshot; the History panel queries a bounded
+  search (`browser:history`) and snapshots keep the 20 most recent entries.
+- `browser-state.json` is versioned. Files written by a newer build or malformed files
+  are backed up instead of silently overwritten.
+- Unpacked extensions are copied into `userData/extensions`; only those paths are restored.
+- AI and updater IPC use the same exact-origin shell check as the browser service.
+- Tab views migrated from the deprecated BrowserView to WebContentsView.
+- Snapshot sends are coalesced per event-loop turn; toolbar controls stay reachable below
+  1000px; error toast no longer covers the sidebar settings control.
+- Removed the superseded sidebar/top bar/tab manager/shield modules and their tests.
+
+### Dependencies
+- Electron 42.11, electron-builder 26.15, React 19.2.8, TypeScript 6.0.3, Vite 8.2,
+  Vitest 4.1.11, Biome 2.5, Tailwind 4.3, lint-staged 17, jsdom 29.1, better-sqlite3 12.11,
+  Anthropic SDK 0.91. GitHub Actions: checkout 6, setup-node 6, upload-artifact 7,
+  download-artifact 8, action-gh-release 3.
+
 ## v0.5.0 (2026-09-06) — Main-owned browser engine, Liquid Glass shell, Android app
 
 Completes the browser implementation planned in `docs/implementation/browser-completion.md`.
