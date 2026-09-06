@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, BackHandler, FlatList, Image, Keyboard, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, Text, TextInput, useColorScheme, View } from 'react-native';
+import { Alert, Animated, AppState, BackHandler, FlatList, Image, Keyboard, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Switch, Text, TextInput, useColorScheme, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { captureRef } from 'react-native-view-shot';
+import { TabSwitcher } from './src/TabSwitcher';
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import type { WebViewNavigation } from 'react-native-webview';
-import { address, blockedRequest, isHost, newTab, restorePages, restoreSession, serializeSession } from './src/policy';
+import { address, blockedRequest, displayHost, isHost, newTab, recordVisit, restorePages, restoreSession, serializeSession, topSites } from './src/policy';
 import type { BrowserSession, SavedPage } from './src/policy';
 import { palettes } from './src/themes';
 import type { ThemeChoice } from './src/themes';
@@ -33,6 +36,11 @@ function Browser() {
   const [editing, setEditing] = useState(false);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const toolbarY = useRef(new Animated.Value(0)).current;
+  const toolbarHidden = useRef(false);
+  const lastScroll = useRef(0);
+  const pageRefs = useRef<Record<string, View | null>>({});
   const [canBack, setCanBack] = useState(false);
   const [canForward, setCanForward] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,10 +111,10 @@ function Browser() {
     setSources(old => ({ ...old, [active.id]: url }));
     setInput(url); setEditing(false); setPanel(null); setError(null); setLoading(true); Keyboard.dismiss();
   }
-  function addTab() {
-    log('Creating tab');
+  function addTab(privateTab = false) {
+    log(privateTab ? 'Creating private tab' : 'Creating tab');
     if (session.tabs.length >= 30) { setNotice('Close a tab before opening another (30 tab limit).'); return; }
-    const tab = newTab(); setSession(old => ({ tabs: [...old.tabs, tab], activeId: tab.id }));
+    const tab = newTab(privateTab); setSession(old => ({ tabs: [...old.tabs, tab], activeId: tab.id }));
     setSources(old => ({ ...old, [tab.id]: '' })); setPanel(null); setInput('');
   }
   function closeTab(id: string) {
@@ -119,7 +127,8 @@ function Browser() {
     if (!address(state.url)) return;
     setSession(old => ({ ...old, tabs: old.tabs.map(tab => tab.id === id ? { ...tab, url: state.url, title: state.title || 'Untitled page' } : tab) }));
     if (id === active.id) { setCanBack(state.canGoBack); setCanForward(state.canGoForward); setLoading(state.loading); }
-    if (!state.loading) setHistory(old => [{ url: state.url, title: state.title || state.url, date: Date.now() }, ...old.filter(page => page.url !== state.url)].slice(0, 300));
+    const visited = session.tabs.find(tab => tab.id === id);
+    if (!state.loading && visited) setHistory(old => recordVisit(old, { ...visited, url: state.url }, state.title));
   }
   function toggleBookmark() {
     log('Updating bookmark');
@@ -139,7 +148,27 @@ function Browser() {
     }
     return false;
   }
-  function openPanel(next: Panel) { log('Opening browser panel'); setFilter(''); setPanel(next); Keyboard.dismiss(); }
+  function openPanel(next: Panel) { log('Opening browser panel'); setFilter(''); if (next === 'tabs') void snapshotActive(); setPanel(next); Keyboard.dismiss(); }
+  async function snapshotActive() {
+    const node = pageRefs.current[active.id];
+    if (!node || !active.url) return;
+    try {
+      const uri = await captureRef(node, { format: 'jpg', quality: 0.5, result: 'data-uri', width: 360 });
+      setSession(old => ({ ...old, tabs: old.tabs.map(tab => tab.id === active.id ? { ...tab, thumbnail: uri } : tab) }));
+    } catch { log('Thumbnail capture unavailable'); }
+  }
+  function setToolbar(hidden: boolean) {
+    if (toolbarHidden.current === hidden) return;
+    toolbarHidden.current = hidden;
+    Animated.timing(toolbarY, { toValue: hidden ? 72 : 0, duration: 180, useNativeDriver: true }).start();
+  }
+  function onScroll(y: number) {
+    const delta = y - lastScroll.current;
+    lastScroll.current = y;
+    if (y < 40) setToolbar(false);
+    else if (delta > 14) setToolbar(true);
+    else if (delta < -14) setToolbar(false);
+  }
   function clearHistory() { Alert.alert('Clear history?', 'This removes saved browsing history from Nsty.', [{ text: 'Cancel' }, { text: 'Clear', style: 'destructive', onPress: () => setHistory([]) }]); }
   function explain(title: string, message: string) { Alert.alert(title, message); }
   function reload() { setError(null); webviews.current[active.id]?.reload(); }
@@ -161,17 +190,22 @@ function Browser() {
     <StatusBar style={colors.dark ? 'light' : 'dark'} />
     <View style={[styles.addressRow, { borderColor: colors.border }]}>
       <Button label="Site information" icon={active.url.startsWith('https:') ? 'lock' : 'info-outline'} onPress={() => openPanel('site')} />
-      <TextInput ref={inputRef} accessibilityLabel="Address or search" placeholder="Search or enter address" placeholderTextColor={colors.muted} value={input} onChangeText={setInput} onFocus={() => setEditing(true)} onBlur={() => setEditing(false)} selectTextOnFocus autoCapitalize="none" autoCorrect={false} keyboardType="web-search" returnKeyType="go" onSubmitEditing={() => navigate(input)} style={[styles.address, { color: colors.text, backgroundColor: colors.panel }]} />
+      {editing || !active.url ? <TextInput ref={inputRef} autoFocus={!!active.url} accessibilityLabel="Address or search" placeholder="Search or enter address" placeholderTextColor={colors.muted} value={input} onChangeText={setInput} onFocus={() => setEditing(true)} onBlur={() => setEditing(false)} selectTextOnFocus autoCapitalize="none" autoCorrect={false} keyboardType="web-search" returnKeyType="go" onSubmitEditing={() => navigate(input)} style={[styles.address, { color: colors.text, backgroundColor: colors.panel }]} />
+      : <Pressable accessibilityRole="button" accessibilityLabel={`Address ${displayHost(active.url)}, tap to edit`} onPress={() => { setInput(active.url); setEditing(true); }} style={[styles.address, styles.pill, { backgroundColor: colors.panel, borderColor: active.privateTab ? '#C9B8FF' : 'transparent' }]}>
+          <MaterialIcons name={active.privateTab ? 'visibility-off' : active.url.startsWith('https:') ? 'lock' : 'info-outline'} size={15} color={active.privateTab ? '#C9B8FF' : colors.muted} />
+          <Text numberOfLines={1} style={{ color: colors.text, fontSize: 15, marginLeft: 8, flex: 1 }}>{displayHost(active.url)}</Text>
+          {loading && <View style={styles.progressTrack}><View style={{ width: `${Math.max(6, Math.round(progress * 100))}%`, height: 3, backgroundColor: colors.accent, borderRadius: 2 }} /></View>}
+        </Pressable>}
       <Button label={loading ? 'Stop loading' : 'Reload page'} icon={loading ? 'close' : 'refresh'} disabled={!canBrowse} onPress={() => loading ? webviews.current[active.id]?.stopLoading() : reload()} />
     </View>
-    {loading && <View accessibilityLabel="Page loading" style={{ height: 2, backgroundColor: colors.accent }} />}
     {finding && <View style={styles.addressRow}><TextInput accessibilityLabel="Find in page" placeholder="Find in page" placeholderTextColor={colors.muted} value={find} onChangeText={setFind} style={[styles.address, { color: colors.text, backgroundColor: colors.panel }]} /><Button label="Find next" icon="arrow-downward" onPress={() => webviews.current[active.id]?.injectJavaScript(`window.find(${JSON.stringify(find)}, false, false, true); true;`)} /><Button label="Close find" icon="close" onPress={() => setFinding(false)} /></View>}
     <View style={{ flex: 1 }}>
-      {loaded && session.tabs.map(tab => tab.url && <View key={tab.id} style={[StyleSheet.absoluteFill, { display: tab.id === active.id ? 'flex' : 'none' }]}>
-        <WebView ref={ref => { webviews.current[tab.id] = ref; }} source={{ uri: sources[tab.id] || tab.url }} style={{ flex: 1, backgroundColor: colors.panel }}
+      {loaded && session.tabs.map(tab => tab.url && <View key={tab.id} ref={node => { pageRefs.current[tab.id] = node; }} collapsable={false} style={[StyleSheet.absoluteFill, { display: tab.id === active.id ? 'flex' : 'none' }]}>
+        <WebView ref={ref => { webviews.current[tab.id] = ref; }} source={{ uri: sources[tab.id] || tab.url }} style={{ flex: 1, backgroundColor: colors.panel }} incognito={!!tab.privateTab}
+          onLoadProgress={event => { if (tab.id === active.id) setProgress(event.nativeEvent.progress); }} onScroll={event => { if (tab.id === active.id) onScroll(event.nativeEvent.contentOffset.y); }}
           onNavigationStateChange={state => onNavigation(tab.id, state)} onShouldStartLoadWithRequest={event => request(event.url, tab.id)}
           onOpenWindow={event => { const url = address(event.nativeEvent.targetUrl); if (url) { log('Opening requested link in current tab'); navigate(url); } }}
-          onLoadStart={() => { if (tab.id === active.id) { setLoading(true); setError(null); } }} onLoadEnd={() => { if (tab.id === active.id) setLoading(false); }}
+          onLoadStart={() => { if (tab.id === active.id) { setLoading(true); setProgress(0); setError(null); } }} onLoadEnd={() => { if (tab.id === active.id) setLoading(false); }}
           onError={event => { log('Page load failed'); if (tab.id === active.id) { setLoading(false); setError(event.nativeEvent.description || 'This page could not be loaded.'); } }}
           onRenderProcessGone={() => { log('Web content process exited'); setError('This tab stopped responding. Reload to continue.'); }}
           javaScriptEnabled domStorageEnabled sharedCookiesEnabled thirdPartyCookiesEnabled={false} javaScriptCanOpenWindowsAutomatically={false}
@@ -188,22 +222,25 @@ function Browser() {
         <Text style={[styles.hero, { color: colors.text }]}>Make room{ '\n' }for discovery.</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>Your tabs, your pace. A calmer place for the web.</Text>
         <Pressable accessibilityRole="button" onPress={() => inputRef.current?.focus()} style={[styles.searchCard, { backgroundColor: colors.panel, borderColor: colors.border }]}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><MaterialIcons name="search" size={22} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 16 }}>Search anything, go anywhere</Text></View><MaterialIcons name="north-east" size={20} color={colors.accent} /></Pressable>
-        {title('Your shortcuts')}
-        <View style={styles.shortcuts}>{([['YouTube', 'https://youtube.com', 'smart-display'], ['Wikipedia', 'https://wikipedia.org', 'public'], ['GitHub', 'https://github.com', 'code']] as [string, string, IconName][]).map(([label, url, icon]) => <Pressable key={label} accessibilityRole="button" onPress={() => navigate(url)} style={[styles.shortcut, { backgroundColor: colors.panel, borderColor: colors.border }]}><MaterialIcons name={icon} size={28} color={colors.accent} /><Text style={{ fontSize: 12, color: colors.text, marginTop: 12 }}>{label}</Text></Pressable>)}</View>
+        {session.tabs.some(tab => tab.url && tab.id !== active.id && !tab.privateTab) && <>{title('Recent tabs')}<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 6 }}>{session.tabs.filter(tab => tab.url && tab.id !== active.id && !tab.privateTab).slice(-5).reverse().map(tab => <Pressable key={tab.id} accessibilityRole="button" onPress={() => setSession(old => ({ ...old, activeId: tab.id }))} style={[styles.recentCard, { backgroundColor: colors.panel, borderColor: colors.border }]}>{tab.thumbnail ? <Image source={{ uri: tab.thumbnail }} style={styles.recentThumb} /> : <View style={[styles.recentThumb, { backgroundColor: colors.raised, alignItems: 'center', justifyContent: 'center' }]}><MaterialIcons name="public" size={22} color={colors.muted} /></View>}<Text numberOfLines={1} style={{ color: colors.text, fontSize: 12, fontWeight: '600', marginTop: 8 }}>{tab.title}</Text><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11 }}>{displayHost(tab.url)}</Text></Pressable>)}</ScrollView></>}
+        {title(topSites(history, 8).length ? 'Top sites' : 'Your shortcuts')}
+        {topSites(history, 8).length > 0 && <View style={styles.topSites}>{topSites(history, 8).map(site => <Pressable key={site.host} accessibilityRole="button" accessibilityLabel={site.title} onPress={() => navigate(site.url)} style={styles.topSite}><View style={[styles.topSiteTile, { backgroundColor: colors.panel, borderColor: colors.border }]}><Text style={{ color: colors.accent, fontSize: 20, fontWeight: '800' }}>{site.host[0]!.toUpperCase()}</Text></View><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, marginTop: 6 }}>{site.host}</Text></Pressable>)}</View>}
+        {topSites(history, 8).length === 0 && <View style={styles.shortcuts}>{([['YouTube', 'https://youtube.com', 'smart-display'], ['Wikipedia', 'https://wikipedia.org', 'public'], ['GitHub', 'https://github.com', 'code']] as [string, string, IconName][]).map(([label, url, icon]) => <Pressable key={label} accessibilityRole="button" onPress={() => navigate(url)} style={[styles.shortcut, { backgroundColor: colors.panel, borderColor: colors.border }]}><MaterialIcons name={icon} size={28} color={colors.accent} /><Text style={{ fontSize: 12, color: colors.text, marginTop: 12 }}>{label}</Text></Pressable>)}</View>}
         <Row title={shield ? 'Shield controls enabled' : 'Browse with intention'} detail={shield ? 'Cosmetic filtering and selected navigation checks' : 'Choose how Nsty looks and protects your browsing.'} action={() => openPanel(shield ? 'shield' : 'settings')} />
         {bookmarks.length > 0 && <><View style={styles.sectionHeading}>{title('Saved for later')}<Button label="View all" onPress={() => openPanel('bookmarks')} /></View>{bookmarks.slice(0, 3).map(page => <Row key={page.url} title={page.title} detail={new URL(page.url).hostname} action={() => navigate(page.url)} />)}</>}
       </ScrollView>}
       {error && <View style={[StyleSheet.absoluteFill, styles.error, { backgroundColor: colors.base }]}><MaterialIcons name="cloud-off" size={44} color={colors.accent} /><Text style={[styles.hero, { color: colors.text, fontSize: 28 }]}>Let’s try that again.</Text>{note(error)}<Button label="Reload page" selected onPress={reload} /></View>}
     </View>
     {!!notice && <View accessibilityLiveRegion="polite" style={[styles.notice, { backgroundColor: colors.raised }]}><Text style={{ color: colors.text }}>{notice}</Text></View>}
-    <View style={[styles.toolbar, { backgroundColor: colors.panel, borderColor: colors.border }]}>
+    <Animated.View style={[styles.toolbarWrap, { transform: [{ translateY: toolbarY }] }]}><BlurView intensity={colors.dark ? 45 : 60} tint={colors.dark ? 'dark' : 'light'} style={[styles.toolbar, { backgroundColor: colors.dark ? 'rgba(41,44,48,0.72)' : 'rgba(251,250,246,0.72)', borderColor: colors.border }]}>
       <Button label="Go back" icon="arrow-back" disabled={!canBack} onPress={() => webviews.current[active.id]?.goBack()} />
       <Button label="Go forward" icon="arrow-forward" disabled={!canForward} onPress={() => webviews.current[active.id]?.goForward()} />
       <Button label="New tab" icon="add" onPress={addTab} />
       <Button label={`${session.tabs.length} tabs`} icon="tab" text={String(session.tabs.length)} onPress={() => openPanel('tabs')} />
       <Button label="Browser menu" icon="menu" onPress={() => openPanel('menu')} />
-    </View>
-    <Modal visible={panel !== null} animationType="slide" transparent onRequestClose={() => setPanel(null)}>
+    </BlurView></Animated.View>
+    <TabSwitcher visible={panel === 'tabs'} tabs={session.tabs} activeId={active.id} colors={colors} onSelect={id => { setSession(old => ({ ...old, activeId: id })); setPanel(null); }} onClose={closeTab} onNew={privateTab => { addTab(privateTab); setPanel(null); }} onDismiss={() => setPanel(null)} />
+    <Modal visible={panel !== null && panel !== 'tabs'} animationType="slide" transparent onRequestClose={() => setPanel(null)}>
       <View style={styles.modalBackdrop}><Pressable accessibilityLabel="Close panel" style={{ flex: 1 }} onPress={() => setPanel(null)} /><SafeAreaView edges={['bottom']} style={[styles.sheet, { backgroundColor: colors.base, borderColor: colors.border }]}>
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
         <View style={styles.sheetHeading}><Text style={[styles.sheetTitle, { color: colors.text }]}>{({ menu: 'Your browser', tabs: 'Open tabs', bookmarks: 'Bookmarks', history: 'History', settings: 'Settings', shield: 'Nsty Shield', site: 'Site information' } as const)[panel || 'menu']}</Text><Button label="Close panel" icon="close" onPress={() => setPanel(null)} /></View>
@@ -217,10 +254,9 @@ function Browser() {
             <Row title="Desktop site" detail="Request a desktop page layout" right={<Switch accessibilityLabel="Desktop site" value={desktop} trackColor={{ true: colors.accent }} onValueChange={value => { setDesktop(value); setPanel(null); setTimeout(reload, 150); }} />} />
             <Row title="Nsty Shield" detail={shield ? 'Controls enabled' : 'Optional controls · off'} action={() => openPanel('shield')} />
             <Row title="Extensions" detail="Unavailable on Android WebView" action={() => explain('Extensions on Android', 'This Android build uses Chromium through Android System WebView. It cannot install Chrome Web Store extensions. Desktop Nsty supports a limited subset of extensions.')} />
-            <Row title="Private browsing" detail="Not available in this build" action={() => explain('Private browsing unavailable', 'Android WebView shares browser storage. This build does not yet provide an isolated private session. Browsing tabs here use the regular session.')} />
+            <Row title="New private tab" detail="Separate cookies, nothing saved to history" action={() => { addTab(true); setPanel(null); }} />
             <Row title="Settings" detail="Appearance, privacy and browser information" action={() => openPanel('settings')} />
           </>}
-          {panel === 'tabs' && <><Row title="New tab" detail="Start with a little space" action={addTab} />{session.tabs.map(tab => <View key={tab.id} style={[styles.tabRow, { backgroundColor: tab.id === active.id ? colors.raised : colors.panel, borderColor: tab.id === active.id ? colors.accent : colors.border }]}><Pressable accessibilityRole="button" accessibilityState={{ selected: tab.id === active.id }} onPress={() => { setSession(old => ({ ...old, activeId: tab.id })); setPanel(null); }} style={{ flex: 1, padding: 16 }}><Text numberOfLines={1} style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>{tab.title}</Text><Text numberOfLines={1} style={[styles.detail, { color: colors.muted }]}>{tab.url || 'A fresh start'}</Text></Pressable><Button label={`Close ${tab.title}`} icon="close" onPress={() => closeTab(tab.id)} /></View>)}</>}
           {(panel === 'bookmarks' || panel === 'history') && <>
             <TextInput accessibilityLabel={`Search ${panel}`} placeholder={`Search ${panel}`} placeholderTextColor={colors.muted} value={filter} onChangeText={setFilter} style={[styles.filter, { color: colors.text, backgroundColor: colors.panel, borderColor: colors.border }]} />
             {panel === 'bookmarks' && canBrowse && <Row title={bookmarks.some(page => page.url === active.url) ? 'Remove current bookmark' : 'Save current page'} action={toggleBookmark} />}
@@ -257,10 +293,13 @@ function Browser() {
   </SafeAreaView>;
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1 }, addressRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
+  screen: { flex: 1 }, pill: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, overflow: 'hidden' }, progressTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, backgroundColor: 'transparent' },
+  toolbarWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 }, recentCard: { width: 150, padding: 10, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth }, recentThumb: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10 },
+  topSites: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 }, topSite: { width: '22%', alignItems: 'center' }, topSiteTile: { width: 58, height: 58, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  addressRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
   address: { flex: 1, minHeight: 44, borderRadius: 14, paddingHorizontal: 13, fontSize: 14 }, button: { minWidth: 46, minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 12 },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingVertical: 5, borderTopWidth: StyleSheet.hairlineWidth },
-  landing: { padding: 24, paddingTop: 38, maxWidth: 620, width: '100%', alignSelf: 'center' }, brand: { width: 56, height: 56, borderRadius: 16, marginBottom: 36 },
+  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingVertical: 5, paddingBottom: 9, borderTopWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  landing: { padding: 24, paddingTop: 38, paddingBottom: 110, maxWidth: 620, width: '100%', alignSelf: 'center' }, brand: { width: 56, height: 56, borderRadius: 16, marginBottom: 36 },
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 14 }, hero: { fontSize: 42, fontWeight: '600', lineHeight: 48, letterSpacing: -1.4 }, subtitle: { fontSize: 15, lineHeight: 24, marginTop: 16, maxWidth: 290 },
   searchCard: { marginTop: 28, padding: 18, minHeight: 60, borderRadius: 18, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 },
   sectionTitle: { fontSize: 15, fontWeight: '600', marginTop: 22, marginBottom: 14 }, shortcuts: { flexDirection: 'row', gap: 10, marginBottom: 24 }, shortcut: { flex: 1, paddingVertical: 20, alignItems: 'center', borderRadius: 18, borderWidth: StyleSheet.hairlineWidth },
