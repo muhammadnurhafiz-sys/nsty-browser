@@ -1,0 +1,6 @@
+{
+  "expo": {
+    "name": "Nsty Browser", "slug": "nsty-browser", "version": "0.5.0", "orientation": "default", "userInterfaceStyle": "automatic",
+    "android": { "package": "com.nsty.browser", "versionCode": 5, "permissions": ["INTERNET"], "blockedPermissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO", "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION"] }
+  }
+}

@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.5.0 (2026-09-06) — Main-owned browser engine, Liquid Glass shell, Android app
+
+Completes the browser implementation planned in `docs/implementation/browser-completion.md`.
+
+### Desktop
+- `BrowserService` (main process) now owns all browser state: tabs with real IDs,
+  isolated browsing sessions (private tabs never persist), Shield with per-site
+  exceptions and per-tab attribution, downloads, unpacked extensions, site
+  permissions, history/bookmarks, find, zoom, print, save page, persistence.
+- Renderer replaced by `BrowserShell`: snapshot-driven chrome with omnibox
+  suggestions, spaces, favorites, tabs, Shield/extensions/downloads/menu panels,
+  settings, permission prompts. IPC validates exact shell identity and payloads.
+- Themes: Graphite + Sage (dark) and Warm Paper (light), follow-system by default.
+  Liquid Glass treatment on dialogs, suggestions, find bar and toasts.
+- Frameless window keeps native Windows/Linux caption buttons on the toolbar.
+- Removed global keyboard shortcuts; shortcuts are handled in-process.
+
+### Android
+- New `mobile/` Expo + Android System WebView app with the same two palettes:
+  tabs, bookmarks, history, find, desktop-site toggle, optional cosmetic Shield.
+  Extensions and private browsing are reported as unavailable in-product.
+
 ## v0.4.1 (2026-04-17) — Design system documentation and token migration
 
 Formalizes the "Obsidian Monolith" design system as an agent-consumable reference

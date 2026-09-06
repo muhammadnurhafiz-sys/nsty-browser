@@ -88,6 +88,22 @@ const api = {
   getSpaces: () => ipcRenderer.invoke('session:getSpaces'),
   saveSpaces: (spaces: unknown) => ipcRenderer.send('session:saveSpaces', spaces),
 
+  // Main-owned browser state (BrowserService). The renderer never creates
+  // tabs or IDs itself: it renders snapshots and submits typed actions.
+  getBrowserSnapshot: () => ipcRenderer.invoke('browser:getSnapshot'),
+  dispatchBrowserAction: (action: unknown) => ipcRenderer.invoke('browser:action', action),
+  onBrowserSnapshot: (callback: (snapshot: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, snapshot: unknown) => callback(snapshot)
+    ipcRenderer.on('browser:snapshot', listener)
+    return () => { ipcRenderer.removeListener('browser:snapshot', listener) }
+  },
+  // Shortcuts pressed while a page view has focus are forwarded by main.
+  onBrowserShortcut: (callback: (key: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, key: string) => callback(key)
+    ipcRenderer.on('browser:shortcut', listener)
+    return () => { ipcRenderer.removeListener('browser:shortcut', listener) }
+  },
+
   // Platform — authoritative process.platform, surfaced so renderer doesn't
   // resort to UA sniffing for chrome padding / shortcut decisions.
   platform: process.platform,

@@ -1,13 +1,9 @@
-import { app, BrowserWindow, globalShortcut, protocol, net, session } from 'electron'
+import { app, BrowserWindow, protocol, net, session } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { TabManager } from './tab-manager'
-import { WindowManager } from './window-manager'
+import { BrowserService } from './browser-service'
 import { registerIpcHandlers } from './ipc-handlers'
-import { ShieldEngine } from './shield/engine'
-import { setupInterceptor } from './shield/interceptor'
-import { scheduleFilterUpdates } from './shield/filter-lists'
 import { closeDatabase } from './store/database'
 import { ClaudeClient } from './ai/claude-client'
 import { setupAutoUpdater } from './updater'
@@ -19,13 +15,14 @@ import { installCrashHandlers } from './utils/crash-handlers'
 const log = createLogger('main')
 
 let mainWindow: BrowserWindow | null = null
-let tabManager: TabManager | null = null
-let windowManager: WindowManager | null = null
-let shieldEngine: ShieldEngine | null = null
+let browserService: BrowserService | null = null
 let claudeClient: ClaudeClient | null = null
 
 const isDev = !app.isPackaged
 
+// Height of the BrowserShell toolbar; the OS caption overlay (Windows/Linux)
+// is sized to match so the native buttons sit on the toolbar, not beside it.
+const TOOLBAR_HEIGHT = 54
 
 // Register custom protocol before app is ready — required for file:// CORS compat
 protocol.registerSchemesAsPrivileged([{
@@ -36,10 +33,10 @@ protocol.registerSchemesAsPrivileged([{
 function createWindow(): void {
   const isMac = process.platform === 'darwin'
   const platformOptions = isMac
-    ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 12, y: 12 } }
+    ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 12, y: 18 } }
     : {
         titleBarStyle: 'hidden' as const,
-        titleBarOverlay: { color: '#111113', symbolColor: '#94a3b8', height: 42 },
+        titleBarOverlay: { color: '#292C30', symbolColor: '#F0F1EC', height: TOOLBAR_HEIGHT },
       }
 
   mainWindow = new BrowserWindow({
@@ -50,7 +47,7 @@ function createWindow(): void {
     frame: false,
     ...platformOptions,
     icon: path.join(__dirname, '../../resources/icons/icon.png'),
-    backgroundColor: '#111113',
+    backgroundColor: '#17191C',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -61,28 +58,18 @@ function createWindow(): void {
 
   applyNavigationGuard(mainWindow.webContents)
 
-  tabManager = new TabManager(mainWindow)
-  windowManager = new WindowManager(mainWindow, tabManager)
+  // Main-owned browser state: tabs, sessions, Shield, downloads, extensions,
+  // permissions and persistence all live here; the renderer only renders snapshots.
+  browserService = new BrowserService(mainWindow)
+  browserService.registerIpc()
+  void browserService.initializeShield()
+  void browserService.loadExtensions()
 
   // Initialize Claude AI client
   claudeClient = new ClaudeClient(mainWindow)
   claudeClient.initialize()
 
-  registerIpcHandlers(tabManager, windowManager, claudeClient)
-
-  // Initialize shield (ad blocker)
-  shieldEngine = new ShieldEngine()
-  shieldEngine.initialize().then(() => {
-    if (shieldEngine && mainWindow) {
-      shieldEngine.enableOnSession()
-      shieldEngine.setupStatsTracking()
-      setupInterceptor(mainWindow, shieldEngine)
-      scheduleFilterUpdates()
-      log.info('shield engine ready')
-    }
-  }).catch((err) => {
-    log.error('shield init failed', { message: err instanceof Error ? err.message : String(err) })
-  })
+  registerIpcHandlers(browserService, claudeClient)
 
   // Auto-updater (production only)
   if (!isDev) {
@@ -122,40 +109,14 @@ function createWindow(): void {
     mainWindow.loadURL('app://bundle/index.html')
   }
 
-  // Register global shortcuts
-  globalShortcut.register('CommandOrControl+\\', () => {
-    if (!mainWindow || !windowManager) return
-    const expanded = windowManager.toggleSidebar()
-    mainWindow.webContents.send('sidebar:toggled', expanded)
-  })
-
-  globalShortcut.register('CommandOrControl+T', () => {
-    if (!mainWindow || !tabManager) return
-    // Create tab in current space — renderer will send the spaceId
-    mainWindow.webContents.send('shortcut:newTab')
-  })
-
-  globalShortcut.register('CommandOrControl+W', () => {
-    if (!tabManager) return
-    const activeTab = tabManager.getActiveTab()
-    if (activeTab) {
-      tabManager.closeTab(activeTab.id)
-      mainWindow?.webContents.send('tab:closed', activeTab.id)
-    }
-  })
-
-  globalShortcut.register('CommandOrControl+L', () => {
-    mainWindow?.webContents.send('shortcut:focusAddressBar')
-  })
-
-  globalShortcut.register('CommandOrControl+Shift+H', () => {
-    mainWindow?.webContents.send('shortcut:toggleHistory')
-  })
+  // Keyboard shortcuts are handled in-process: BrowserShell for the chrome,
+  // BrowserService (before-input-event) for focused page views. No global
+  // shortcuts — they would steal keys from every other application.
 
   mainWindow.on('closed', () => {
+    browserService?.dispose()
+    browserService = null
     mainWindow = null
-    tabManager = null
-    windowManager = null
   })
 }
 
@@ -185,7 +146,6 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  globalShortcut.unregisterAll()
   closeDatabase()
   if (process.platform !== 'darwin') {
     app.quit()

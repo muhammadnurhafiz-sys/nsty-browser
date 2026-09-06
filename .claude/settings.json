@@ -3,7 +3,12 @@
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "if echo \"$TOOL_INPUT\" | grep -qE '\\.(ts|tsx)'; then cd /home/hafiz/nsty-browser && npx tsc --noEmit --pretty 2>&1 | tail -5; fi"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE '\\.(ts|tsx)'; then cd \"$CLAUDE_PROJECT_DIR\" && npx tsc --noEmit --pretty 2>&1 | tail -5; fi"
+          }
+        ]
       }
     ]
   }
