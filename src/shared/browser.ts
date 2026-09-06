@@ -7,10 +7,11 @@ export interface BrowserPreferences {
   youtube: boolean
   reduceMotion: boolean
   downloadAsk: boolean
+  sidebarCollapsed: boolean
 }
 export const DEFAULT_BROWSER_PREFERENCES: BrowserPreferences = {
   theme: 'system', searchEngine: 'google', restoreTabs: true, shield: true,
-  youtube: true, reduceMotion: false, downloadAsk: true,
+  youtube: true, reduceMotion: false, downloadAsk: true, sidebarCollapsed: false,
 }
 export interface BrowserTab {
   id: string
@@ -25,6 +26,10 @@ export interface BrowserTab {
   zoom: number
   error: string | null
   blocked: number
+  favicon: string | null
+  audible: boolean
+  /** Current find-in-page result, null when no search is active. */
+  find: { active: number; total: number } | null
 }
 export interface BrowserBookmark { id: string; title: string; url: string; folder: string }
 export interface BrowserHistoryEntry { id: string; title: string; url: string; visitedAt: number }
@@ -63,6 +68,8 @@ export type BrowserAction =
   | { type: 'zoom'; value: number }
   | { type: 'find'; text: string; forward?: boolean }
   | { type: 'overlay'; open: boolean }
+  /** Renderer-reported origin of the content area (sidebar width, toolbar height). */
+  | { type: 'layout'; x: number; y: number }
   | { type: 'preferences'; patch: Partial<BrowserPreferences> }
   | { type: 'bookmark:add'; title: string; url: string; folder: string }
   | { type: 'bookmark:remove'; id: string }

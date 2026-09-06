@@ -11,7 +11,8 @@ vi.mock('electron', async () => {
     loadURL = vi.fn(async (url: string) => { this.url = url }); getURL = () => this.url
     setWindowOpenHandler = vi.fn(); close = vi.fn(); isDestroyed = () => false
     setAudioMuted = vi.fn(); setZoomFactor = vi.fn(); executeJavaScript = vi.fn(async () => undefined)
-    stop = vi.fn(); reload = vi.fn(); send = vi.fn()
+    stop = vi.fn(); reload = vi.fn(); send = vi.fn(); stopFindInPage = vi.fn(); findInPage = vi.fn()
+    capturePage = vi.fn(async () => ({ resize: () => ({ toJPEG: () => Buffer.from('jpeg-bytes') }) }))
   }
   const ses = { webRequest: { onBeforeRequest: vi.fn() }, setPermissionRequestHandler: vi.fn(), setPermissionCheckHandler: vi.fn(), on: vi.fn(), clearStorageData: vi.fn(async () => {}), clearCache: vi.fn(async () => {}), extensions: { loadExtension: vi.fn(), removeExtension: vi.fn() } }
   return { WebContentsView: class { webContents = new Contents(); setBounds = vi.fn() }, BrowserWindow: vi.fn(), session: { fromPartition: () => ses }, app: { getPath: () => os.tmpdir(), getAppPath: () => process.cwd(), isPackaged: true }, nativeTheme: { shouldUseDarkColors: true, on: vi.fn() }, dialog: {}, shell: {}, ipcMain: { handle: vi.fn(), removeHandler: vi.fn() } }
@@ -186,6 +187,47 @@ describe('BrowserService native state ownership', () => {
     await service.dispatch({ type: 'shield:site', host: 'site.test', enabled: false })
     onBeforeRequest({ webContentsId: managed.view.webContents.id, resourceType: 'script', url: 'https://ads.test/b.js' }, r => results.push(r))
     expect(results.at(-1)).toEqual({})
+    service.dispose()
+  })
+  it('tracks favicon, audio and find state per tab', async () => {
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    await service.dispatch({ type: 'navigate', url: 'https://site.test/' })
+    const id = service.snapshot().activeTabId!
+    const wc = (service as unknown as { views: Map<string, { view: { webContents: import('node:events').EventEmitter } }> }).views.get(id)!.view.webContents
+    wc.emit('page-favicon-updated', {}, ['https://site.test/favicon.ico', 'https://site.test/other.png'])
+    wc.emit('audio-state-changed', { audible: true })
+    await service.dispatch({ type: 'find', text: 'notify' })
+    wc.emit('found-in-page', {}, { activeMatchOrdinal: 3, matches: 12, finalUpdate: true })
+    let tab = service.snapshot().tabs.find(t => t.id === id)!
+    expect(tab.favicon).toBe('https://site.test/favicon.ico')
+    expect(tab.audible).toBe(true)
+    expect(tab.find).toEqual({ active: 3, total: 12 })
+    await service.dispatch({ type: 'find', text: '' })
+    wc.emit('audio-state-changed', { audible: false })
+    tab = service.snapshot().tabs.find(t => t.id === id)!
+    expect(tab.find).toBeNull(); expect(tab.audible).toBe(false)
+    wc.emit('page-favicon-updated', {}, ['javascript:alert(1)'])
+    expect(service.snapshot().tabs.find(t => t.id === id)!.favicon).toBeNull()
+    service.dispose()
+  })
+  it('lays out the native view from the rect the renderer reports', async () => {
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    await service.dispatch({ type: 'navigate', url: 'https://site.test/' })
+    const view = (service as unknown as { views: Map<string, { view: { setBounds: { mock: { calls: [unknown][] } } } }> }).views.get(service.snapshot().activeTabId!)!.view
+    await service.dispatch({ type: 'layout', x: 64, y: 54 })
+    expect(view.setBounds.mock.calls.at(-1)![0]).toEqual({ x: 64, y: 54, width: 1136, height: 746 })
+    service.dispose()
+  })
+  it('captures a page preview when an overlay opens and clears it when it closes', async () => {
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    await service.dispatch({ type: 'navigate', url: 'https://site.test/' })
+    window.webContents.send.mockClear()
+    await service.dispatch({ type: 'overlay', open: true })
+    const preview = window.webContents.send.mock.calls.find(([channel]) => channel === 'browser:preview')
+    expect(preview?.[1]).toMatch(/^data:image\/jpeg;base64,/)
+    expect(window.contentView.removeChildView).toHaveBeenCalled()
+    await service.dispatch({ type: 'overlay', open: false })
+    expect(window.webContents.send.mock.calls.filter(([channel]) => channel === 'browser:preview').at(-1)![1]).toBeNull()
     service.dispose()
   })
   it('rejects invalid native commands', async () => {

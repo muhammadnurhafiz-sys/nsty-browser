@@ -1,16 +1,26 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+
+afterEach(() => cleanup())
 import { BrowserShell } from './BrowserShell'
 import { DEFAULT_BROWSER_PREFERENCES, type BrowserSnapshot } from '../shared/browser'
 const snapshot: BrowserSnapshot = { revision: 1, tabs: [], activeTabId: null, activeSpace: 'Work', spaces: ['Work', 'Personal', 'Dev'], preferences: DEFAULT_BROWSER_PREFERENCES, bookmarks: [], history: [], downloads: [], extensions: [], pendingPermission: null, permissions: [], shieldExceptions: [], shieldReady: true, capabilities: { extensions: true, privateBrowsing: true } }
 describe('Browser shell native state', () => {
+ it('collapsing the sidebar stores a preference and reports the new content rect', async () => {
+  const dispatch = vi.fn(async () => ({ ok: true, snapshot }))
+  window.nsty = { getBrowserSnapshot: async () => snapshot, onBrowserSnapshot: () => () => {}, dispatchBrowserAction: dispatch } as unknown as typeof window.nsty
+  render(<BrowserShell />)
+  await waitFor(() => expect(dispatch).toHaveBeenCalledWith({ type: 'layout', x: 240, y: 54 }))
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+  await waitFor(() => expect(dispatch).toHaveBeenCalledWith({ type: 'preferences', patch: { sidebarCollapsed: true } }))
+ })
  it('creates tabs only after native snapshot and ignores stale hydration', async () => {
   let emit: (s: BrowserSnapshot) => void = () => {}
   let hydrate: (s: BrowserSnapshot) => void = () => {}
   const dispatch = vi.fn(async () => ({ ok: true, snapshot }))
   window.nsty = { getBrowserSnapshot: () => new Promise(resolve => { hydrate = resolve }), onBrowserSnapshot: (cb: typeof emit) => { emit = cb; return () => {} }, dispatchBrowserAction: dispatch } as unknown as typeof window.nsty
   render(<BrowserShell />)
-  emit({ ...snapshot, revision: 3, tabs: [{ id: 'native-id', title: 'Actual tab', url: '', space: 'Work', private: false, loading: false, canGoBack: false, canGoForward: false, muted: false, zoom: 1, error: null, blocked: 0 }], activeTabId: 'native-id' })
+  emit({ ...snapshot, revision: 3, tabs: [{ id: 'native-id', title: 'Actual tab', url: '', space: 'Work', private: false, loading: false, canGoBack: false, canGoForward: false, muted: false, zoom: 1, error: null, blocked: 0, favicon: null, audible: false, find: null }], activeTabId: 'native-id' })
   hydrate(snapshot)
   await screen.findByRole('button', { name: 'Select Actual tab' })
   fireEvent.click(screen.getByRole('button', { name: 'New tab' }))

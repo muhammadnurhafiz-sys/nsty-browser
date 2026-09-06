@@ -51,6 +51,7 @@ export function validateBrowserAction(value: unknown): value is BrowserAction {
     case 'zoom': return typeof a.value === 'number' && Number.isFinite(a.value) && a.value >= 0.5 && a.value <= 2
     case 'find': return str('text', 200) && (a.forward === undefined || bool('forward'))
     case 'overlay': return bool('open')
+    case 'layout': return [a.x, a.y].every(v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 2000)
     case 'bookmark:add': return str('title', 250) && str('url') && str('folder', 100)
     case 'clear-data': return bool('history') && bool('cookies') && bool('cache')
     case 'shield:site': return str('host', 255) && /^[a-z\d.-]+$/i.test(a.host as string) && bool('enabled')
@@ -61,7 +62,7 @@ export function validateBrowserAction(value: unknown): value is BrowserAction {
       return Object.entries(a.patch).every(([key, v]) => {
         if (key === 'theme') return ['system', 'graphite', 'paper'].includes(String(v))
         if (key === 'searchEngine') return ['google', 'duckduckgo', 'bing', 'brave'].includes(String(v))
-        return ['restoreTabs', 'shield', 'youtube', 'reduceMotion', 'downloadAsk'].includes(key) && typeof v === 'boolean'
+        return ['restoreTabs', 'shield', 'youtube', 'reduceMotion', 'downloadAsk', 'sidebarCollapsed'].includes(key) && typeof v === 'boolean'
       })
     }
     default: return false

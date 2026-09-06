@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { normalizeAddress, validateBrowserAction, isShellUrl, persistableTabs, isSpaceName } from './browser-policy'
 
 describe('browser boundary policies', () => {
+  it('validates layout reports and the sidebar preference', () => {
+    expect(validateBrowserAction({ type: 'layout', x: 64, y: 54 })).toBe(true)
+    expect(validateBrowserAction({ type: 'layout', x: -1, y: 54 })).toBe(false)
+    expect(validateBrowserAction({ type: 'layout', x: 64, y: Number.NaN })).toBe(false)
+    expect(validateBrowserAction({ type: 'preferences', patch: { sidebarCollapsed: true } })).toBe(true)
+  })
   it('accepts user-defined space names and rejects empty or oversized ones', () => {
     expect(validateBrowserAction({ type: 'space:create', name: 'Research' })).toBe(true)
     expect(validateBrowserAction({ type: 'space', name: 'Side projects 2' })).toBe(true)

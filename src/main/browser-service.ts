@@ -28,6 +28,8 @@ export class BrowserService {
   private extensionRecords: ExtensionRecord[] = []
   private closedTabs: { url: string; space: string }[] = []
   private overlayOpen = false
+  /** Content-area origin reported by the renderer (sidebar width, toolbar height). */
+  private contentOrigin = { x: 240, y: 54 }
   private blocker: ElectronBlocker | null = null
   private saveTimer: ReturnType<typeof setTimeout> | null = null
   private sendScheduled = false
@@ -178,7 +180,7 @@ export class BrowserService {
     const url = normalizeAddress(input, this.state.preferences.searchEngine)
     const id = randomUUID()
     const view = new WebContentsView({ webPreferences: { session: this.getSession(isPrivate), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } })
-    const tab: BrowserTab = { id, url, space, private: isPrivate, title: 'New tab', loading: false, canGoBack: false, canGoForward: false, muted: false, zoom: 1, error: null, blocked: 0 }
+    const tab: BrowserTab = { id, url, space, private: isPrivate, title: 'New tab', loading: false, canGoBack: false, canGoForward: false, muted: false, zoom: 1, error: null, blocked: 0, favicon: null, audible: false, find: null }
     const wc = view.webContents
     this.views.set(id, { tab, view })
     wc.setWindowOpenHandler(({ url: destination }) => {
@@ -197,6 +199,9 @@ export class BrowserService {
     }
     wc.on('did-navigate', navigated)
     wc.on('did-navigate-in-page', (event, destination, isMainFrame) => { if (isMainFrame) navigated(event, destination) })
+    wc.on('page-favicon-updated', (_event, favicons) => { const icon = favicons.find(u => /^(https?:|data:image\/)/i.test(u)) ?? null; if (icon !== tab.favicon) { tab.favicon = icon; this.publish() } })
+    wc.on('audio-state-changed', event => { tab.audible = event.audible; this.publish() })
+    wc.on('found-in-page', (_event, result) => { tab.find = { active: result.activeMatchOrdinal, total: result.matches }; this.publish() })
     wc.on('page-title-updated', (_event, title) => { tab.title = title; if (!tab.private) for (const h of this.state.history) if (h.url === tab.url) h.title = title; this.publish(!tab.private) })
     wc.on('did-fail-load', (_event, code, description, _url, mainFrame) => {
       if (mainFrame && code !== -3) { tab.loading = false; tab.error = description; this.layout(); this.publish() }
@@ -255,6 +260,22 @@ export class BrowserService {
     this.layout(); this.publish(true)
   }
 
+  /** Open/close a DOM overlay. On open, capture the page first so the dialog can blur it. */
+  private async setOverlay(open: boolean): Promise<void> {
+    if (open === this.overlayOpen) return
+    if (open) {
+      const wc = this.active()?.view.webContents
+      let preview: string | null = null
+      if (wc && this.active()?.tab.url !== 'nsty://newtab' && typeof wc.capturePage === 'function') {
+        try { const image = await wc.capturePage(); preview = `data:image/jpeg;base64,${image.resize({ width: 1280 }).toJPEG(60).toString('base64')}` }
+        catch { log.warn('page preview capture failed') }
+      }
+      if (!this.window.isDestroyed()) this.window.webContents.send('browser:preview', preview)
+    } else if (!this.window.isDestroyed()) this.window.webContents.send('browser:preview', null)
+    this.overlayOpen = open
+    this.layout()
+  }
+
   layout(): void {
     if (this.disposed || this.window.isDestroyed()) return
     log.debug('update native content bounds')
@@ -263,7 +284,8 @@ export class BrowserService {
       this.window.contentView.removeChildView(view)
       if (tab.id === this.state.activeTabId && tab.url !== 'nsty://newtab' && !tab.error && !this.overlayOpen && !this.permissionQueue.length) {
         this.window.contentView.addChildView(view)
-        view.setBounds({ x: 240, y: 54, width: Math.max(100, width - 240), height: Math.max(100, height - 54) })
+        const { x, y } = this.contentOrigin
+        view.setBounds({ x, y, width: Math.max(100, width - x), height: Math.max(100, height - y) })
       }
     }
   }
@@ -414,10 +436,11 @@ export class BrowserService {
         case 'forward': if (wc?.navigationHistory.canGoForward()) wc.navigationHistory.goForward(); break
         case 'reload': if (current) this.load(current.tab, current.view, current.tab.url); break
         case 'stop': wc?.stop(); break
-        case 'overlay': this.overlayOpen = action.open; break
+        case 'overlay': await this.setOverlay(action.open); break
+        case 'layout': this.contentOrigin = { x: Math.round(action.x), y: Math.round(action.y) }; break
         case 'preferences': this.state.preferences = { ...this.state.preferences, ...action.patch }; this.applyTheme(); if (action.patch.shield !== undefined || action.patch.youtube !== undefined) for (const { tab, view } of this.views.values()) if (tab.url !== 'nsty://newtab') view.webContents.reload(); break
         case 'zoom': if (current) { current.tab.zoom = action.value; wc?.setZoomFactor(action.value) }; break
-        case 'find': if (action.text) wc?.findInPage(action.text, { forward: action.forward ?? true }); else wc?.stopFindInPage('clearSelection'); break
+        case 'find': if (action.text) wc?.findInPage(action.text, { forward: action.forward ?? true }); else { wc?.stopFindInPage('clearSelection'); if (current) current.tab.find = null }; break
         case 'print': if (wc && current?.tab.url !== 'nsty://newtab') wc.print({}, (success, reason) => { if (!success) log.warn('printing did not complete', { reason }) }); break
         case 'save-page': { if (!wc || current?.tab.url === 'nsty://newtab') break; const result = await dialog.showSaveDialog(this.window, { defaultPath: 'page.html', filters: [{ name: 'Web page', extensions: ['html'] }] }); if (result.filePath) await wc.savePage(result.filePath, 'HTMLComplete'); break }
         case 'devtools': wc?.openDevTools({ mode: 'detach' }); break
