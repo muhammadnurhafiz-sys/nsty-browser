@@ -33,9 +33,22 @@ updates:
           - lint-staged
           - tailwindcss
           - "@tailwindcss/*"
-      dnd:
+
+  # Expo / React Native Android app
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      expo:
         patterns:
-          - "@dnd-kit/*"
+          - expo
+          - expo-*
+          - react-native
+          - react-native-*
+          - "@react-native-async-storage/*"
 
   - package-ecosystem: github-actions
     directory: /
