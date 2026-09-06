@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.6.0 (2026-09-06) — UX round 1: desktop and mobile
+
+### Desktop
+- Dialogs no longer blank the page: main captures the active page when an overlay opens and
+  the shell blurs it behind the glass dialog.
+- Tabs show favicons, a loading ring and an audio indicator.
+- Sidebar collapses to a 64px favicon rail (persisted); the renderer reports its content rect
+  to main instead of main hardcoding the geometry.
+- Spaces have positional colours; the active space tints the sidebar edge and the active tab.
+- Downloads appear as a toolbar pill with a progress ring and a popover.
+- Omnibox suggestions query bounded history plus bookmarks, with arrow-key navigation.
+- Find in page shows "n of m".
+
+### Android
+- Address bar shows the domain with a lock and a load-progress bar; tapping edits the full URL.
+- Translucent bottom toolbar that hides while scrolling down and returns on scroll up.
+- Full-screen tab switcher with page thumbnails, a Tabs | Private control and a floating new tab.
+- Private tabs use an incognito WebView and never enter history or the saved session.
+- New tab page shows recent tabs, top sites from history and bookmarks.
+
 ## v0.5.1 (2026-09-06) — Review follow-ups, user spaces, dependency bumps
 
 ### Desktop
