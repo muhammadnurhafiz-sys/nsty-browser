@@ -11,6 +11,8 @@ import { isShellUrl, normalizeAddress, persistableTabs, validateBrowserAction } 
 import { createLogger } from './utils/logger'
 
 const log = createLogger('browser')
+const STATE_VERSION = 1
+let youtubeScript: string | null = null
 interface ManagedTab { tab: BrowserTab; view: BrowserView }
 interface ExtensionRecord { path: string; id: string; enabled: boolean; pinned: boolean; name: string; version: string }
 interface PendingPermission { request: BrowserPermission; callback: (allow: boolean) => void; timer: ReturnType<typeof setTimeout> }
@@ -43,7 +45,7 @@ export class BrowserService {
     this.state.history = (restored?.history ?? []).filter(h => typeof h.id === 'string' && typeof h.title === 'string' && typeof h.visitedAt === 'number' && /^https?:\/\//.test(h.url)).slice(0, 500)
     this.state.shieldExceptions = (restored?.shieldExceptions ?? []).filter(h => typeof h === 'string' && /^[a-z\d.-]+$/i.test(h))
     this.state.permissions = (restored?.permissions ?? []).filter(p => typeof p.origin === 'string' && typeof p.permission === 'string' && typeof p.allowed === 'boolean')
-    this.extensionRecords = (restored?.extensionRecords ?? []).filter(e => typeof e.id === 'string' && typeof e.path === 'string')
+    this.extensionRecords = (restored?.extensionRecords ?? []).filter(e => typeof e.id === 'string' && typeof e.path === 'string' && this.isManagedExtensionPath(e.path))
     if (this.state.preferences.restoreTabs) {
       for (const entry of (restored?.savedTabs ?? []).slice(0, 50)) {
         try { this.createTab(entry.url, false, ['Work', 'Personal', 'Dev'].includes(entry.space) ? entry.space : 'Work') } catch { log.warn('skip invalid saved tab') }
@@ -60,18 +62,26 @@ export class BrowserService {
   }
 
   private readState(): (Partial<BrowserSnapshot> & { savedTabs?: { url: string; space: string }[]; extensionRecords?: ExtensionRecord[] }) | null {
-    try {
-      const data = JSON.parse(fs.readFileSync(path.join(this.storageDir, 'browser-state.json'), 'utf8'))
-      if (!data || !Array.isArray(data.bookmarks) || !Array.isArray(data.history) || !Array.isArray(data.savedTabs) || !Array.isArray(data.extensionRecords) || !Array.isArray(data.permissions) || !Array.isArray(data.shieldExceptions)) return null
-      return data
-    } catch { log.info('start with fresh browser state'); return null }
+    const file = path.join(this.storageDir, 'browser-state.json')
+    let data: Record<string, unknown>
+    try { data = JSON.parse(fs.readFileSync(file, 'utf8')) } catch { log.info('start with fresh browser state'); return null }
+    // Unversioned files are the v0.5.0 shape (== version 1). Anything newer or
+    // malformed is preserved as a backup rather than overwritten on next save.
+    const version = typeof data?.version === 'number' ? data.version : 1
+    const shape = data && Array.isArray(data.bookmarks) && Array.isArray(data.history) && Array.isArray(data.savedTabs) && Array.isArray(data.extensionRecords) && Array.isArray(data.permissions) && Array.isArray(data.shieldExceptions)
+    if (version > STATE_VERSION || !shape) {
+      const backup = `${file}.backup-v${version}-${Date.now()}`
+      try { fs.renameSync(file, backup); log.warn('browser state not readable by this version; backed up', { version, backup }) } catch { log.error('could not back up unreadable browser state') }
+      return null
+    }
+    return data as ReturnType<BrowserService['readState']>
   }
 
   private persist(): void {
     log.debug('persist browser preferences and public session')
     fs.mkdirSync(this.storageDir, { recursive: true })
     const target = path.join(this.storageDir, 'browser-state.json')
-    const payload = { preferences: this.state.preferences, bookmarks: this.state.bookmarks, history: this.state.history, permissions: this.state.permissions,
+    const payload = { version: STATE_VERSION, preferences: this.state.preferences, bookmarks: this.state.bookmarks, history: this.state.history, permissions: this.state.permissions,
       shieldExceptions: this.state.shieldExceptions, extensionRecords: this.extensionRecords,
       savedTabs: this.state.preferences.restoreTabs ? persistableTabs([...this.views.values()].map(v => v.tab)) : [], }
     try { fs.writeFileSync(`${target}.tmp`, JSON.stringify(payload), { mode: 0o600 }); fs.renameSync(`${target}.tmp`, target) }
@@ -261,8 +271,8 @@ export class BrowserService {
         if (result.active) for (const script of result.scripts) await wc.executeJavaScript(script).catch(() => undefined)
       }
       if (this.state.preferences.youtube && (hostname === 'youtube.com' || hostname.endsWith('.youtube.com'))) {
-        const script = fs.readFileSync(path.join(app.getAppPath(), 'resources/content-scripts/youtube-shield.js'), 'utf8')
-        await wc.executeJavaScript(script)
+        youtubeScript ??= fs.readFileSync(path.join(app.getAppPath(), 'resources/content-scripts/youtube-shield.js'), 'utf8')
+        await wc.executeJavaScript(youtubeScript)
       }
     } catch { log.warn('page protection injection unavailable') }
   }
@@ -292,6 +302,15 @@ export class BrowserService {
     this.publish(remember)
   }
 
+  private get extensionsDir(): string { return path.join(this.storageDir, 'extensions') }
+
+  /** Only directories this app copied into userData/extensions are ever loaded. */
+  private isManagedExtensionPath(candidate: string): boolean {
+    const root = path.resolve(this.extensionsDir)
+    const resolved = path.resolve(candidate)
+    return resolved.startsWith(root + path.sep)
+  }
+
   async loadExtensions(): Promise<void> {
     log.info('restore compatible unpacked extensions')
     const ses = this.getSession()
@@ -302,13 +321,25 @@ export class BrowserService {
     this.publish(true)
   }
 
+  /** Copy an unpacked extension into userData/extensions so restored paths are always app-owned. */
+  async installExtension(source: string): Promise<void> {
+    log.info('install unpacked extension into managed directory')
+    if (!fs.existsSync(path.join(source, 'manifest.json'))) throw new Error('The folder does not contain an extension manifest')
+    const target = path.join(this.extensionsDir, randomUUID())
+    fs.mkdirSync(this.extensionsDir, { recursive: true })
+    fs.cpSync(source, target, { recursive: true, dereference: true })
+    const ext = await this.getSession().extensions.loadExtension(target)
+    if (this.extensionRecords.some(e => e.id === ext.id)) { fs.rmSync(target, { recursive: true, force: true }); throw new Error('This extension is already installed') }
+    this.extensionRecords.push({ id: ext.id, path: target, name: ext.name, version: ext.version, enabled: true, pinned: false })
+  }
+
   private async extensionAction(action: Extract<BrowserAction, { type: 'extension:toggle' | 'extension:pin' | 'extension:remove' | 'extension:open' }>): Promise<void> {
     log.info('extension action', { type: action.type })
     const item = this.extensionRecords.find(e => e.id === action.id)
     if (!item) throw new Error('Extension no longer exists')
     const ses = this.getSession()
     if (action.type === 'extension:pin') item.pinned = !item.pinned
-    else if (action.type === 'extension:remove') { if (item.enabled) ses.extensions.removeExtension(item.id); this.extensionRecords = this.extensionRecords.filter(e => e !== item) }
+    else if (action.type === 'extension:remove') { if (item.enabled) ses.extensions.removeExtension(item.id); this.extensionRecords = this.extensionRecords.filter(e => e !== item); if (this.isManagedExtensionPath(item.path)) fs.rmSync(item.path, { recursive: true, force: true }) }
     else if (action.type === 'extension:toggle') {
       if (item.enabled) { ses.extensions.removeExtension(item.id); item.enabled = false }
       else { await ses.extensions.loadExtension(item.path); item.enabled = true }
@@ -360,12 +391,12 @@ export class BrowserService {
         case 'bookmark:remove': this.state.bookmarks = this.state.bookmarks.filter(b => b.id !== action.id); break
         case 'bookmarks:import': { const result = await dialog.showOpenDialog(this.window, { properties: ['openFile'], filters: [{ name: 'Nsty bookmarks JSON', extensions: ['json'] }] }); const file = result.filePaths[0]; if (file) { const data: unknown = JSON.parse(fs.readFileSync(file, 'utf8')); if (!Array.isArray(data) || data.length > 5000) throw new Error('Invalid bookmarks file'); for (const entry of data) { if (!validateBrowserAction({ ...entry, type: 'bookmark:add' })) throw new Error('Invalid bookmark entry'); const url = normalizeAddress(entry.url); if (!/^https?:/.test(url)) continue; this.state.bookmarks.push({ id: randomUUID(), url, title: entry.title, folder: entry.folder }) } }; break }
         case 'bookmarks:export': { const result = await dialog.showSaveDialog(this.window, { defaultPath: 'nsty-bookmarks.json' }); if (result.filePath) fs.writeFileSync(result.filePath, JSON.stringify(this.state.bookmarks, null, 2)); break }
-        case 'clear-data': if (action.history) this.state.history = []; for (const ses of this.sessions) { if (action.cookies) await ses.clearStorageData(); if (action.cache) await ses.clearCache() }; break
+        case 'clear-data': if (action.history) this.state.history = []; for (const ses of new Set([...this.sessions, session.fromPartition('persist:nsty-browsing'), session.fromPartition(this.privatePartition)])) { if (action.cookies) await ses.clearStorageData(); if (action.cache) await ses.clearCache() }; break
         case 'download:pause': this.downloadItems.get(action.id)?.pause(); break
         case 'download:resume': this.downloadItems.get(action.id)?.resume(); break
         case 'download:cancel': this.downloadItems.get(action.id)?.cancel(); break
         case 'download:open': case 'download:folder': { const item = this.downloadItems.get(action.id); if (item?.getState() !== 'completed') throw new Error('Download is not complete'); if (action.type === 'download:open') { const error = await shell.openPath(item.getSavePath()); if (error) throw new Error(error) } else shell.showItemInFolder(item.getSavePath()); break }
-        case 'extensions:load': { const result = await dialog.showOpenDialog(this.window, { properties: ['openDirectory'], title: 'Load a compatible unpacked extension' }); const directory = result.filePaths[0]; if (directory) { const ext = await this.getSession().extensions.loadExtension(directory); if (!this.extensionRecords.some(e => e.id === ext.id)) this.extensionRecords.push({ id: ext.id, path: directory, name: ext.name, version: ext.version, enabled: true, pinned: false }) }; break }
+        case 'extensions:load': { const result = await dialog.showOpenDialog(this.window, { properties: ['openDirectory'], title: 'Load a compatible unpacked extension' }); const directory = result.filePaths[0]; if (directory) await this.installExtension(directory); break }
         case 'extension:toggle': case 'extension:remove': case 'extension:pin': case 'extension:open': await this.extensionAction(action); break
         case 'shield:site': this.state.shieldExceptions = this.state.shieldExceptions.filter(h => h !== action.host); if (!action.enabled) this.state.shieldExceptions.push(action.host); for (const { tab, view } of this.views.values()) if (tab.url !== 'nsty://newtab' && new URL(tab.url).hostname === action.host) view.webContents.reload(); break
         case 'permission:respond': this.respondPermission(action.id, action.allow, action.remember); break

@@ -69,6 +69,37 @@ describe('BrowserService native state ownership', () => {
     expect(window.webContents.send.mock.calls[0]![1].tabs[0].zoom).toBe(1.3)
     service.dispose()
   })
+  it('backs up a newer or malformed state file instead of overwriting it', () => {
+    const file = path.join(dir, 'browser-state.json')
+    fs.writeFileSync(file, JSON.stringify({ version: 99, future: true }))
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    service.dispose()
+    const backups = fs.readdirSync(dir).filter(name => name.startsWith('browser-state.json.backup-v99'))
+    expect(backups).toHaveLength(1)
+    expect(JSON.parse(fs.readFileSync(path.join(dir, backups[0]!), 'utf8')).future).toBe(true)
+    expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe(1)
+  })
+  it('reads unversioned v0.5.0 state files and writes version 1', () => {
+    const file = path.join(dir, 'browser-state.json')
+    fs.writeFileSync(file, JSON.stringify({ preferences: { theme: 'paper' }, bookmarks: [{ id: 'b', title: 'Old', url: 'https://old.test/', folder: 'Favorites' }], history: [], savedTabs: [], extensionRecords: [], permissions: [], shieldExceptions: [] }))
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    expect(service.snapshot().bookmarks[0]?.title).toBe('Old')
+    service.dispose()
+    expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe(1)
+  })
+  it('only restores extensions that live inside the managed extensions directory', () => {
+    const file = path.join(dir, 'browser-state.json')
+    const managed = path.join(dir, 'extensions', 'abc')
+    fs.writeFileSync(file, JSON.stringify({ version: 1, bookmarks: [], history: [], savedTabs: [], permissions: [], shieldExceptions: [], extensionRecords: [
+      { id: 'evil', path: '/tmp/anywhere', enabled: true, pinned: false, name: 'x', version: '1' },
+      { id: 'ok', path: managed, enabled: false, pinned: false, name: 'y', version: '1' },
+    ] }))
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    expect(service.snapshot().extensions.map(e => e.id)).toEqual(['ok'])
+    service.dispose()
+    const persisted = JSON.parse(fs.readFileSync(file, 'utf8')).extensionRecords.map((e: { id: string }) => e.id)
+    expect(persisted).toEqual(['ok'])
+  })
   it('rejects invalid native commands', async () => {
     const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
     const result = await service.dispatch({ type: 'zoom', value: Infinity } as never)

@@ -1,7 +1,7 @@
 import type { BrowserAction, BrowserPreferences } from './browser'
 
 export function normalizeAddress(input: string, engine: BrowserPreferences['searchEngine'] = 'google'): string {
-  console.info('[browser-policy] Resolve navigation input')
+  console.debug('[browser-policy] Resolve navigation input')
   const text = input.trim()
   if (!text || text === 'nsty://newtab') return 'nsty://newtab'
   if (text.length > 8192) throw new Error('Address is too long')
@@ -24,11 +24,11 @@ export function isShellUrl(value: string, dev = false): boolean {
   } catch { return false }
 }
 export function persistableTabs(tabs: { url: string; space: string; private: boolean }[]): { url: string; space: string }[] {
-  console.info('[browser-policy] Serialize non-private session')
+  console.debug('[browser-policy] Serialize non-private session')
   return tabs.filter(tab => !tab.private).map(({ url, space }) => ({ url, space }))
 }
 export function validateBrowserAction(value: unknown): value is BrowserAction {
-  console.info('[browser-policy] Validate command')
+  console.debug('[browser-policy] Validate command')
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const a = value as Record<string, unknown>
   const str = (key: string, max = 8192) => typeof a[key] === 'string' && (a[key] as string).length <= max
