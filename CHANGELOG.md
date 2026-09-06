@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.3 (2026-09-06) — Android: over-the-air JavaScript updates
+
+- The Android app now uses EAS Update. JavaScript changes ship with
+  `cd mobile && npx eas-cli update --branch preview` and reach installed phones on the next
+  launch, or immediately via Settings → Updates → Check for updates. A green "Update ready ·
+  Restart now" bar appears when a downloaded update is waiting. Native changes (new modules,
+  permissions) still need a new APK; the runtime version follows the app version.
+
 ## v0.6.2 (2026-09-06) — Android: private-tab bug, tab switcher, browser fixes
 
 Findings from a frame-by-frame review of the tester's screen recording.

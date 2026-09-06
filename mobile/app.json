@@ -2,16 +2,21 @@
   "expo": {
     "name": "Nsty Browser",
     "slug": "nsty-browser",
-    "version": "0.6.2",
+    "version": "0.6.3",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.nsty.browser",
-      "versionCode": 8,
+      "versionCode": 9,
       "permissions": [
+        "INTERNET",
         "INTERNET"
       ],
       "blockedPermissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -37,6 +42,16 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7284a161-81ae-43b1-bea8-668063f2b7a9",
+      "requestHeaders": {
+        "expo-channel-name": "preview"
+      }
+    },
+    "ios": {}
   }
 }

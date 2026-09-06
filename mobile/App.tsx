@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { captureRef } from 'react-native-view-shot';
 import { TabSwitcher } from './src/TabSwitcher';
 import { StatusBar } from 'expo-status-bar';
+import * as Updates from 'expo-updates';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -57,6 +58,7 @@ function Browser() {
   const [finding, setFinding] = useState(false);
   const [findCount, setFindCount] = useState<number | null>(null);
   const [notice, setNotice] = useState('');
+  const { isUpdatePending } = Updates.useUpdates();
   const webviews = useRef<Record<string, WebView | null>>({});
   const inputRef = useRef<TextInput>(null);
   const active = session.tabs.find(tab => tab.id === session.activeId) || session.tabs[0];
@@ -215,6 +217,19 @@ function Browser() {
   function clearHistory() { Alert.alert('Clear history?', 'This removes saved browsing history from Nsty.', [{ text: 'Cancel' }, { text: 'Clear', style: 'destructive', onPress: () => setHistory([]) }]); }
   function explain(title: string, message: string) { Alert.alert(title, message); }
   function reload() { setError(null); webviews.current[active.id]?.reload(); }
+  async function checkForUpdate() {
+    log('Checking for an over-the-air update');
+    if (__DEV__ || !Updates.isEnabled) { setNotice('Updates are not available in this build.'); return; }
+    setNotice('Checking for updates…');
+    try {
+      const result = await Updates.checkForUpdateAsync();
+      if (!result.isAvailable) { setNotice('Nsty is up to date.'); return; }
+      setNotice('Downloading update…');
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch (error) { console.warn('[Nsty Mobile] Update check failed', error); setNotice('Update check failed. Try again later.'); }
+  }
+  const restartForUpdate = () => Updates.reloadAsync().catch(() => setNotice('Restart the app to finish updating.'));
   function toggleDesktop(value: boolean) { log('Toggling desktop site for this tab'); setDesktop(old => ({ ...old, [active.id]: value })); setPanel(null); setTimeout(reload, 150); }
   function Button({ label, icon, text, onPress, selected = false, disabled = false }: { label: string; icon?: IconName; text?: string; onPress: () => void; selected?: boolean; disabled?: boolean }) {
     const color = selected ? colors.accentText : colors.text;
@@ -278,6 +293,7 @@ function Browser() {
       {error && <View style={[StyleSheet.absoluteFill, styles.error, { backgroundColor: colors.base }]}><MaterialIcons name="cloud-off" size={44} color={colors.accent} /><Text style={[styles.hero, { color: colors.text, fontSize: 28 }]}>Let’s try that again.</Text>{note(error)}<Button label="Reload page" selected onPress={reload} /></View>}
     </Animated.View>
     <Animated.View style={{ height: toolbarY.interpolate({ inputRange: [0, 72], outputRange: [TOOLBAR_HEIGHT, 0] }) }} />
+    {isUpdatePending && <Pressable accessibilityRole="button" onPress={restartForUpdate} style={[styles.notice, { backgroundColor: colors.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}><Text style={{ color: colors.accentText, fontWeight: '700' }}>Update ready</Text><Text style={{ color: colors.accentText, fontWeight: '600' }}>Restart now</Text></Pressable>}
     {!!notice && <View accessibilityLiveRegion="polite" style={[styles.notice, { backgroundColor: colors.raised }]}><Text style={{ color: colors.text }}>{notice}</Text></View>}
     <Animated.View style={[styles.toolbarWrap, { transform: [{ translateY: toolbarY }] }]}><BlurView intensity={colors.dark ? 45 : 60} tint={colors.dark ? 'dark' : 'light'} style={[styles.toolbar, { backgroundColor: colors.dark ? 'rgba(41,44,48,0.72)' : 'rgba(251,250,246,0.72)', borderColor: colors.border }]}>
       <Button label="Go back" icon="arrow-back" disabled={!canBack} onPress={() => webviews.current[active.id]?.goBack()} />
@@ -316,6 +332,8 @@ function Browser() {
             {title('Privacy & browsing')}<Row title="Clear browsing history" action={clearHistory} /><Row title="Site access" detail="Camera, microphone and location are disabled in this build" action={() => explain('Site access', 'Camera, microphone and location requests are denied. These permissions are not declared by this app. File uploads use the Android document picker and only expose files you choose.')} />
             <Row title="Cookies & site data" detail="Managed by Android WebView" action={() => explain('Clear all browser data', 'To remove cookies and all saved data, use Android Settings → Apps → Nsty Browser → Storage → Clear storage. This also removes tabs, bookmarks and preferences.')} />
             <Row title="Nsty Shield" action={() => openPanel('shield')} />
+            {title('Updates')}
+            <Row title={isUpdatePending ? 'Update ready · restart to apply' : 'Check for updates'} detail={`Version ${pkg.version} · ${Updates.updateId ? `update ${Updates.updateId.slice(0, 8)}` : 'built-in bundle'}`} action={isUpdatePending ? restartForUpdate : () => void checkForUpdate()} />
             {title('About Nsty')}{note(`Nsty Browser ${pkg.version} · Expo + Android System WebView. Keep Android System WebView updated for browser security updates. Google search is the default. Bookmarks and history stay on this device; no sync service is connected.`)}
           </>}
           {panel === 'shield' && <>
