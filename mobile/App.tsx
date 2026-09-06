@@ -150,14 +150,14 @@ function Browser() {
   function closeAll(privateTabs: boolean) {
     log('Closing all tabs of one kind');
     setSession(old => { const tabs = old.tabs.filter(tab => !!tab.privateTab !== privateTabs); if (!tabs.length) { const tab = newTab(); return { tabs: [tab], activeId: tab.id }; } return { tabs, activeId: tabs.some(tab => tab.id === old.activeId) ? old.activeId : tabs[tabs.length - 1]!.id }; });
-    if (privateTabs) setNotice('Left private browsing');
+    if (privateTabs && active.privateTab) setNotice('Left private browsing');
   }
   function closeTab(id: string) {
     log('Closing tab');
-    const result = closeTabIn(session, id);
-    setSession(result.session);
-    if (result.leftPrivate) setNotice('Left private browsing');
-    setNav(old => { const next = { ...old }; delete next[id]; return next; });
+    // Functional updater: two swipe-closes can land in the same tick, so never close against render-time session.
+    setSession(old => { const result = closeTabIn(old, id); if (result.leftPrivate) setNotice('Left private browsing'); return result.session; });
+    const drop = <T,>(old: Record<string, T>) => { const next = { ...old }; delete next[id]; return next; };
+    setNav(drop); setDesktop(drop); setGeneration(drop);
     setSources(old => { const next = { ...old }; delete next[id]; return next; });
   }
   function onNavigation(id: string, state: WebViewNavigation) {
