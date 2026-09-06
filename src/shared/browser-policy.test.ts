@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeAddress, validateBrowserAction, isShellUrl, persistableTabs } from './browser-policy'
+import { normalizeAddress, validateBrowserAction, isShellUrl, persistableTabs, isSpaceName } from './browser-policy'
 
 describe('browser boundary policies', () => {
+  it('accepts user-defined space names and rejects empty or oversized ones', () => {
+    expect(validateBrowserAction({ type: 'space:create', name: 'Research' })).toBe(true)
+    expect(validateBrowserAction({ type: 'space', name: 'Side projects 2' })).toBe(true)
+    expect(validateBrowserAction({ type: 'space:create', name: '' })).toBe(false)
+    expect(validateBrowserAction({ type: 'space:create', name: ' leading' })).toBe(false)
+    expect(isSpaceName('x'.repeat(41))).toBe(false)
+    expect(isSpaceName('<script>')).toBe(false)
+  })
   it('normalizes addresses without turning failed URLs into searches', () => {
     expect(normalizeAddress('example.com')).toBe('https://example.com/')
     expect(normalizeAddress('localhost:3000/test')).toBe('http://localhost:3000/test')

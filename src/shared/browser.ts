@@ -40,8 +40,11 @@ export interface BrowserSnapshot {
   tabs: BrowserTab[]
   activeTabId: string | null
   activeSpace: string
+  /** User-defined workspaces; always at least one. */
+  spaces: string[]
   preferences: BrowserPreferences
   bookmarks: BrowserBookmark[]
+  /** Most recent entries only; use searchHistory for the full bounded list. */
   history: BrowserHistoryEntry[]
   downloads: BrowserDownload[]
   extensions: BrowserExtension[]
@@ -56,7 +59,7 @@ export type BrowserAction =
   | { type: 'tab:select' | 'tab:close' | 'tab:duplicate' | 'tab:mute'; id: string }
   | { type: 'tab:reopen' | 'back' | 'forward' | 'reload' | 'stop' | 'print' | 'save-page' | 'devtools' }
   | { type: 'navigate'; url: string }
-  | { type: 'space'; name: string }
+  | { type: 'space' | 'space:create' | 'space:remove'; name: string }
   | { type: 'zoom'; value: number }
   | { type: 'find'; text: string; forward?: boolean }
   | { type: 'overlay'; open: boolean }

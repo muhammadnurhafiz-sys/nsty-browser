@@ -100,6 +100,76 @@ describe('BrowserService native state ownership', () => {
     const persisted = JSON.parse(fs.readFileSync(file, 'utf8')).extensionRecords.map((e: { id: string }) => e.id)
     expect(persisted).toEqual(['ok'])
   })
+  it('keeps only recent history in snapshots and searches the full bounded list', async () => {
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    const view = (service as unknown as { views: Map<string, { view: { webContents: import('node:events').EventEmitter } }> }).views.get(service.snapshot().activeTabId!)!.view
+    for (let i = 0; i < 40; i++) view.webContents.emit('did-navigate', {}, `https://site-${i}.test/`)
+    expect(service.snapshot().history).toHaveLength(20)
+    expect(service.snapshot().history[0]?.url).toBe('https://site-39.test/')
+    expect(service.searchHistory('site-3.', 10).map(h => h.url)).toEqual(['https://site-3.test/'])
+    expect(service.searchHistory('', 500)).toHaveLength(40)
+    service.dispose()
+  })
+  it('creates, switches and removes user-defined spaces, moving orphaned tabs', async () => {
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    const original = service.snapshot().activeTabId!
+    expect((await service.dispatch({ type: 'space:create', name: 'Research' })).ok).toBe(true)
+    let snap = service.snapshot()
+    expect(snap.spaces).toContain('Research'); expect(snap.activeSpace).toBe('Research')
+    const researchTab = snap.activeTabId!
+    expect(researchTab).not.toBe(original)
+    expect((await service.dispatch({ type: 'space:create', name: 'Research' })).ok).toBe(false)
+    await service.dispatch({ type: 'space:remove', name: 'Research' })
+    snap = service.snapshot()
+    expect(snap.spaces).not.toContain('Research')
+    expect(snap.tabs.find(t => t.id === researchTab)?.space).toBe(snap.spaces[0])
+    expect((await service.dispatch({ type: 'space', name: 'Nope' })).ok).toBe(false)
+    service.dispose()
+    const restored = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    expect(restored.snapshot().spaces).toEqual(['Work', 'Personal', 'Dev'])
+    restored.dispose()
+  })
+  it('queues site permission prompts per origin, caps the queue and honours one-shot answers', async () => {
+    const { session } = await import('electron')
+    const ses = session.fromPartition('x') as unknown as { setPermissionRequestHandler: { mock: { calls: [Function][] } } }
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    await service.dispatch({ type: 'navigate', url: 'https://site.test/page' })
+    const managed = (service as unknown as { views: Map<string, { view: { webContents: unknown } }> }).views.get(service.snapshot().activeTabId!)!
+    const handler = ses.setPermissionRequestHandler.mock.calls.at(-1)![0] as (c: unknown, p: string, cb: (a: boolean) => void, d: { requestingUrl: string }) => void
+    const answers: boolean[] = []
+    handler(managed.view.webContents, 'geolocation', a => answers.push(a), { requestingUrl: 'https://other.test/' })
+    expect(answers).toEqual([false])
+    for (let i = 0; i < 6; i++) handler(managed.view.webContents, 'geolocation', a => answers.push(a), { requestingUrl: 'https://site.test/x' })
+    expect(answers).toEqual([false, false])
+    const pending = service.snapshot().pendingPermission!
+    expect(pending.origin).toBe('https://site.test')
+    await service.dispatch({ type: 'permission:respond', id: pending.id, allow: true, remember: true })
+    expect(answers).toEqual([false, false, true])
+    expect(service.snapshot().permissions).toEqual([{ origin: 'https://site.test', permission: 'geolocation', allowed: true }])
+    expect((await service.dispatch({ type: 'permission:respond', id: pending.id, allow: true, remember: false })).ok).toBe(true)
+    expect(answers).toHaveLength(3)
+    service.dispose()
+    expect(answers.slice(3).every(a => a === false)).toBe(true)
+  })
+  it('attributes blocked requests to the owning tab and honours per-site exceptions', async () => {
+    const { session } = await import('electron')
+    const ses = session.fromPartition('x') as unknown as { webRequest: { onBeforeRequest: { mock: { calls: [Function][] } } } }
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    await service.dispatch({ type: 'navigate', url: 'https://site.test/' })
+    const active = service.snapshot().activeTabId!
+    const managed = (service as unknown as { views: Map<string, { view: { webContents: { id: number } } }> }).views.get(active)!
+    ;(service as unknown as { blocker: unknown }).blocker = { match: () => ({ match: true }) }
+    const onBeforeRequest = ses.webRequest.onBeforeRequest.mock.calls.at(-1)![0] as (d: unknown, cb: (r: unknown) => void) => void
+    const results: unknown[] = []
+    onBeforeRequest({ webContentsId: managed.view.webContents.id, resourceType: 'script', url: 'https://ads.test/a.js' }, r => results.push(r))
+    onBeforeRequest({ webContentsId: managed.view.webContents.id, resourceType: 'mainFrame', url: 'https://site.test/' }, r => results.push(r))
+    expect(results).toEqual([{ cancel: true }, {}])
+    expect(service.snapshot().tabs.find(t => t.id === active)?.blocked).toBe(1)
+    await service.dispatch({ type: 'shield:site', host: 'site.test', enabled: false })
+    onBeforeRequest({ webContentsId: managed.view.webContents.id, resourceType: 'script', url: 'https://ads.test/b.js' }, r => results.push(r))
+    expect(results.at(-1)).toEqual({})
+    service.dispose()
+  })
   it('rejects invalid native commands', async () => {
     const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
     const result = await service.dispatch({ type: 'zoom', value: Infinity } as never)

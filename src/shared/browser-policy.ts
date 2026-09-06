@@ -23,6 +23,10 @@ export function isShellUrl(value: string, dev = false): boolean {
       (dev && url.origin === 'http://localhost:5173')
   } catch { return false }
 }
+export const MAX_SPACES = 20
+export function isSpaceName(value: string): boolean {
+  return /^[\p{L}\p{N}][\p{L}\p{N} _.'-]{0,39}$/u.test(value)
+}
 export function persistableTabs(tabs: { url: string; space: string; private: boolean }[]): { url: string; space: string }[] {
   console.debug('[browser-policy] Serialize non-private session')
   return tabs.filter(tab => !tab.private).map(({ url, space }) => ({ url, space }))
@@ -43,7 +47,7 @@ export function validateBrowserAction(value: unknown): value is BrowserAction {
     case 'tab:reopen': case 'back': case 'forward': case 'reload': case 'stop': case 'print': case 'save-page':
     case 'devtools': case 'bookmarks:import': case 'bookmarks:export': case 'extensions:load': return true
     case 'navigate': return str('url')
-    case 'space': return str('name', 40) && ['Work', 'Personal', 'Dev'].includes(a.name as string)
+    case 'space': case 'space:create': case 'space:remove': return str('name', 40) && isSpaceName(a.name as string)
     case 'zoom': return typeof a.value === 'number' && Number.isFinite(a.value) && a.value >= 0.5 && a.value <= 2
     case 'find': return str('text', 200) && (a.forward === undefined || bool('forward'))
     case 'overlay': return bool('open')

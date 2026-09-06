@@ -14,6 +14,7 @@ describe('preload API', () => {
     expect(typeof api.dispatchBrowserAction).toBe('function')
     expect(typeof api.onBrowserSnapshot).toBe('function')
     expect(typeof api.onBrowserShortcut).toBe('function')
+    expect(typeof api.searchHistory).toBe('function')
     const { ipcRenderer } = await import('electron')
     await (api.dispatchBrowserAction as (a: unknown) => Promise<unknown>)({ type: 'tab:new' })
     expect(ipcRenderer.invoke).toHaveBeenCalledWith('browser:action', { type: 'tab:new' })

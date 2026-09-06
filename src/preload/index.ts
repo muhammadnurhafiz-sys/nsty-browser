@@ -24,6 +24,8 @@ const api = {
   // tabs or IDs itself: it renders snapshots and submits typed actions.
   getBrowserSnapshot: () => ipcRenderer.invoke('browser:getSnapshot'),
   dispatchBrowserAction: (action: unknown) => ipcRenderer.invoke('browser:action', action),
+  // Bounded history query kept out of the snapshot so navigation events stay small.
+  searchHistory: (query: string, limit?: number) => ipcRenderer.invoke('browser:history', query, limit),
   onBrowserSnapshot: (callback: (snapshot: unknown) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, snapshot: unknown) => callback(snapshot)
     ipcRenderer.on('browser:snapshot', listener)

@@ -6,12 +6,15 @@ import { randomUUID } from 'node:crypto'
 import { ElectronBlocker, fromElectronDetails } from '@ghostery/adblocker-electron'
 import fetch from 'cross-fetch'
 import { DEFAULT_BROWSER_PREFERENCES } from '../shared/browser'
-import type { BrowserAction, BrowserActionResult, BrowserSnapshot, BrowserTab, BrowserPermission, BrowserExtension } from '../shared/browser'
-import { isShellUrl, normalizeAddress, persistableTabs, validateBrowserAction } from '../shared/browser-policy'
+import type { BrowserAction, BrowserActionResult, BrowserHistoryEntry, BrowserSnapshot, BrowserTab, BrowserPermission, BrowserExtension } from '../shared/browser'
+import { MAX_SPACES, isShellUrl, isSpaceName, normalizeAddress, persistableTabs, validateBrowserAction } from '../shared/browser-policy'
 import { createLogger } from './utils/logger'
 
 const log = createLogger('browser')
 const STATE_VERSION = 1
+const DEFAULT_SPACES = ['Work', 'Personal', 'Dev']
+const RECENT_HISTORY = 20
+const HISTORY_LIMIT = 500
 let youtubeScript: string | null = null
 interface ManagedTab { tab: BrowserTab; view: WebContentsView }
 interface ExtensionRecord { path: string; id: string; enabled: boolean; pinned: boolean; name: string; version: string }
@@ -32,7 +35,7 @@ export class BrowserService {
   private restoring = true
   private privatePartition = `private-${randomUUID()}`
   private state: BrowserSnapshot = {
-    revision: 0, tabs: [], activeTabId: null, activeSpace: 'Work', preferences: { ...DEFAULT_BROWSER_PREFERENCES },
+    revision: 0, tabs: [], activeTabId: null, activeSpace: 'Work', spaces: [...DEFAULT_SPACES], preferences: { ...DEFAULT_BROWSER_PREFERENCES },
     bookmarks: [], history: [], downloads: [], extensions: [], pendingPermission: null, permissions: [],
     shieldExceptions: [], shieldReady: false, capabilities: { extensions: true, privateBrowsing: true },
   }
@@ -42,13 +45,16 @@ export class BrowserService {
     const restored = this.readState()
     if (restored && validateBrowserAction({ type: 'preferences', patch: restored.preferences })) this.state.preferences = { ...DEFAULT_BROWSER_PREFERENCES, ...restored.preferences }
     this.state.bookmarks = (restored?.bookmarks ?? []).filter(b => typeof b.id === 'string' && typeof b.title === 'string' && typeof b.folder === 'string' && /^https?:\/\//.test(b.url))
-    this.state.history = (restored?.history ?? []).filter(h => typeof h.id === 'string' && typeof h.title === 'string' && typeof h.visitedAt === 'number' && /^https?:\/\//.test(h.url)).slice(0, 500)
+    this.state.history = (restored?.history ?? []).filter(h => typeof h.id === 'string' && typeof h.title === 'string' && typeof h.visitedAt === 'number' && /^https?:\/\//.test(h.url)).slice(0, HISTORY_LIMIT)
     this.state.shieldExceptions = (restored?.shieldExceptions ?? []).filter(h => typeof h === 'string' && /^[a-z\d.-]+$/i.test(h))
     this.state.permissions = (restored?.permissions ?? []).filter(p => typeof p.origin === 'string' && typeof p.permission === 'string' && typeof p.allowed === 'boolean')
     this.extensionRecords = (restored?.extensionRecords ?? []).filter(e => typeof e.id === 'string' && typeof e.path === 'string' && this.isManagedExtensionPath(e.path))
+    const spaces = [...new Set((restored?.spaces ?? []).filter(name => typeof name === 'string' && isSpaceName(name)))].slice(0, MAX_SPACES)
+    if (spaces.length) this.state.spaces = spaces
+    this.state.activeSpace = this.state.spaces[0]!
     if (this.state.preferences.restoreTabs) {
       for (const entry of (restored?.savedTabs ?? []).slice(0, 50)) {
-        try { this.createTab(entry.url, false, ['Work', 'Personal', 'Dev'].includes(entry.space) ? entry.space : 'Work') } catch { log.warn('skip invalid saved tab') }
+        try { this.createTab(entry.url, false, this.state.spaces.includes(entry.space) ? entry.space : this.state.spaces[0]!) } catch { log.warn('skip invalid saved tab') }
       }
     }
     if (!this.views.size) this.createTab('nsty://newtab')
@@ -58,7 +64,16 @@ export class BrowserService {
   }
 
   snapshot(): BrowserSnapshot {
-    return structuredClone({ ...this.state, tabs: [...this.views.values()].map(v => ({ ...v.tab })) })
+    return structuredClone({ ...this.state, history: this.state.history.slice(0, RECENT_HISTORY), tabs: [...this.views.values()].map(v => ({ ...v.tab })) })
+  }
+
+  /** Bounded, case-insensitive search over the full history; never part of a snapshot. */
+  searchHistory(query: string, limit = 50): BrowserHistoryEntry[] {
+    log.debug('search history')
+    const needle = query.trim().toLowerCase().slice(0, 200)
+    const max = Math.min(Math.max(1, Math.floor(limit) || 50), HISTORY_LIMIT)
+    const hits = needle ? this.state.history.filter(h => `${h.title} ${h.url}`.toLowerCase().includes(needle)) : this.state.history
+    return structuredClone(hits.slice(0, max))
   }
 
   private readState(): (Partial<BrowserSnapshot> & { savedTabs?: { url: string; space: string }[]; extensionRecords?: ExtensionRecord[] }) | null {
@@ -81,7 +96,7 @@ export class BrowserService {
     log.debug('persist browser preferences and public session')
     fs.mkdirSync(this.storageDir, { recursive: true })
     const target = path.join(this.storageDir, 'browser-state.json')
-    const payload = { version: STATE_VERSION, preferences: this.state.preferences, bookmarks: this.state.bookmarks, history: this.state.history, permissions: this.state.permissions,
+    const payload = { version: STATE_VERSION, spaces: this.state.spaces, preferences: this.state.preferences, bookmarks: this.state.bookmarks, history: this.state.history, permissions: this.state.permissions,
       shieldExceptions: this.state.shieldExceptions, extensionRecords: this.extensionRecords,
       savedTabs: this.state.preferences.restoreTabs ? persistableTabs([...this.views.values()].map(v => v.tab)) : [], }
     try { fs.writeFileSync(`${target}.tmp`, JSON.stringify(payload), { mode: 0o600 }); fs.renameSync(`${target}.tmp`, target) }
@@ -159,7 +174,7 @@ export class BrowserService {
     const navigated = (_event: unknown, destination: string) => {
       tab.url = destination; tab.error = null; tab.blocked = 0; this.updateNavigation(tab, wc)
       if (!tab.private && /^https?:\/\//i.test(destination)) {
-        this.state.history = [{ id: randomUUID(), url: destination, title: tab.title, visitedAt: Date.now() }, ...this.state.history.filter(h => h.url !== destination)].slice(0, 500)
+        this.state.history = [{ id: randomUUID(), url: destination, title: tab.title, visitedAt: Date.now() }, ...this.state.history.filter(h => h.url !== destination)].slice(0, HISTORY_LIMIT)
       }
       this.publish(!tab.private)
     }
@@ -375,7 +390,9 @@ export class BrowserService {
         case 'tab:mute': { const managed = this.views.get(action.id); if (managed) { managed.tab.muted = !managed.tab.muted; managed.view.webContents.setAudioMuted(managed.tab.muted) }; break }
         case 'tab:reopen': { const tab = this.closedTabs.shift(); if (tab) this.createTab(tab.url, false, tab.space); break }
         case 'navigate': { const url = normalizeAddress(action.url, this.state.preferences.searchEngine); if (current) this.load(current.tab, current.view, url); else this.createTab(url); break }
-        case 'space': this.state.activeSpace = action.name; this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === action.name).at(-1)?.tab.id ?? null; if (!this.active()) this.createTab(); break
+        case 'space': if (!this.state.spaces.includes(action.name)) throw new Error('That space no longer exists'); this.state.activeSpace = action.name; this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === action.name).at(-1)?.tab.id ?? null; if (!this.active()) this.createTab(); break
+        case 'space:create': { const name = action.name.trim(); if (this.state.spaces.includes(name)) throw new Error('A space with that name already exists'); if (this.state.spaces.length >= MAX_SPACES) throw new Error(`You can have up to ${MAX_SPACES} spaces`); this.state.spaces.push(name); this.state.activeSpace = name; this.state.activeTabId = null; this.createTab(); break }
+        case 'space:remove': { if (!this.state.spaces.includes(action.name)) throw new Error('That space no longer exists'); if (this.state.spaces.length <= 1) throw new Error('Keep at least one space'); this.state.spaces = this.state.spaces.filter(name => name !== action.name); const home = this.state.spaces[0]!; for (const { tab } of this.views.values()) if (tab.space === action.name) tab.space = home; if (this.state.activeSpace === action.name) { this.state.activeSpace = home; this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === home).at(-1)?.tab.id ?? null; if (!this.active()) this.createTab() } break }
         case 'back': if (wc?.navigationHistory.canGoBack()) wc.navigationHistory.goBack(); break
         case 'forward': if (wc?.navigationHistory.canGoForward()) wc.navigationHistory.goForward(); break
         case 'reload': if (current) this.load(current.tab, current.view, current.tab.url); break
@@ -412,6 +429,7 @@ export class BrowserService {
     const trusted = (event: Electron.IpcMainInvokeEvent) => event.sender === this.window.webContents && event.senderFrame === this.window.webContents.mainFrame && isShellUrl(event.senderFrame?.url ?? '', !app.isPackaged)
     ipcMain.handle('browser:getSnapshot', event => { if (!trusted(event)) throw new Error('Untrusted browser caller'); return this.snapshot() })
     ipcMain.handle('browser:action', (event, action: unknown) => { if (!trusted(event)) throw new Error('Untrusted browser caller'); return this.dispatch(action) })
+    ipcMain.handle('browser:history', (event, query: unknown, limit: unknown) => { if (!trusted(event)) throw new Error('Untrusted browser caller'); return this.searchHistory(typeof query === 'string' ? query : '', typeof limit === 'number' ? limit : 50) })
   }
 
   dispose(): void {
@@ -423,6 +441,6 @@ export class BrowserService {
     this.permissionQueue.length = 0
     for (const { view } of this.views.values()) if (!view.webContents.isDestroyed()) view.webContents.close()
     this.views.clear()
-    ipcMain.removeHandler('browser:getSnapshot'); ipcMain.removeHandler('browser:action')
+    ipcMain.removeHandler('browser:getSnapshot'); ipcMain.removeHandler('browser:action'); ipcMain.removeHandler('browser:history')
   }
 }
