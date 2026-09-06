@@ -7,6 +7,7 @@ describe('browser boundary policies', () => {
     expect(validateBrowserAction({ type: 'space', name: 'Side projects 2' })).toBe(true)
     expect(validateBrowserAction({ type: 'space:create', name: '' })).toBe(false)
     expect(validateBrowserAction({ type: 'space:create', name: ' leading' })).toBe(false)
+    expect(validateBrowserAction({ type: 'space:create', name: 'trailing ' })).toBe(false)
     expect(isSpaceName('x'.repeat(41))).toBe(false)
     expect(isSpaceName('<script>')).toBe(false)
   })

@@ -32,6 +32,8 @@ export class BrowserService {
   private saveTimer: ReturnType<typeof setTimeout> | null = null
   private sendScheduled = false
   private disposed = false
+  /** Set when an unreadable state file could not be backed up: never overwrite it. */
+  private persistBlocked = false
   private restoring = true
   private privatePartition = `private-${randomUUID()}`
   private state: BrowserSnapshot = {
@@ -48,7 +50,20 @@ export class BrowserService {
     this.state.history = (restored?.history ?? []).filter(h => typeof h.id === 'string' && typeof h.title === 'string' && typeof h.visitedAt === 'number' && /^https?:\/\//.test(h.url)).slice(0, HISTORY_LIMIT)
     this.state.shieldExceptions = (restored?.shieldExceptions ?? []).filter(h => typeof h === 'string' && /^[a-z\d.-]+$/i.test(h))
     this.state.permissions = (restored?.permissions ?? []).filter(p => typeof p.origin === 'string' && typeof p.permission === 'string' && typeof p.allowed === 'boolean')
-    this.extensionRecords = (restored?.extensionRecords ?? []).filter(e => typeof e.id === 'string' && typeof e.path === 'string' && this.isManagedExtensionPath(e.path))
+    this.extensionRecords = []
+    for (const record of (restored?.extensionRecords ?? []).filter(e => typeof e.id === 'string' && typeof e.path === 'string')) {
+      if (this.isManagedExtensionPath(record.path)) { this.extensionRecords.push(record); continue }
+      // Legacy record from before extensions were copied into userData: migrate the
+      // directory once if it still exists, otherwise drop it visibly.
+      try {
+        if (!fs.existsSync(path.join(record.path, 'manifest.json'))) throw new Error('missing manifest')
+        const target = path.join(this.extensionsDir, randomUUID())
+        fs.mkdirSync(this.extensionsDir, { recursive: true })
+        fs.cpSync(record.path, target, { recursive: true, dereference: true })
+        this.extensionRecords.push({ ...record, path: target })
+        log.info('migrated legacy extension into managed directory', { id: record.id })
+      } catch { log.warn('dropped legacy extension record that could not be migrated', { id: record.id }) }
+    }
     const spaces = [...new Set((restored?.spaces ?? []).filter(name => typeof name === 'string' && isSpaceName(name)))].slice(0, MAX_SPACES)
     if (spaces.length) this.state.spaces = spaces
     this.state.activeSpace = this.state.spaces[0]!
@@ -86,13 +101,15 @@ export class BrowserService {
     const shape = data && Array.isArray(data.bookmarks) && Array.isArray(data.history) && Array.isArray(data.savedTabs) && Array.isArray(data.extensionRecords) && Array.isArray(data.permissions) && Array.isArray(data.shieldExceptions)
     if (version > STATE_VERSION || !shape) {
       const backup = `${file}.backup-v${version}-${Date.now()}`
-      try { fs.renameSync(file, backup); log.warn('browser state not readable by this version; backed up', { version, backup }) } catch { log.error('could not back up unreadable browser state') }
+      try { fs.renameSync(file, backup); log.warn('browser state not readable by this version; backed up', { version, backup }) }
+      catch { this.persistBlocked = true; log.error('could not back up unreadable browser state; persistence disabled for this session to protect it') }
       return null
     }
     return data as ReturnType<BrowserService['readState']>
   }
 
   private persist(): void {
+    if (this.persistBlocked) { log.warn('skip persist: original state file is preserved untouched'); return }
     log.debug('persist browser preferences and public session')
     fs.mkdirSync(this.storageDir, { recursive: true })
     const target = path.join(this.storageDir, 'browser-state.json')
@@ -388,9 +405,9 @@ export class BrowserService {
         case 'tab:close': this.closeTab(action.id); break
         case 'tab:duplicate': { const tab = this.views.get(action.id)?.tab; if (tab) this.createTab(tab.url, tab.private, tab.space); break }
         case 'tab:mute': { const managed = this.views.get(action.id); if (managed) { managed.tab.muted = !managed.tab.muted; managed.view.webContents.setAudioMuted(managed.tab.muted) }; break }
-        case 'tab:reopen': { const tab = this.closedTabs.shift(); if (tab) this.createTab(tab.url, false, tab.space); break }
+        case 'tab:reopen': { const tab = this.closedTabs.shift(); if (tab) this.createTab(tab.url, false, this.state.spaces.includes(tab.space) ? tab.space : this.state.spaces[0]!); break }
         case 'navigate': { const url = normalizeAddress(action.url, this.state.preferences.searchEngine); if (current) this.load(current.tab, current.view, url); else this.createTab(url); break }
-        case 'space': if (!this.state.spaces.includes(action.name)) throw new Error('That space no longer exists'); this.state.activeSpace = action.name; this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === action.name).at(-1)?.tab.id ?? null; if (!this.active()) this.createTab(); break
+        case 'space': if (!this.state.spaces.includes(action.name.trim())) throw new Error('That space no longer exists'); this.state.activeSpace = action.name.trim(); this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === this.state.activeSpace).at(-1)?.tab.id ?? null; if (!this.active()) this.createTab(); break
         case 'space:create': { const name = action.name.trim(); if (this.state.spaces.includes(name)) throw new Error('A space with that name already exists'); if (this.state.spaces.length >= MAX_SPACES) throw new Error(`You can have up to ${MAX_SPACES} spaces`); this.state.spaces.push(name); this.state.activeSpace = name; this.state.activeTabId = null; this.createTab(); break }
         case 'space:remove': { if (!this.state.spaces.includes(action.name)) throw new Error('That space no longer exists'); if (this.state.spaces.length <= 1) throw new Error('Keep at least one space'); this.state.spaces = this.state.spaces.filter(name => name !== action.name); const home = this.state.spaces[0]!; for (const { tab } of this.views.values()) if (tab.space === action.name) tab.space = home; if (this.state.activeSpace === action.name) { this.state.activeSpace = home; this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === home).at(-1)?.tab.id ?? null; if (!this.active()) this.createTab() } break }
         case 'back': if (wc?.navigationHistory.canGoBack()) wc.navigationHistory.goBack(); break

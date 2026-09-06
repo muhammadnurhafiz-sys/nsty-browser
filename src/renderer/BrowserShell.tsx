@@ -112,11 +112,14 @@ export function BrowserShell() {
   useEffect(() => {
     if (panel !== 'history') return
     const api = bridge()
-    if (!api?.searchHistory) { setHistoryResults(state.history); return }
+    const search = api?.searchHistory
+    if (!search) { setHistoryResults(state.history); return }
     let live = true
-    log.debug('query history')
-    api.searchHistory(query, 200).then(results => { if (live) setHistoryResults(results) }).catch(() => { if (live) setHistoryResults(state.history) })
-    return () => { live = false }
+    const timer = setTimeout(() => {
+      log.debug('query history')
+      search(query, 200).then(results => { if (live) setHistoryResults(results) }).catch(() => { if (live) setHistoryResults(state.history) })
+    }, 120)
+    return () => { live = false; clearTimeout(timer) }
   }, [panel, query, state.revision])
   const open = (next: Panel) => { setQuery(''); setSuggestions(false); setPanel(next) }
   const navigate = (url: string) => { setPanel(null); setSuggestions(false); void send({ type: 'navigate', url }) }

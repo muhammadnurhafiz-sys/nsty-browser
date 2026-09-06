@@ -87,6 +87,19 @@ describe('BrowserService native state ownership', () => {
     service.dispose()
     expect(JSON.parse(fs.readFileSync(file, 'utf8')).version).toBe(1)
   })
+  it('migrates legacy external extension records into the managed directory', () => {
+    const legacy = path.join(dir, 'legacy-ext'); fs.mkdirSync(legacy); fs.writeFileSync(path.join(legacy, 'manifest.json'), '{}')
+    fs.writeFileSync(path.join(dir, 'browser-state.json'), JSON.stringify({ version: 1, bookmarks: [], history: [], savedTabs: [], permissions: [], shieldExceptions: [], extensionRecords: [
+      { id: 'legacy', path: legacy, enabled: false, pinned: false, name: 'L', version: '1' },
+      { id: 'gone', path: path.join(dir, 'missing'), enabled: false, pinned: false, name: 'G', version: '1' },
+    ] }))
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    service.dispose()
+    const records = JSON.parse(fs.readFileSync(path.join(dir, 'browser-state.json'), 'utf8')).extensionRecords as { id: string; path: string }[]
+    expect(records.map(r => r.id)).toEqual(['legacy'])
+    expect(records[0]!.path.startsWith(path.join(dir, 'extensions') + path.sep)).toBe(true)
+    expect(fs.existsSync(path.join(records[0]!.path, 'manifest.json'))).toBe(true)
+  })
   it('only restores extensions that live inside the managed extensions directory', () => {
     const file = path.join(dir, 'browser-state.json')
     const managed = path.join(dir, 'extensions', 'abc')
@@ -124,6 +137,11 @@ describe('BrowserService native state ownership', () => {
     expect(snap.spaces).not.toContain('Research')
     expect(snap.tabs.find(t => t.id === researchTab)?.space).toBe(snap.spaces[0])
     expect((await service.dispatch({ type: 'space', name: 'Nope' })).ok).toBe(false)
+    await service.dispatch({ type: 'space:create', name: 'Temp' })
+    await service.dispatch({ type: 'tab:close', id: service.snapshot().activeTabId! })
+    await service.dispatch({ type: 'space:remove', name: 'Temp' })
+    await service.dispatch({ type: 'tab:reopen' })
+    expect(service.snapshot().tabs.every(t => service.snapshot().spaces.includes(t.space))).toBe(true)
     service.dispose()
     const restored = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
     expect(restored.snapshot().spaces).toEqual(['Work', 'Personal', 'Dev'])

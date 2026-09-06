@@ -25,7 +25,7 @@ export function isShellUrl(value: string, dev = false): boolean {
 }
 export const MAX_SPACES = 20
 export function isSpaceName(value: string): boolean {
-  return /^[\p{L}\p{N}][\p{L}\p{N} _.'-]{0,39}$/u.test(value)
+  return /^[\p{L}\p{N}](?:[\p{L}\p{N} _.'-]{0,38}[\p{L}\p{N}._'-])?$/u.test(value)
 }
 export function persistableTabs(tabs: { url: string; space: string; private: boolean }[]): { url: string; space: string }[] {
   console.debug('[browser-policy] Serialize non-private session')
