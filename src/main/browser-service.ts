@@ -28,6 +28,7 @@ export class BrowserService {
   private extensionRecords: ExtensionRecord[] = []
   private closedTabs: { url: string; space: string }[] = []
   private overlayOpen = false
+  private overlaySeq = 0
   /** Content-area origin reported by the renderer (sidebar width, toolbar height). */
   private contentOrigin = { x: 240, y: 54 }
   private blocker: ElectronBlocker | null = null
@@ -262,7 +263,9 @@ export class BrowserService {
 
   /** Open/close a DOM overlay. On open, capture the page first so the dialog can blur it. */
   private async setOverlay(open: boolean): Promise<void> {
-    if (open === this.overlayOpen) return
+    // The last request always wins: a close that arrives while an open is still
+    // capturing must not be swallowed, and a stale capture must not re-open.
+    const seq = ++this.overlaySeq
     if (open) {
       const wc = this.active()?.view.webContents
       let preview: string | null = null
@@ -270,6 +273,7 @@ export class BrowserService {
         try { const image = await wc.capturePage(); preview = `data:image/jpeg;base64,${image.resize({ width: 1280 }).toJPEG(60).toString('base64')}` }
         catch { log.warn('page preview capture failed') }
       }
+      if (seq !== this.overlaySeq) { log.debug('overlay request superseded'); return }
       if (!this.window.isDestroyed()) this.window.webContents.send('browser:preview', preview)
     } else if (!this.window.isDestroyed()) this.window.webContents.send('browser:preview', null)
     this.overlayOpen = open

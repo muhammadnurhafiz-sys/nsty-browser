@@ -39,3 +39,4 @@
 .bs-suggestions button.highlight{background:var(--bs-hover)}
 .bs-suggestions button kbd{margin-left:auto;font-size:10px;color:var(--bs-muted)}
 .bs-find-count{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:var(--bs-muted);align-self:center;padding:0 6px;white-space:nowrap}
+.bs-ring.indeterminate{animation:bs-spin 1s linear infinite}.bs-ring.indeterminate .bs-ring-fill{stroke-dashoffset:38}

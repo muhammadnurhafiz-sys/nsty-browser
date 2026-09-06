@@ -230,6 +230,20 @@ describe('BrowserService native state ownership', () => {
     expect(window.webContents.send.mock.calls.filter(([channel]) => channel === 'browser:preview').at(-1)![1]).toBeNull()
     service.dispose()
   })
+  it('a close that arrives during preview capture wins over the pending open', async () => {
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
+    await service.dispatch({ type: 'navigate', url: 'https://site.test/' })
+    window.webContents.send.mockClear(); window.contentView.addChildView.mockClear()
+    const opening = service.dispatch({ type: 'overlay', open: true })
+    await service.dispatch({ type: 'overlay', open: false })
+    await opening
+    const previews = window.webContents.send.mock.calls.filter(([channel]) => channel === 'browser:preview').map(c => c[1])
+    expect(previews).toEqual([null])
+    expect((service as unknown as { overlayOpen: boolean }).overlayOpen).toBe(false)
+    service.layout()
+    expect(window.contentView.addChildView).toHaveBeenCalled()
+    service.dispose()
+  })
   it('rejects invalid native commands', async () => {
     const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir)
     const result = await service.dispatch({ type: 'zoom', value: Infinity } as never)
