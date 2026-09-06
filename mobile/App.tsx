@@ -10,9 +10,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import type { WebViewNavigation } from 'react-native-webview';
-import { address, blockedRequest, displayHost, isHost, newTab, recordVisit, restorePages, restoreSession, serializeSession, topSites } from './src/policy';
+import { address, blockedRequest, closeTabIn, displayHost, isHost, linkAction, mountedTabs, newTab, recordVisit, restorePages, restoreSession, sameKindCount, serializeSession, topSites } from './src/policy';
+import pkg from './package.json';
 import type { BrowserSession, SavedPage } from './src/policy';
-import { palettes } from './src/themes';
+import { palettes, privatePalette } from './src/themes';
 import type { ThemeChoice } from './src/themes';
 import { cosmeticScript, youtubeScript } from './src/shield';
 
@@ -20,12 +21,14 @@ type IconName = keyof typeof MaterialIcons.glyphMap;
 type Panel = 'menu' | 'tabs' | 'bookmarks' | 'history' | 'settings' | 'shield' | 'site' | null;
 const KEY = '@nsty/';
 const log = (event: string) => console.info(`[Nsty Mobile] ${event}`);
+const TOOLBAR_HEIGHT = 60;
+const LIVE_TABS = 4;
+const DESKTOP_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 export default function App() { return <SafeAreaProvider><Browser /></SafeAreaProvider>; }
 function Browser() {
   const system = useColorScheme();
   const [theme, setTheme] = useState<ThemeChoice>('system');
-  const colors = palettes[theme === 'system' ? (system === 'light' ? 'paper' : 'graphite') : theme];
   const [session, setSession] = useState<BrowserSession>(() => restoreSession(null));
   const [sources, setSources] = useState<Record<string, string>>({});
   const [bookmarks, setBookmarks] = useState<SavedPage[]>([]);
@@ -41,19 +44,27 @@ function Browser() {
   const toolbarHidden = useRef(false);
   const lastScroll = useRef(0);
   const pageRefs = useRef<Record<string, View | null>>({});
-  const [canBack, setCanBack] = useState(false);
-  const [canForward, setCanForward] = useState(false);
+  const [nav, setNav] = useState<Record<string, { canBack: boolean; canForward: boolean }>>({});
+  const [generation, setGeneration] = useState<Record<string, number>>({});
+  const [recent, setRecent] = useState<string[]>([]);
+  const pageIn = useRef(new Animated.Value(1)).current;
   const [error, setError] = useState<string | null>(null);
   const [shield, setShield] = useState(false);
   const [youtube, setYoutube] = useState(false);
   const [exceptions, setExceptions] = useState<string[]>([]);
-  const [desktop, setDesktop] = useState(false);
+  const [desktop, setDesktop] = useState<Record<string, boolean>>({});
   const [find, setFind] = useState('');
   const [finding, setFinding] = useState(false);
+  const [findCount, setFindCount] = useState<number | null>(null);
   const [notice, setNotice] = useState('');
   const webviews = useRef<Record<string, WebView | null>>({});
   const inputRef = useRef<TextInput>(null);
   const active = session.tabs.find(tab => tab.id === session.activeId) || session.tabs[0];
+  const palette = palettes[theme === 'system' ? (system === 'light' ? 'paper' : 'graphite') : theme];
+  const colors = active.privateTab ? { ...palette, ...privatePalette } : palette;
+  const canBack = nav[active.id]?.canBack ?? false;
+  const canForward = nav[active.id]?.canForward ?? false;
+  const live = mountedTabs(recent, active.id, LIVE_TABS);
   const host = (() => { try { return new URL(active.url).hostname; } catch { return ''; } })();
   const protectedSite = shield && !exceptions.includes(host);
   const stateRef = useRef({ session, bookmarks, history, theme, shield, youtube, exceptions });
@@ -94,7 +105,22 @@ function Browser() {
     return () => { app.remove(); back.remove(); links.remove(); };
   }, [panel, finding, canBack, active.id, loaded]);
   useEffect(() => { if (!editing) setInput(active.url); }, [active.url, active.id, editing]);
-  useEffect(() => { setError(null); setCanBack(false); setCanForward(false); setFinding(false); }, [active.id]);
+  useEffect(() => {
+    setError(null); setFinding(false);
+    setRecent(old => [active.id, ...old.filter(id => id !== active.id)].slice(0, 12));
+    pageIn.setValue(0);
+    Animated.spring(pageIn, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 4 }).start();
+  }, [active.id]);
+  useEffect(() => {
+    // A tab that loses its live WebView must come back at its latest page, not its first one.
+    const parked = session.tabs.filter(tab => tab.url && !live.has(tab.id) && sources[tab.id] !== tab.url);
+    if (parked.length) setSources(old => ({ ...old, ...Object.fromEntries(parked.map(tab => [tab.id, tab.url])) }));
+  }, [recent, active.id]);
+  useEffect(() => {
+    if (!finding) { setFindCount(null); return; }
+    const timer = setTimeout(() => webviews.current[active.id]?.injectJavaScript(findCountScript(find)), 200);
+    return () => clearTimeout(timer);
+  }, [find, finding, active.id]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 4500); return () => clearTimeout(timer); }, [notice]);
 
   async function persist() {
@@ -111,22 +137,35 @@ function Browser() {
     setSources(old => ({ ...old, [active.id]: url }));
     setInput(url); setEditing(false); setPanel(null); setError(null); setLoading(true); Keyboard.dismiss();
   }
-  function addTab(privateTab = false) {
+  function addTab(privateTab = false, url = '') {
     log(privateTab ? 'Creating private tab' : 'Creating tab');
     if (session.tabs.length >= 30) { setNotice('Close a tab before opening another (30 tab limit).'); return; }
-    const tab = newTab(privateTab); setSession(old => ({ tabs: [...old.tabs, tab], activeId: tab.id }));
-    setSources(old => ({ ...old, [tab.id]: '' })); setPanel(null); setInput('');
+    void snapshotActive();
+    const tab = newTab(privateTab); if (url) { tab.url = url; tab.title = 'Loading…'; }
+    setSession(old => ({ tabs: [...old.tabs, tab], activeId: tab.id }));
+    setSources(old => ({ ...old, [tab.id]: url })); setPanel(null); setInput(url);
+    setNotice(privateTab ? 'New private tab' : 'New tab');
+  }
+  function switchTab(id: string) { void snapshotActive(); setEditing(false); setSession(old => ({ ...old, activeId: id })); }
+  function closeAll(privateTabs: boolean) {
+    log('Closing all tabs of one kind');
+    setSession(old => { const tabs = old.tabs.filter(tab => !!tab.privateTab !== privateTabs); if (!tabs.length) { const tab = newTab(); return { tabs: [tab], activeId: tab.id }; } return { tabs, activeId: tabs.some(tab => tab.id === old.activeId) ? old.activeId : tabs[tabs.length - 1]!.id }; });
+    if (privateTabs) setNotice('Left private browsing');
   }
   function closeTab(id: string) {
     log('Closing tab');
-    setSession(old => { const closing = old.tabs.find(tab => tab.id === id); const tabs = old.tabs.filter(tab => tab.id !== id); if (!tabs.length) { const tab = newTab(); return { tabs: [tab], activeId: tab.id }; } const sameKind = tabs.filter(tab => !!tab.privateTab === !!closing?.privateTab); return { tabs, activeId: old.activeId === id ? (sameKind[sameKind.length - 1] ?? tabs[tabs.length - 1]).id : old.activeId }; });
+    const result = closeTabIn(session, id);
+    setSession(result.session);
+    if (result.leftPrivate) setNotice('Left private browsing');
+    setNav(old => { const next = { ...old }; delete next[id]; return next; });
     setSources(old => { const next = { ...old }; delete next[id]; return next; });
   }
   function onNavigation(id: string, state: WebViewNavigation) {
     log('Navigation state updated');
     if (!address(state.url)) return;
     setSession(old => ({ ...old, tabs: old.tabs.map(tab => tab.id === id ? { ...tab, url: state.url, title: state.title || 'Untitled page' } : tab) }));
-    if (id === active.id) { setCanBack(state.canGoBack); setCanForward(state.canGoForward); setLoading(state.loading); }
+    setNav(old => ({ ...old, [id]: { canBack: state.canGoBack, canForward: state.canGoForward } }));
+    if (id === active.id) setLoading(state.loading);
     const visited = session.tabs.find(tab => tab.id === id);
     if (!state.loading && visited) setHistory(old => recordVisit(old, { ...visited, url: state.url }, state.title));
   }
@@ -141,26 +180,30 @@ function Browser() {
     const tab = session.tabs.find(item => item.id === id);
     const enabled = shield && !!tab && !exceptions.some(domain => isHost(tab.url, domain));
     if (blockedRequest(url, enabled)) return false;
-    if (url === 'about:blank' || address(url)) return true;
-    if (/^(mailto:|tel:|sms:)/i.test(url)) {
+    const action = linkAction(url);
+    if (action === 'web') return true;
+    if (action === 'app') {
       log('Requesting confirmation before opening another app');
-      Alert.alert('Open another app?', 'This page wants to open a phone, messaging, or email app.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Open', onPress: () => Linking.openURL(url).catch(() => setNotice('No app is available to open this link.')) }]);
+      Alert.alert('Open in another app?', 'This page wants to open a link in another app on your phone.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Open', onPress: () => Linking.openURL(url).catch(() => setNotice('No app is available to open this link.')) }]);
     }
     return false;
   }
   function openPanel(next: Panel) { log('Opening browser panel'); setFilter(''); setEditing(false); if (next === 'tabs') void snapshotActive(); setPanel(next); Keyboard.dismiss(); }
-  async function snapshotActive() {
-    const node = pageRefs.current[active.id];
-    if (!node || !active.url) return;
+  async function snapshot(id: string) {
+    const node = pageRefs.current[id];
+    if (!node) return;
     try {
       const uri = await captureRef(node, { format: 'jpg', quality: 0.5, result: 'data-uri', width: 360 });
-      setSession(old => ({ ...old, tabs: old.tabs.map(tab => tab.id === active.id ? { ...tab, thumbnail: uri } : tab) }));
+      setSession(old => ({ ...old, tabs: old.tabs.map(tab => tab.id === id ? { ...tab, thumbnail: uri } : tab) }));
     } catch { log('Thumbnail capture unavailable'); }
   }
+  const snapshotActive = () => active.url ? snapshot(active.id) : Promise.resolve();
+  const findCountScript = (query: string) => `(() => { const q = ${JSON.stringify(query)}; const text = document.body ? document.body.innerText.toLowerCase() : ''; const count = q ? text.split(q.toLowerCase()).length - 1 : 0; window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'find', count })); })(); true;`;
+  const findStep = (backwards: boolean) => webviews.current[active.id]?.injectJavaScript(`window.find(${JSON.stringify(find)}, false, ${backwards}, true); true;`);
   function setToolbar(hidden: boolean) {
     if (toolbarHidden.current === hidden) return;
     toolbarHidden.current = hidden;
-    Animated.timing(toolbarY, { toValue: hidden ? 72 : 0, duration: 180, useNativeDriver: true }).start();
+    Animated.timing(toolbarY, { toValue: hidden ? 72 : 0, duration: 180, useNativeDriver: false }).start();
   }
   function onScroll(y: number) {
     const delta = y - lastScroll.current;
@@ -172,6 +215,7 @@ function Browser() {
   function clearHistory() { Alert.alert('Clear history?', 'This removes saved browsing history from Nsty.', [{ text: 'Cancel' }, { text: 'Clear', style: 'destructive', onPress: () => setHistory([]) }]); }
   function explain(title: string, message: string) { Alert.alert(title, message); }
   function reload() { setError(null); webviews.current[active.id]?.reload(); }
+  function toggleDesktop(value: boolean) { log('Toggling desktop site for this tab'); setDesktop(old => ({ ...old, [active.id]: value })); setPanel(null); setTimeout(reload, 150); }
   function Button({ label, icon, text, onPress, selected = false, disabled = false }: { label: string; icon?: IconName; text?: string; onPress: () => void; selected?: boolean; disabled?: boolean }) {
     const color = selected ? colors.accentText : colors.text;
     return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} style={[styles.button, { backgroundColor: selected ? colors.accent : 'transparent', opacity: disabled ? 0.35 : 1 }]}>
@@ -189,40 +233,42 @@ function Browser() {
   return <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={[styles.screen, { backgroundColor: colors.base }]}>
     <StatusBar style={colors.dark ? 'light' : 'dark'} />
     <View style={[styles.addressRow, { borderColor: colors.border }]}>
-      <Button label="Site information" icon={active.url.startsWith('https:') ? 'lock' : 'info-outline'} onPress={() => openPanel('site')} />
+      <Button label="Site information" icon={active.privateTab ? 'visibility-off' : active.url.startsWith('https:') ? 'lock' : 'info-outline'} onPress={() => openPanel('site')} />
       {editing || !active.url ? <TextInput ref={inputRef} autoFocus={!!active.url} accessibilityLabel="Address or search" placeholder="Search or enter address" placeholderTextColor={colors.muted} value={input} onChangeText={setInput} onFocus={() => setEditing(true)} onBlur={() => setEditing(false)} selectTextOnFocus autoCapitalize="none" autoCorrect={false} keyboardType="web-search" returnKeyType="go" onSubmitEditing={() => navigate(input)} style={[styles.address, { color: colors.text, backgroundColor: colors.panel }]} />
       : <Pressable accessibilityRole="button" accessibilityLabel={`Address ${displayHost(active.url)}, tap to edit`} onPress={() => { setInput(active.url); setEditing(true); }} style={[styles.address, styles.pill, { backgroundColor: colors.panel, borderColor: active.privateTab ? '#C9B8FF' : 'transparent' }]}>
-          <MaterialIcons name={active.privateTab ? 'visibility-off' : active.url.startsWith('https:') ? 'lock' : 'info-outline'} size={15} color={active.privateTab ? '#C9B8FF' : colors.muted} />
+          <MaterialIcons name={active.url.startsWith('https:') ? 'lock' : 'info-outline'} size={15} color={colors.muted} />
           <Text numberOfLines={1} style={{ color: colors.text, fontSize: 15, marginLeft: 8, flex: 1 }}>{displayHost(active.url)}</Text>
+          {active.privateTab && <View style={[styles.chip, { backgroundColor: colors.accent }]}><Text style={{ color: colors.accentText, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>PRIVATE</Text></View>}
           {loading && <View style={styles.progressTrack}><View style={{ width: `${Math.max(6, Math.round(progress * 100))}%`, height: 3, backgroundColor: colors.accent, borderRadius: 2 }} /></View>}
         </Pressable>}
       <Button label={loading ? 'Stop loading' : 'Reload page'} icon={loading ? 'close' : 'refresh'} disabled={!canBrowse} onPress={() => loading ? webviews.current[active.id]?.stopLoading() : reload()} />
     </View>
-    {finding && <View style={styles.addressRow}><TextInput accessibilityLabel="Find in page" placeholder="Find in page" placeholderTextColor={colors.muted} value={find} onChangeText={setFind} style={[styles.address, { color: colors.text, backgroundColor: colors.panel }]} /><Button label="Find next" icon="arrow-downward" onPress={() => webviews.current[active.id]?.injectJavaScript(`window.find(${JSON.stringify(find)}, false, false, true); true;`)} /><Button label="Close find" icon="close" onPress={() => setFinding(false)} /></View>}
-    <View style={{ flex: 1 }}>
-      {loaded && session.tabs.map(tab => tab.url && <View key={tab.id} ref={node => { pageRefs.current[tab.id] = node; }} collapsable={false} style={[StyleSheet.absoluteFill, { display: tab.id === active.id ? 'flex' : 'none' }]}>
-        <WebView ref={ref => { webviews.current[tab.id] = ref; }} source={{ uri: sources[tab.id] || tab.url }} style={{ flex: 1, backgroundColor: colors.panel }}
+    {finding && <View style={styles.addressRow}><TextInput accessibilityLabel="Find in page" placeholder="Find in page" placeholderTextColor={colors.muted} value={find} onChangeText={setFind} style={[styles.address, { color: colors.text, backgroundColor: colors.panel }]} /><Text style={{ color: colors.muted, fontSize: 12, minWidth: 34, textAlign: 'center' }}>{findCount === null || !find ? '' : String(findCount)}</Text><Button label="Find previous" icon="arrow-upward" disabled={!find} onPress={() => findStep(true)} /><Button label="Find next" icon="arrow-downward" disabled={!find} onPress={() => findStep(false)} /><Button label="Close find" icon="close" onPress={() => setFinding(false)} /></View>}
+    <Animated.View style={{ flex: 1, opacity: pageIn, transform: [{ translateY: pageIn.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }] }}>
+      {loaded && session.tabs.map(tab => tab.url && live.has(tab.id) && <View key={tab.id} ref={node => { pageRefs.current[tab.id] = node; }} collapsable={false} style={[StyleSheet.absoluteFill, { display: tab.id === active.id ? 'flex' : 'none' }]}>
+        <WebView key={`${tab.id}-${generation[tab.id] ?? 0}`} ref={ref => { webviews.current[tab.id] = ref; }} source={{ uri: sources[tab.id] || tab.url }} style={{ flex: 1, backgroundColor: colors.panel }}
           onLoadProgress={event => { if (tab.id === active.id) setProgress(event.nativeEvent.progress); }} onScroll={event => { if (tab.id === active.id) onScroll(event.nativeEvent.contentOffset.y); }}
           onNavigationStateChange={state => onNavigation(tab.id, state)} onShouldStartLoadWithRequest={event => request(event.url, tab.id)}
-          onOpenWindow={event => { const url = address(event.nativeEvent.targetUrl); if (url) { log('Opening requested link in current tab'); navigate(url); } }}
-          onLoadStart={() => { if (tab.id === active.id) { setLoading(true); setProgress(0); setError(null); } }} onLoadEnd={() => { if (tab.id === active.id) setLoading(false); }}
+          onOpenWindow={event => { const url = address(event.nativeEvent.targetUrl); if (url) { log('Opening requested link in a new tab'); addTab(!!tab.privateTab, url); } }}
+          onMessage={event => { try { const data = JSON.parse(event.nativeEvent.data); if (data?.type === 'find' && tab.id === active.id) setFindCount(typeof data.count === 'number' ? data.count : 0); } catch { log('Ignoring page message'); } }}
+          onLoadStart={() => { if (tab.id === active.id) { setLoading(true); setProgress(0); setError(null); } }} onLoadEnd={() => { if (tab.id === active.id) { setLoading(false); setTimeout(() => void snapshot(tab.id), 700); } }}
           onError={event => { log('Page load failed'); if (tab.id === active.id) { setLoading(false); setError(event.nativeEvent.description || 'This page could not be loaded.'); } }}
-          onRenderProcessGone={() => { log('Web content process exited'); setError('This tab stopped responding. Reload to continue.'); }}
+          onRenderProcessGone={() => { log('Web content process exited'); setGeneration(old => ({ ...old, [tab.id]: (old[tab.id] ?? 0) + 1 })); setSources(old => ({ ...old, [tab.id]: tab.url })); if (tab.id === active.id) setError('This tab stopped responding. Reload to continue.'); }}
           javaScriptEnabled domStorageEnabled sharedCookiesEnabled thirdPartyCookiesEnabled={false} javaScriptCanOpenWindowsAutomatically={false}
           setSupportMultipleWindows allowsFullscreenVideo allowsBackForwardNavigationGestures allowsInlineMediaPlayback mediaPlaybackRequiresUserAction
           allowFileAccess={false} allowFileAccessFromFileURLs={false} allowUniversalAccessFromFileURLs={false} mixedContentMode="never" geolocationEnabled={false}
           originWhitelist={['*']} webviewDebuggingEnabled={false}
-          userAgent={desktop ? 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' : undefined}
+          userAgent={desktop[tab.id] ? DESKTOP_UA : undefined}
           injectedJavaScript={shield && !exceptions.some(domain => isHost(tab.url, domain)) ? cosmeticScript + (youtube && isHost(tab.url, 'youtube.com') ? youtubeScript : '') : undefined}
         />
       </View>)}
       {!active.url && <ScrollView contentContainerStyle={styles.landing} keyboardShouldPersistTaps="handled">
         <Image source={require('./assets/icon.png')} accessibilityLabel="Nsty Browser" style={styles.brand} />
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>A LITTLE SPACE TO EXPLORE</Text>
-        <Text style={[styles.hero, { color: colors.text }]}>Make room{ '\n' }for discovery.</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>Your tabs, your pace. A calmer place for the web.</Text>
+        <Text style={[styles.eyebrow, { color: colors.accent }]}>{active.privateTab ? 'PRIVATE TAB' : 'A LITTLE SPACE TO EXPLORE'}</Text>
+        <Text style={[styles.hero, { color: colors.text }]}>{active.privateTab ? 'Browsing\nprivately.' : 'Make room\nfor discovery.'}</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>{active.privateTab ? 'Pages here are not saved to history or restored later. Cookies are still shared with your other tabs on Android.' : 'Your tabs, your pace. A calmer place for the web.'}</Text>
         <Pressable accessibilityRole="button" onPress={() => inputRef.current?.focus()} style={[styles.searchCard, { backgroundColor: colors.panel, borderColor: colors.border }]}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><MaterialIcons name="search" size={22} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 16 }}>Search anything, go anywhere</Text></View><MaterialIcons name="north-east" size={20} color={colors.accent} /></Pressable>
-        {session.tabs.some(tab => tab.url && tab.id !== active.id && !tab.privateTab) && <>{title('Recent tabs')}<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 6 }}>{session.tabs.filter(tab => tab.url && tab.id !== active.id && !tab.privateTab).slice(-5).reverse().map(tab => <Pressable key={tab.id} accessibilityRole="button" onPress={() => setSession(old => ({ ...old, activeId: tab.id }))} style={[styles.recentCard, { backgroundColor: colors.panel, borderColor: colors.border }]}>{tab.thumbnail ? <Image source={{ uri: tab.thumbnail }} style={styles.recentThumb} /> : <View style={[styles.recentThumb, { backgroundColor: colors.raised, alignItems: 'center', justifyContent: 'center' }]}><MaterialIcons name="public" size={22} color={colors.muted} /></View>}<Text numberOfLines={1} style={{ color: colors.text, fontSize: 12, fontWeight: '600', marginTop: 8 }}>{tab.title}</Text><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11 }}>{displayHost(tab.url)}</Text></Pressable>)}</ScrollView></>}
+        {session.tabs.some(tab => tab.url && tab.id !== active.id && !tab.privateTab) && <>{title('Recent tabs')}<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 6 }}>{session.tabs.filter(tab => tab.url && tab.id !== active.id && !tab.privateTab).slice(-5).reverse().map(tab => <Pressable key={tab.id} accessibilityRole="button" onPress={() => switchTab(tab.id)} style={[styles.recentCard, { backgroundColor: colors.panel, borderColor: colors.border }]}>{tab.thumbnail ? <Image source={{ uri: tab.thumbnail }} style={styles.recentThumb} /> : <View style={[styles.recentThumb, { backgroundColor: colors.raised, alignItems: 'center', justifyContent: 'center' }]}><MaterialIcons name="public" size={22} color={colors.muted} /></View>}<Text numberOfLines={1} style={{ color: colors.text, fontSize: 12, fontWeight: '600', marginTop: 8 }}>{tab.title}</Text><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11 }}>{displayHost(tab.url)}</Text></Pressable>)}</ScrollView></>}
         {title(topSites(history, 8).length ? 'Top sites' : 'Your shortcuts')}
         {topSites(history, 8).length > 0 && <View style={styles.topSites}>{topSites(history, 8).map(site => <Pressable key={site.host} accessibilityRole="button" accessibilityLabel={site.title} onPress={() => navigate(site.url)} style={styles.topSite}><View style={[styles.topSiteTile, { backgroundColor: colors.panel, borderColor: colors.border }]}><Text style={{ color: colors.accent, fontSize: 20, fontWeight: '800' }}>{site.host[0]!.toUpperCase()}</Text></View><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, marginTop: 6 }}>{site.host}</Text></Pressable>)}</View>}
         {topSites(history, 8).length === 0 && <View style={styles.shortcuts}>{([['YouTube', 'https://youtube.com', 'smart-display'], ['Wikipedia', 'https://wikipedia.org', 'public'], ['GitHub', 'https://github.com', 'code']] as [string, string, IconName][]).map(([label, url, icon]) => <Pressable key={label} accessibilityRole="button" onPress={() => navigate(url)} style={[styles.shortcut, { backgroundColor: colors.panel, borderColor: colors.border }]}><MaterialIcons name={icon} size={28} color={colors.accent} /><Text style={{ fontSize: 12, color: colors.text, marginTop: 12 }}>{label}</Text></Pressable>)}</View>}
@@ -230,30 +276,31 @@ function Browser() {
         {bookmarks.length > 0 && <><View style={styles.sectionHeading}>{title('Saved for later')}<Button label="View all" onPress={() => openPanel('bookmarks')} /></View>{bookmarks.slice(0, 3).map(page => <Row key={page.url} title={page.title} detail={new URL(page.url).hostname} action={() => navigate(page.url)} />)}</>}
       </ScrollView>}
       {error && <View style={[StyleSheet.absoluteFill, styles.error, { backgroundColor: colors.base }]}><MaterialIcons name="cloud-off" size={44} color={colors.accent} /><Text style={[styles.hero, { color: colors.text, fontSize: 28 }]}>Let’s try that again.</Text>{note(error)}<Button label="Reload page" selected onPress={reload} /></View>}
-    </View>
+    </Animated.View>
+    <Animated.View style={{ height: toolbarY.interpolate({ inputRange: [0, 72], outputRange: [TOOLBAR_HEIGHT, 0] }) }} />
     {!!notice && <View accessibilityLiveRegion="polite" style={[styles.notice, { backgroundColor: colors.raised }]}><Text style={{ color: colors.text }}>{notice}</Text></View>}
     <Animated.View style={[styles.toolbarWrap, { transform: [{ translateY: toolbarY }] }]}><BlurView intensity={colors.dark ? 45 : 60} tint={colors.dark ? 'dark' : 'light'} style={[styles.toolbar, { backgroundColor: colors.dark ? 'rgba(41,44,48,0.72)' : 'rgba(251,250,246,0.72)', borderColor: colors.border }]}>
       <Button label="Go back" icon="arrow-back" disabled={!canBack} onPress={() => webviews.current[active.id]?.goBack()} />
       <Button label="Go forward" icon="arrow-forward" disabled={!canForward} onPress={() => webviews.current[active.id]?.goForward()} />
-      <Button label="New tab" icon="add" onPress={addTab} />
-      <Button label={`${session.tabs.length} tabs`} icon="tab" text={String(session.tabs.length)} onPress={() => openPanel('tabs')} />
+      <Button label="New tab" icon="add" onPress={() => addTab()} />
+      <Button label={`${sameKindCount(session.tabs, active)} tabs`} icon={active.privateTab ? 'visibility-off' : 'tab'} text={String(sameKindCount(session.tabs, active))} onPress={() => openPanel('tabs')} />
       <Button label="Browser menu" icon="menu" onPress={() => openPanel('menu')} />
     </BlurView></Animated.View>
-    <TabSwitcher visible={panel === 'tabs'} tabs={session.tabs} activeId={active.id} colors={colors} onSelect={id => { setEditing(false); setSession(old => ({ ...old, activeId: id })); setPanel(null); }} onClose={closeTab} onNew={privateTab => { addTab(privateTab); setPanel(null); }} onDismiss={() => setPanel(null)} />
+    <TabSwitcher visible={panel === 'tabs'} tabs={session.tabs} activeId={active.id} colors={colors} onSelect={id => { switchTab(id); setPanel(null); }} onClose={closeTab} onCloseAll={kind => { closeAll(kind); setPanel(null); }} onNew={privateTab => { addTab(privateTab); setPanel(null); }} onDismiss={() => setPanel(null)} />
     <Modal visible={panel !== null && panel !== 'tabs'} animationType="slide" transparent onRequestClose={() => setPanel(null)}>
       <View style={styles.modalBackdrop}><Pressable accessibilityLabel="Close panel" style={{ flex: 1 }} onPress={() => setPanel(null)} /><SafeAreaView edges={['bottom']} style={[styles.sheet, { backgroundColor: colors.base, borderColor: colors.border }]}>
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
         <View style={styles.sheetHeading}><Text style={[styles.sheetTitle, { color: colors.text }]}>{({ menu: 'Your browser', tabs: 'Open tabs', bookmarks: 'Bookmarks', history: 'History', settings: 'Settings', shield: 'Nsty Shield', site: 'Site information' } as const)[panel || 'menu']}</Text><Button label="Close panel" icon="close" onPress={() => setPanel(null)} /></View>
         <ScrollView contentContainerStyle={styles.sheetBody} keyboardShouldPersistTaps="handled">
           {panel === 'menu' && <>
-            <View style={styles.menuQuick}><Button label="New tab" icon="add" onPress={addTab} /><Button label="Bookmark page" icon={bookmarks.some(page => page.url === active.url) ? 'star' : 'star-border'} disabled={!canBrowse} onPress={toggleBookmark} /><Button label="Share page" icon="share" disabled={!canBrowse} onPress={() => Share.share({ message: active.url }).catch(() => setNotice('Sharing is unavailable.'))} /><Button label="Copy address" icon="content-copy" disabled={!canBrowse} onPress={() => { Clipboard.setStringAsync(active.url); setNotice('Address copied'); }} /></View>
+            <View style={styles.menuQuick}><Button label="New tab" icon="add" onPress={() => addTab()} /><Button label="Bookmark page" icon={bookmarks.some(page => page.url === active.url) ? 'star' : 'star-border'} disabled={!canBrowse} onPress={toggleBookmark} /><Button label="Share page" icon="share" disabled={!canBrowse} onPress={() => Share.share({ message: active.url }).catch(() => setNotice('Sharing is unavailable.'))} /><Button label="Copy address" icon="content-copy" disabled={!canBrowse} onPress={() => { Clipboard.setStringAsync(active.url); setNotice('Address copied'); }} /></View>
             <Row title="Bookmarks" detail={`${bookmarks.length} saved pages`} action={() => openPanel('bookmarks')} />
             <Row title="History" detail="Pick up where you left off" action={() => openPanel('history')} />
             <Row title="Downloads" detail="Files are saved by Android Download Manager" action={() => explain('Downloads', 'Downloads from supported links are handled by Android Download Manager. Open the Files app → Downloads to view them. Some sign-in protected or blob downloads may not be supported.')} />
             <Row title="Find in page" action={() => { setPanel(null); setFinding(true); }} />
-            <Row title="Desktop site" detail="Request a desktop page layout" right={<Switch accessibilityLabel="Desktop site" value={desktop} trackColor={{ true: colors.accent }} onValueChange={value => { setDesktop(value); setPanel(null); setTimeout(reload, 150); }} />} />
+            <Row title="Desktop site" detail="Request a desktop page layout" right={<Switch accessibilityLabel="Desktop site" value={!!desktop[active.id]} disabled={!canBrowse} trackColor={{ true: colors.accent }} onValueChange={toggleDesktop} />} />
             <Row title="Nsty Shield" detail={shield ? 'Controls enabled' : 'Optional controls · off'} action={() => openPanel('shield')} />
-            <Row title="Extensions" detail="Unavailable on Android WebView" action={() => explain('Extensions on Android', 'This Android build uses Chromium through Android System WebView. It cannot install Chrome Web Store extensions. Desktop Nsty supports a limited subset of extensions.')} />
+            <Row title="Extensions" detail="Not available on Android System WebView. Desktop Nsty supports a limited set." />
             <Row title="New private tab" detail="Nothing saved to history or restored later. Cookies are shared with other tabs on Android." action={() => { addTab(true); setPanel(null); }} />
             <Row title="Settings" detail="Appearance, privacy and browser information" action={() => openPanel('settings')} />
           </>}
@@ -269,7 +316,7 @@ function Browser() {
             {title('Privacy & browsing')}<Row title="Clear browsing history" action={clearHistory} /><Row title="Site access" detail="Camera, microphone and location are disabled in this build" action={() => explain('Site access', 'Camera, microphone and location requests are denied. These permissions are not declared by this app. File uploads use the Android document picker and only expose files you choose.')} />
             <Row title="Cookies & site data" detail="Managed by Android WebView" action={() => explain('Clear all browser data', 'To remove cookies and all saved data, use Android Settings → Apps → Nsty Browser → Storage → Clear storage. This also removes tabs, bookmarks and preferences.')} />
             <Row title="Nsty Shield" action={() => openPanel('shield')} />
-            {title('About Nsty')}{note('Nsty Browser 0.5.0 · Expo + Android System WebView. Keep Android System WebView updated for browser security updates. Google search is the default. Bookmarks and history stay on this device; no sync service is connected.')}
+            {title('About Nsty')}{note(`Nsty Browser ${pkg.version} · Expo + Android System WebView. Keep Android System WebView updated for browser security updates. Google search is the default. Bookmarks and history stay on this device; no sync service is connected.`)}
           </>}
           {panel === 'shield' && <>
             <View style={[styles.shieldHero, { backgroundColor: colors.panel }]}><MaterialIcons name="shield" size={36} color={colors.accent} /><Text style={[styles.rowTitle, { color: colors.text, marginTop: 12 }]}>Your web. A little quieter.</Text>{note('Optional cosmetic ad hiding and checks for selected ad destinations. These controls do not block all network requests.')}</View>
@@ -282,10 +329,12 @@ function Browser() {
           {panel === 'site' && <>
             <Row title={active.url.startsWith('https:') ? 'HTTPS address' : active.url ? 'Unencrypted HTTP address' : 'Nsty new tab'} detail={active.url || 'An internal browser screen'} />
             {note(active.url.startsWith('https:') ? 'Android WebView validates the connection certificate. Invalid certificates are never bypassed.' : active.url ? 'This address uses HTTP. Information sent to this site may be visible to others on the network.' : 'Open a website to see its address and controls.')}
-            <Row title="Camera, microphone & location" detail="Blocked in this build" />
-            <Row title="File uploads" detail="Only files you choose in the Android picker" />
-            <Row title="Third-party cookies" detail="Blocked" />
-            <Row title="Shield on this site" detail={protectedSite ? 'Controls enabled' : 'Off'} action={() => openPanel('shield')} />
+            {canBrowse && <>
+              <Row title="Camera, microphone & location" detail="Blocked in this build" />
+              <Row title="File uploads" detail="Only files you choose in the Android picker" />
+              <Row title="Third-party cookies" detail="Blocked" />
+              <Row title="Shield on this site" detail={protectedSite ? 'Controls enabled' : 'Off'} action={() => openPanel('shield')} />
+            </>}
           </>}
         </ScrollView>
       </SafeAreaView></View>
@@ -293,8 +342,8 @@ function Browser() {
   </SafeAreaView>;
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1 }, pill: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, overflow: 'hidden' }, progressTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, backgroundColor: 'transparent' },
-  toolbarWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 }, recentCard: { width: 150, padding: 10, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth }, recentThumb: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10 },
+  screen: { flex: 1 }, chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, marginLeft: 8 }, pill: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, overflow: 'hidden' }, progressTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, backgroundColor: 'transparent' },
+  toolbarWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, height: TOOLBAR_HEIGHT }, recentCard: { width: 150, padding: 10, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth }, recentThumb: { width: '100%', aspectRatio: 4 / 3, borderRadius: 10 },
   topSites: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 }, topSite: { width: '22%', alignItems: 'center' }, topSiteTile: { width: 58, height: 58, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
   addressRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
   address: { flex: 1, minHeight: 44, borderRadius: 14, paddingHorizontal: 13, fontSize: 14 }, button: { minWidth: 46, minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 12 },

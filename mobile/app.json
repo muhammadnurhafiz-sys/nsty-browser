@@ -2,12 +2,12 @@
   "expo": {
     "name": "Nsty Browser",
     "slug": "nsty-browser",
-    "version": "0.6.0",
+    "version": "0.6.2",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.nsty.browser",
-      "versionCode": 7,
+      "versionCode": 8,
       "permissions": [
         "INTERNET"
       ],

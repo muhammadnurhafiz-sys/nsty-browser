@@ -2,12 +2,40 @@ export type BrowserTab = { id: string; url: string; title: string; privateTab?: 
 export type BrowserSession = { tabs: BrowserTab[]; activeId: string };
 export type SavedPage = { url: string; title: string; date: number };
 export const newTab = (privateTab = false): BrowserTab => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, url: '', title: 'New tab', ...(privateTab ? { privateTab: true } : {}) });
+const NON_WEB_SCHEME = /^(javascript|data|file|blob|about|vbscript|mailto|tel|sms|intent|market):/i;
+const BLOCKED_SCHEME = /^(javascript|data|file|blob|vbscript):/i;
+/** What a navigation request should do: load it, hand it to another app, or drop it. */
+export function linkAction(url: string): 'web' | 'app' | 'blocked' {
+  if (url === 'about:blank' || address(url)) return 'web';
+  if (BLOCKED_SCHEME.test(url) || !/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(url)) return 'blocked';
+  return 'app';
+}
+/** Close a tab; the active tab moves to the nearest tab of the same kind. */
+export function closeTabIn(session: BrowserSession, id: string): { session: BrowserSession; leftPrivate: boolean } {
+  console.info('[Session] Closing tab');
+  const closing = session.tabs.find(tab => tab.id === id);
+  const tabs = session.tabs.filter(tab => tab.id !== id);
+  if (!tabs.length) { const tab = newTab(); return { session: { tabs: [tab], activeId: tab.id }, leftPrivate: false }; }
+  if (session.activeId !== id) return { session: { tabs, activeId: session.activeId }, leftPrivate: false };
+  const sameKind = tabs.filter(tab => !!tab.privateTab === !!closing?.privateTab);
+  const next = sameKind[sameKind.length - 1] ?? tabs[tabs.length - 1]!;
+  return { session: { tabs, activeId: next.id }, leftPrivate: !!closing?.privateTab && !next.privateTab };
+}
+/** Tabs that keep a live WebView: the active one plus the most recently used, newest first. */
+export function mountedTabs(recent: string[], activeId: string, limit: number): Set<string> {
+  const kept = new Set<string>([activeId]);
+  for (const id of recent) { if (kept.size >= limit) break; kept.add(id); }
+  return kept;
+}
+export const sameKindCount = (tabs: BrowserTab[], active: BrowserTab): number => tabs.filter(tab => !!tab.privateTab === !!active.privateTab).length;
 export function address(input: string): string | null {
   console.info('[Navigation] Normalizing address');
   const value = input.trim();
   if (!value) return null;
-  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
-  const candidate = hasScheme ? value : !/\s/.test(value) && value.includes('.') ? `https://${value}` : `https://www.google.com/search?q=${encodeURIComponent(value)}`;
+  // A bare "word:" is not a scheme: localhost:3000 and "error: text" must not be rejected as unknown schemes.
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(value) || NON_WEB_SCHEME.test(value);
+  const hostLike = !/\s/.test(value) && (value.includes('.') || /^[a-zA-Z\d-]+:\d+(\/|$)/.test(value));
+  const candidate = hasScheme ? value : hostLike ? `https://${value}` : `https://www.google.com/search?q=${encodeURIComponent(value)}`;
   try { const parsed = new URL(candidate); return ['https:', 'http:'].includes(parsed.protocol) && parsed.hostname && !parsed.username && !parsed.password ? candidate : null; } catch { return null; }
 }
 export function isHost(url: string, host: string): boolean {

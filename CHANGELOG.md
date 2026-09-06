@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.6.2 (2026-09-06) — Android: private-tab bug, tab switcher, browser fixes
+
+Findings from a frame-by-frame review of the tester's screen recording.
+
+- The `+` button always opened a private tab (the press event leaked into the `privateTab`
+  parameter). Normal tabs open again, with a slide-in and a "New tab" toast.
+- Private mode is now visible: purple chrome, a PRIVATE chip in the address bar, and a private
+  landing page. Closing the last private tab says "Left private browsing".
+- Tab switcher opens on the active tab's section, cards swipe sideways to close, "Close all"
+  per section, thumbnails captured on load and before leaving a tab.
+- Address bar accepts `localhost:3000` and `host:port`, and searches "word: text" instead of
+  rejecting it.
+- Back/forward state is per tab; the hardware back button no longer exits the app after a
+  tab switch. A crashed tab remounts its WebView on reload.
+- `target=_blank` links open a new tab; `intent:`/`market:` and other app links prompt
+  "Open in another app?" instead of being dropped.
+- Page content is no longer hidden behind the toolbar; the tab counter shows the active kind;
+  desktop site is per tab; find-in-page has previous/next and a match count.
+- Only the active tab plus the three most recent keep live WebViews; others reload on return.
+- Extensions row is informational; site information hides inert rows on a new tab; About shows
+  the real version.
+
 ## v0.6.1 (2026-09-06) — Windows launch crash, Android release APK
 
 - Windows installers built on the VPS shipped a Linux `better_sqlite3.node`; the app closed at
