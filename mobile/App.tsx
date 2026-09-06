@@ -226,10 +226,12 @@ function Browser() {
       if (!result.isAvailable) { setNotice('Nsty is up to date.'); return; }
       setNotice('Downloading update…');
       await Updates.fetchUpdateAsync();
+      await persist();
       await Updates.reloadAsync();
     } catch (error) { console.warn('[Nsty Mobile] Update check failed', error); setNotice('Update check failed. Try again later.'); }
   }
-  const restartForUpdate = () => Updates.reloadAsync().catch(() => setNotice('Restart the app to finish updating.'));
+  // Flush the debounced save first: reloadAsync tears down the JS context and would drop the last 350ms of state.
+  const restartForUpdate = () => persist().then(() => Updates.reloadAsync()).catch(() => setNotice('Restart the app to finish updating.'));
   function toggleDesktop(value: boolean) { log('Toggling desktop site for this tab'); setDesktop(old => ({ ...old, [active.id]: value })); setPanel(null); setTimeout(reload, 150); }
   function Button({ label, icon, text, onPress, selected = false, disabled = false }: { label: string; icon?: IconName; text?: string; onPress: () => void; selected?: boolean; disabled?: boolean }) {
     const color = selected ? colors.accentText : colors.text;
