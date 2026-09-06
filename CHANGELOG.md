@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.1 (2026-09-06) — Windows launch crash, Android release APK
+
+- Windows installers built on the VPS shipped a Linux `better_sqlite3.node`; the app closed at
+  startup. An electron-builder afterPack hook now installs the Windows prebuilt, and the
+  database driver loads lazily with a clear error instead of crashing the main process.
+- Android: the VPS artifact is now a bundled `assembleRelease` APK. The earlier debug APKs had no
+  JavaScript bundle and closed on launch.
+
 ## v0.6.0 (2026-09-06) — UX round 1: desktop and mobile
 
 ### Desktop

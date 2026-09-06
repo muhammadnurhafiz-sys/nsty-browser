@@ -20,6 +20,11 @@ This project is developed on a **headless Linux VPS**, not the user's local mach
 | Windows NSIS `.exe` installer | ✅ If Wine installed | `npm run package:win` | `Nsty Browser Setup <ver>.exe` |
 | Windows portable `.tar.gz` | ✅ Fallback without Wine | `npx electron-builder --win portable` | `nsty-browser-v<ver>-win-x64-portable.tar.gz` |
 | macOS `.dmg` | ❌ CI only | (GitHub Actions) | — |
+| Android APK (`mobile/`) | ✅ Native | `cd mobile && npx expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleRelease` | `nsty-browser-<ver>-android.apk` |
+
+**Android: always ship `assembleRelease`, never `assembleDebug`.** A debug APK contains no JS bundle; it expects a Metro dev server and closes on launch when installed standalone (this was the 0.6.0 "auto close" report). The generated project signs release builds with the debug keystore, so the release APK installs directly. Signed store builds come from `npx eas-cli build --platform android --profile preview` (EAS account `it-nastyworldwide`).
+
+**Windows cross-build native modules.** `scripts/after-pack.cjs` swaps the Linux `better_sqlite3.node` for the Windows prebuilt; without it the `.exe` crashes at startup. Verify with `file release/win-unpacked/resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node` → must say `PE32+`.
 
 ### Wine prerequisite for `.exe` installer
 Building the NSIS `.exe` from Linux requires Wine. Check once with `which wine`; if missing, install:

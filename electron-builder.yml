@@ -4,6 +4,9 @@ directories:
   output: release
   buildResources: resources
 
+# Swap the Linux native binary for the Windows prebuilt when cross-building (see scripts/after-pack.cjs)
+afterPack: scripts/after-pack.cjs
+
 publish:
   - provider: github
     owner: muhammadnurhafiz-sys

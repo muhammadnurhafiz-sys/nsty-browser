@@ -1,14 +1,29 @@
-import Database from 'better-sqlite3'
+import type Database from 'better-sqlite3'
 import path from 'node:path'
 import { app } from 'electron'
+import { createLogger } from '../utils/logger'
 
+const log = createLogger('database')
 let db: Database.Database | null = null
+
+// better-sqlite3 is a native module. It is required lazily so a binary built
+// for the wrong platform fails here, with a clear message, instead of taking
+// the whole main process down at import time (the Windows 0.6.0 launch crash).
+function loadDriver(): typeof Database {
+  try {
+    return require('better-sqlite3') as typeof Database
+  } catch (error) {
+    log.error('better-sqlite3 native module could not be loaded', { message: error instanceof Error ? error.message : String(error) })
+    throw new Error('The better-sqlite3 native module could not be loaded for this platform; AI conversation storage is unavailable.')
+  }
+}
 
 export function getDatabase(): Database.Database {
   if (db) return db
 
+  const Driver = loadDriver()
   const dbPath = path.join(app.getPath('userData'), 'nsty.db')
-  db = new Database(dbPath)
+  db = new Driver(dbPath)
 
   // Enable WAL mode for better concurrent access
   db.pragma('journal_mode = WAL')
