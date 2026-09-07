@@ -26,6 +26,12 @@ This project is developed on a **headless Linux VPS**, not the user's local mach
 
 **Android: always ship `assembleRelease`, never `assembleDebug`.** A debug APK contains no JS bundle; it expects a Metro dev server and closes on launch when installed standalone (this was the 0.6.0 "auto close" report). The generated project signs release builds with the debug keystore, so the release APK installs directly. Signed store builds come from `npx eas-cli build --platform android --profile preview` (EAS account `it-nastyworldwide`).
 
+**Android over-the-air updates (EAS Update, since 0.6.3).** JavaScript-only changes ship without a new APK:
+```bash
+cd mobile && CI=1 npx eas-cli update --branch preview --environment preview --platform android --message "<what changed>" --non-interactive
+```
+All three flags are required on this VPS: `--environment` for non-interactive mode, `--platform android` because the project has no `react-native-web`, and `CI=1` for the underlying `expo export`. Phones pick the update up on next launch or via Settings → Updates → Check for updates. The runtime version follows the app version, so any change to native modules, permissions, or `app.json` still needs a version bump and a new APK. The preview channel is set for local builds through `updates.requestHeaders` in `app.json`.
+
 **Windows cross-build native modules.** `scripts/after-pack.cjs` swaps the Linux `better_sqlite3.node` for the Windows prebuilt; without it the `.exe` crashes at startup. Verify with `file release/win-unpacked/resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node` → must say `PE32+`.
 
 ### Wine prerequisite for `.exe` installer
