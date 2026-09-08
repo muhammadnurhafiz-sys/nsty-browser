@@ -235,7 +235,7 @@ export class BrowserService {
     wc.on('context-menu', (_event, params) => {
       log.info('open page context menu', { mediaType: params.mediaType, editable: params.isEditable, link: Boolean(params.linkURL) })
       this.showOverlay('context', { x: this.contentOrigin.x + params.x, y: this.contentOrigin.y + params.y, width: 0, height: 0 }, {
-        x: params.x, y: params.y, linkURL: params.linkURL, srcURL: params.srcURL, mediaType: params.mediaType,
+        x: params.x, y: params.y, linkURL: isWebUrl(params.linkURL) ? params.linkURL : '', srcURL: isWebUrl(params.srcURL) ? params.srcURL : '', mediaType: params.mediaType,
         selectionText: params.selectionText.slice(0, 200), isEditable: params.isEditable,
         canGoBack: tab.canGoBack, canGoForward: tab.canGoForward,
         canCopy: params.editFlags.canCopy, canPaste: params.editFlags.canPaste, canCut: params.editFlags.canCut, canSelectAll: params.editFlags.canSelectAll,
@@ -352,6 +352,7 @@ export class BrowserService {
     view.setBackgroundColor('#00000000')
     this.overlayView = view
     this.options.onViewCreated?.(view.webContents)
+    view.webContents.on('will-navigate', event => event.preventDefault())
     void view.webContents.loadURL(`${this.options.shellUrl ?? 'app://bundle/index.html'}#overlay`).catch(() => log.error('overlay shell failed to load'))
     return view
   }
@@ -698,7 +699,7 @@ export class BrowserService {
     log.info('register browser IPC with exact shell identity')
     const trusted = (event: Electron.IpcMainInvokeEvent) => {
       const fromShell = event.sender === this.window.webContents && event.senderFrame === this.window.webContents.mainFrame
-      const fromOverlay = Boolean(this.overlayView) && event.sender === this.overlayView?.webContents
+      const fromOverlay = Boolean(this.overlayView) && event.sender === this.overlayView?.webContents && event.senderFrame === this.overlayView?.webContents.mainFrame
       return (fromShell || fromOverlay) && isShellUrl(event.senderFrame?.url ?? '', !app.isPackaged)
     }
     ipcMain.handle('browser:getSnapshot', event => { if (!trusted(event)) throw new Error('Untrusted browser caller'); return this.snapshot() })
@@ -713,6 +714,8 @@ export class BrowserService {
     this.persist(); this.disposed = true
     for (const pending of this.permissionQueue) { clearTimeout(pending.timer); pending.callback(false) }
     this.permissionQueue.length = 0
+    for (const pending of this.authQueue) pending.callback()
+    this.authQueue.length = 0
     for (const { view } of this.views.values()) if (!view.webContents.isDestroyed()) view.webContents.close()
     this.views.clear()
     if (this.overlayView) {

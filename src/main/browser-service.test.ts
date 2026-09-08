@@ -293,8 +293,12 @@ describe('BrowserService native state ownership', () => {
     await service.dispatch({ type: 'overlay:open', surface: 'menu' })
     const overlayWc = (service as unknown as { overlayView: { webContents: unknown } }).overlayView.webContents
     const handler = (ipcMain.handle as unknown as { mock: { calls: [string, Function][] } }).mock.calls.filter(([channel]) => channel === 'browser:getSnapshot').at(-1)![1]
-    expect(() => handler({ sender: overlayWc, senderFrame: { url: 'app://bundle/index.html#overlay' } })).not.toThrow()
+    const overlayFrame = { url: 'app://bundle/index.html#overlay' }
+    ;(overlayWc as { mainFrame?: unknown }).mainFrame = overlayFrame
+    expect(() => handler({ sender: overlayWc, senderFrame: overlayFrame })).not.toThrow()
     expect(() => handler({ sender: overlayWc, senderFrame: { url: 'https://attacker.test/' } })).toThrow(/Untrusted/)
+    // A subframe inside the overlay never inherits its trust, even with a shell-looking URL.
+    expect(() => handler({ sender: overlayWc, senderFrame: { url: 'app://bundle/index.html#overlay' } })).toThrow(/Untrusted/)
     service.dispose()
   })
   it('closes the overlay when the tab it acts on is closed', async () => {
@@ -422,6 +426,16 @@ describe('BrowserService native state ownership', () => {
     overlay = service.snapshot().overlay!
     await service.dispatch({ type: 'auth:respond', id: String(overlay.payload.id) })
     expect(answers[1]).toEqual([])
+    activeView(service).webContents.emit('login', { preventDefault: vi.fn() }, {}, { host: 'site.test', isProxy: false }, (...args: unknown[]) => answers.push(args))
+    service.dispose()
+    // Disposing cancels a prompt that was never answered instead of leaving Electron waiting.
+    expect(answers[2]).toEqual([])
+  })
+  it('keeps non-web link and image addresses out of the context menu', async () => {
+    const service = new BrowserService(window as unknown as Electron.BrowserWindow, dir, { shellUrl: 'app://bundle/index.html' })
+    await service.dispatch({ type: 'navigate', url: 'https://site.test/' })
+    activeView(service).webContents.emit('context-menu', {}, { x: 1, y: 1, linkURL: 'javascript:alert(1)', srcURL: 'data:image/png;base64,AAAA', mediaType: 'image', selectionText: '', isEditable: false, editFlags: { canCopy: false, canPaste: false, canCut: false, canSelectAll: true } })
+    expect(service.snapshot().overlay!.payload).toMatchObject({ linkURL: '', srcURL: '' })
     service.dispose()
   })
   it('explains certificate failures in the error page text', async () => {

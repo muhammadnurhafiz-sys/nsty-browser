@@ -10,6 +10,7 @@ interface Bridge { getBrowserSnapshot(): Promise<BrowserSnapshot>; dispatchBrows
 const bridge = () => window.nsty as unknown as Bridge | undefined
 /** Surfaces that hang off a chrome control instead of covering the content area. */
 const POPOVERS = new Set<OverlaySurface>(['menu', 'tabs', 'suggestions', 'find', 'context', 'site', 'shield'])
+const MENUS = new Set<OverlaySurface>(['menu', 'tabs', 'context'])
 /** Popovers whose right edge lines up with the right edge of their anchor. */
 const RIGHT_ALIGNED = new Set<OverlaySurface>(['menu', 'shield'])
 const WIDTHS: Partial<Record<OverlaySurface, number>> = { menu: 300, tabs: 260, site: 300, shield: 320, context: 240 }
@@ -89,23 +90,25 @@ export function OverlayShell() {
   const closeFind = useCallback(() => { void send({ type: 'find', text: '' }); void send({ type: 'overlay:close' }) }, [send])
   useEffect(() => { if (surface) { setQuery(''); setError('') } }, [surface])
   useEffect(() => {
-    if (!surface) return
+    // The omnibox owns focus while suggestions are open; the shell routes its keys.
+    if (!surface || surface === 'suggestions') return
     log.debug('focus and trap the open surface', { surface })
     const container = surfaceRef.current
     const focusable = () => Array.from(container?.querySelectorAll<HTMLElement>('button:not([disabled]), input, select, [tabindex="0"]') ?? [])
-    focusable()[0]?.focus()
+    // Menus focus their container so a pointer-opened menu shows no focus ring; arrow keys move into the items.
+    if (MENUS.has(surface)) container?.focus(); else focusable()[0]?.focus()
     const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         if (surface === 'auth') { event.preventDefault(); cancelAuth(); return }
         if (locked) return
         event.preventDefault(); if (surface === 'find') closeFind(); else close(); return
       }
-      if (surface === 'context' && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      if (MENUS.has(surface) && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
         event.preventDefault()
         const items = focusable()
         const index = items.indexOf(document.activeElement as HTMLElement)
         const step = event.key === 'ArrowDown' ? 1 : -1
-        items[(Math.max(0, index) + step + items.length) % items.length]?.focus()
+        items[index < 0 ? (step > 0 ? 0 : items.length - 1) : (index + step + items.length) % items.length]?.focus()
         return
       }
       if (event.key !== 'Tab') return
@@ -198,7 +201,7 @@ export function OverlayShell() {
     {popover
       // role is one of menu/listbox/dialog, all of which accept aria-label; spread
       // because the linter cannot narrow the dynamic role attribute.
-      ? <div ref={surfaceRef} className={`bs-popover bs-popover-${surface}${surface === 'find' ? ' bs-find' : surface === 'suggestions' ? ' bs-suggestions' : ''}`} style={popoverStyle(overlay)} {...{ role, 'aria-label': TITLES[surface] ?? surface }}>{body}</div>
+      ? <div ref={surfaceRef} tabIndex={-1} className={`bs-popover bs-popover-${surface}${surface === 'find' ? ' bs-find' : surface === 'suggestions' ? ' bs-suggestions' : ''}`} style={popoverStyle(overlay)} {...{ role, 'aria-label': TITLES[surface] ?? surface }}>{body}</div>
       : <div className="bs-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !locked) close() }}><div ref={surfaceRef} className="bs-dialog" role="dialog" aria-modal="true" aria-labelledby="bs-dialog-title"><header><div><span className="bs-eyebrow">NSTY BROWSER</span><h2 id="bs-dialog-title">{TITLES[surface] ?? ''}</h2></div>{!locked && <Button icon="close" label="Close dialog" onClick={close} />}</header><div className="bs-dialog-body">{body}</div></div></div>}
     {error && <div className="bs-toast" role="alert"><span>{error}</span><Button icon="close" label="Dismiss error" onClick={() => setError('')} /></div>}
   </div>

@@ -89,11 +89,25 @@ describe('OverlayShell surfaces', () => {
     const payload = { x: 1, y: 1, linkURL: '', srcURL: '', mediaType: 'none', selectionText: '', isEditable: false, canGoBack: true, canGoForward: true, canCopy: true, canPaste: false, canCut: false, canSelectAll: true }
     mount({ surface: 'context', anchor: { x: 250, y: 74, width: 0, height: 0 }, payload, origin: { x: 240, y: 54 } })
     const back = await screen.findByRole('menuitem', { name: 'Back' })
-    await waitFor(() => expect(document.activeElement).toBe(back))
+    // A pointer-opened menu focuses its container, so no item shows a focus ring until the keyboard is used.
+    await waitFor(() => expect(document.activeElement).toBe(document.querySelector('.bs-popover')))
+    fireEvent.keyDown(document, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(back)
     fireEvent.keyDown(document, { key: 'ArrowDown' })
     expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Forward' }))
     fireEvent.keyDown(document, { key: 'ArrowUp' })
     expect(document.activeElement).toBe(back)
+  })
+  it('navigates the browser menu with the arrow keys too', async () => {
+    mount({ surface: 'menu', anchor: { x: 900, y: 60, width: 36, height: 36 }, payload: {}, origin: { x: 240, y: 54 } })
+    await screen.findByRole('menuitem', { name: /New tab/ })
+    fireEvent.keyDown(document, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Settings' }))
+  })
+  it('leaves keyboard focus in the omnibox while suggestions are open', async () => {
+    mount({ surface: 'suggestions', anchor: { x: 360, y: 8, width: 700, height: 36 }, payload: { query: 'a', rows: [{ kind: 'search', title: 'Search Google for “a”', url: 'https://www.google.com/search?q=a' }], highlight: 0 }, origin: { x: 240, y: 54 } })
+    await screen.findByRole('option')
+    expect(document.activeElement).toBe(document.body)
   })
   it('signs in or cancels the credential prompt without closing the overlay', async () => {
     const dispatch = mount({ surface: 'auth', anchor: null, payload: { id: 'auth-1', host: 'site.test', realm: 'Staging', isProxy: false }, origin: { x: 240, y: 54 } })

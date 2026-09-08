@@ -56,3 +56,4 @@
 .bs-overlay-root .bs-suggestions{position:absolute;right:auto;border-radius:18px}
 /* Disabled chrome buttons swallow mouse events; let the press reach the shell so an open popover still closes. */
 .bs-toolbar button:disabled,.bs-sidebar button:disabled{pointer-events:none}
+.bs-popover:focus{outline:none}
