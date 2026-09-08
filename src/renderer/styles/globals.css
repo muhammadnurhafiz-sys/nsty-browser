@@ -905,3 +905,10 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
 .skip-to-content:focus {
   left: 0;
 }
+
+/* The overlay view must show the live page through everything it does not paint. */
+html.overlay-mode,
+html.overlay-mode body,
+html.overlay-mode #root {
+  background: transparent !important;
+}

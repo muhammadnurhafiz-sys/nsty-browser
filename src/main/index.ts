@@ -61,7 +61,11 @@ function createWindow(): void {
 
   // Main-owned browser state: tabs, sessions, Shield, downloads, extensions,
   // permissions and persistence all live here; the renderer only renders snapshots.
-  browserService = new BrowserService(mainWindow)
+  browserService = new BrowserService(mainWindow, undefined, {
+    shellUrl: isDev ? 'http://localhost:5173/' : 'app://bundle/index.html',
+    preloadPath: path.join(__dirname, '../preload/index.js'),
+    onViewCreated: webContents => applyNavigationGuard(webContents),
+  })
   browserService.registerIpc()
   void browserService.initializeShield()
   void browserService.loadExtensions()

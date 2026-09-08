@@ -28,7 +28,6 @@
 .browser-shell[data-collapsed=true] .bs-new-tab{justify-content:center;padding:10px 0}
 .browser-shell[data-collapsed=true] .bs-sidebar-bottom>button{justify-content:center!important;padding:10px 0!important}
 .browser-shell[data-collapsed=true] .bs-sidebar-bottom>div{flex-direction:column;gap:6px}
-.bs-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top left;z-index:0}
 .bs-download-pill-wrap{position:relative;flex-shrink:0}
 .bs-download-pill{display:flex!important;align-items:center;gap:8px;height:32px;padding:0 12px 0 8px!important;border-radius:9999px!important;background:var(--bs-glass)!important;-webkit-backdrop-filter:blur(28px) saturate(1.7);backdrop-filter:blur(28px) saturate(1.7);box-shadow:inset 0 1px 0 var(--bs-rim),0 0 0 1px var(--bs-border);font-size:11px;max-width:200px}
 .bs-download-pill>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Geist Mono',ui-monospace,monospace}
@@ -40,3 +39,20 @@
 .bs-suggestions button kbd{margin-left:auto;font-size:10px;color:var(--bs-muted)}
 .bs-find-count{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:var(--bs-muted);align-self:center;padding:0 6px;white-space:nowrap}
 .bs-ring.indeterminate{animation:bs-spin 1s linear infinite}.bs-ring.indeterminate .bs-ring-fill{stroke-dashoffset:38}
+
+/* ---- Overlay view: one transparent WebContentsView layered above the live page ---- */
+.browser-shell.bs-overlay-root{position:fixed;inset:0;display:block;grid-template-columns:none;grid-template-rows:none;background:transparent;overflow:hidden;height:100%}
+.bs-overlay-root .bs-backdrop{position:absolute;inset:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.bs-overlay-root .bs-dialog{max-height:calc(100% - 50px)}
+.bs-popover{position:absolute;z-index:40;max-height:calc(100% - 24px);overflow:auto;padding:8px;background:var(--bs-glass-strong);-webkit-backdrop-filter:blur(28px) saturate(1.7);backdrop-filter:blur(28px) saturate(1.7);border:1px solid var(--bs-border);border-radius:14px;box-shadow:inset 0 1px 0 var(--bs-rim),inset 0 -1px 0 rgba(0,0,0,.25),var(--bs-shadow)}
+.bs-popover-site,.bs-popover-shield{padding:16px 18px}
+.bs-menu-divider{height:1px;border:0;background:var(--bs-border);margin:5px 4px}
+.bs-popover-site h3,.bs-popover-shield h3{font-size:13px;margin:14px 0 8px}
+.bs-popover-site p,.bs-popover-shield p{line-height:1.7;color:var(--bs-muted);font-size:12px;margin-bottom:12px}
+.bs-popover-site>.bs-icon,.bs-popover-shield>.bs-icon{color:var(--bs-accent)}
+/* The find bar and the suggestion list keep their shell styling; only their
+   positioning changes now that they live inside the overlay view. */
+.bs-overlay-root .bs-find{position:absolute;top:8px;right:16px;left:auto;padding:0;width:auto!important;overflow:visible}
+.bs-overlay-root .bs-suggestions{position:absolute;right:auto;border-radius:18px}
+/* Disabled chrome buttons swallow mouse events; let the press reach the shell so an open popover still closes. */
+.bs-toolbar button:disabled,.bs-sidebar button:disabled{pointer-events:none}

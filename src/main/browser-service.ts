@@ -1,4 +1,4 @@
-import { app, BrowserWindow, WebContentsView, dialog, ipcMain, nativeTheme, session, shell } from 'electron'
+import { app, BrowserWindow, WebContentsView, clipboard, dialog, ipcMain, nativeTheme, session, shell } from 'electron'
 import type { DownloadItem, Session, WebContents } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -6,8 +6,8 @@ import { randomUUID } from 'node:crypto'
 import { ElectronBlocker, fromElectronDetails } from '@ghostery/adblocker-electron'
 import fetch from 'cross-fetch'
 import { DEFAULT_BROWSER_PREFERENCES } from '../shared/browser'
-import type { BrowserAction, BrowserActionResult, BrowserHistoryEntry, BrowserSnapshot, BrowserTab, BrowserPermission, BrowserExtension } from '../shared/browser'
-import { MAX_SPACES, isShellUrl, isSpaceName, normalizeAddress, persistableTabs, validateBrowserAction } from '../shared/browser-policy'
+import type { BrowserAction, BrowserActionResult, BrowserHistoryEntry, BrowserSnapshot, BrowserTab, BrowserPermission, BrowserExtension, BrowserOverlay, OverlayAnchor, OverlaySurface } from '../shared/browser'
+import { MAX_SPACES, buildSuggestions, isBrowserShortcut, isExternalProtocol, isShellUrl, isSpaceName, normalizeAddress, persistableTabs, validateBrowserAction } from '../shared/browser-policy'
 import { createLogger } from './utils/logger'
 
 const log = createLogger('browser')
@@ -19,16 +19,34 @@ let youtubeScript: string | null = null
 interface ManagedTab { tab: BrowserTab; view: WebContentsView }
 interface ExtensionRecord { path: string; id: string; enabled: boolean; pinned: boolean; name: string; version: string }
 interface PendingPermission { request: BrowserPermission; callback: (allow: boolean) => void; timer: ReturnType<typeof setTimeout> }
+/** An unanswered HTTP basic-auth challenge. Credentials are never stored here. */
+interface PendingAuth { id: string; callback: (username?: string, password?: string) => void; tabId: string; host: string; realm: string; isProxy: boolean }
+/** Web addresses are the only thing the context menu will copy, save or open. */
+const isWebUrl = (value: string | undefined): value is string => typeof value === 'string' && /^https?:\/\//i.test(value)
+const MAX_AUTH_PROMPTS = 5
+export interface BrowserServiceOptions {
+  /** Shell document the overlay view loads (with the '#overlay' hash appended). */
+  shellUrl?: string
+  preloadPath?: string
+  /** Applied to every view main creates, so index.ts can attach its navigation guard. */
+  onViewCreated?: (webContents: WebContents) => void
+}
+/** Actions that change only transient chrome state and must not schedule a save. */
+/** Popovers that describe the active page and must close when it goes away. */
+const TAB_SCOPED_SURFACES = new Set<OverlaySurface>(['find', 'context', 'site', 'shield', 'suggestions'])
+const TRANSIENT_ACTIONS = new Set(['find', 'overlay:open', 'overlay:close', 'suggest', 'suggest:highlight'])
 
 export class BrowserService {
   private readonly views = new Map<string, ManagedTab>()
   private readonly sessions = new Set<Session>()
   private readonly downloadItems = new Map<string, DownloadItem>()
   private readonly permissionQueue: PendingPermission[] = []
+  private readonly authQueue: PendingAuth[] = []
+  /** Tab currently in HTML5 fullscreen; its view covers the whole window. */
+  private fullscreenTabId: string | null = null
   private extensionRecords: ExtensionRecord[] = []
   private closedTabs: { url: string; space: string }[] = []
-  private overlayOpen = false
-  private overlaySeq = 0
+  private overlayView: WebContentsView | null = null
   /** Content-area origin reported by the renderer (sidebar width, toolbar height). */
   private contentOrigin = { x: 240, y: 54 }
   private blocker: ElectronBlocker | null = null
@@ -42,10 +60,10 @@ export class BrowserService {
   private state: BrowserSnapshot = {
     revision: 0, tabs: [], activeTabId: null, activeSpace: 'Work', spaces: [...DEFAULT_SPACES], preferences: { ...DEFAULT_BROWSER_PREFERENCES },
     bookmarks: [], history: [], downloads: [], extensions: [], pendingPermission: null, permissions: [],
-    shieldExceptions: [], shieldReady: false, capabilities: { extensions: true, privateBrowsing: true },
+    shieldExceptions: [], shieldReady: false, capabilities: { extensions: true, privateBrowsing: true }, overlay: null,
   }
 
-  constructor(private readonly window: BrowserWindow, private readonly storageDir = app.getPath('userData')) {
+  constructor(private readonly window: BrowserWindow, private readonly storageDir = app.getPath('userData'), private readonly options: BrowserServiceOptions = {}) {
     log.info('initialize main-owned browser state')
     const restored = this.readState()
     if (restored && validateBrowserAction({ type: 'preferences', patch: restored.preferences })) this.state.preferences = { ...DEFAULT_BROWSER_PREFERENCES, ...restored.preferences }
@@ -78,6 +96,19 @@ export class BrowserService {
     if (!this.views.size) this.createTab('nsty://newtab')
     this.restoring = false
     this.window.on('resize', () => this.layout())
+    // Mouse back/forward buttons arrive as window app commands on Windows and Linux.
+    this.window.on('app-command', (_event, command) => {
+      log.debug('window app command', { command })
+      if (command === 'browser-backward') void this.dispatch({ type: 'back' })
+      else if (command === 'browser-forward') void this.dispatch({ type: 'forward' })
+    })
+    // The user left fullscreen at window level (F11 or Esc): tell the page too.
+    this.window.on('leave-full-screen', () => {
+      const managed = this.fullscreenTabId ? this.views.get(this.fullscreenTabId) : undefined
+      if (!managed) return
+      log.info('exit page fullscreen with the window')
+      void managed.view.webContents.executeJavaScript('document.exitFullscreen()').catch(() => undefined)
+    })
     this.applyTheme()
   }
 
@@ -133,7 +164,11 @@ export class BrowserService {
       this.sendScheduled = true
       setImmediate(() => {
         this.sendScheduled = false
-        if (!this.disposed && !this.window.isDestroyed()) this.window.webContents.send('browser:snapshot', this.snapshot())
+        if (this.disposed) return
+        const snapshot = this.snapshot()
+        if (!this.window.isDestroyed()) this.window.webContents.send('browser:snapshot', snapshot)
+        const overlay = this.overlayView?.webContents
+        if (overlay && !overlay.isDestroyed()) overlay.send('browser:snapshot', snapshot)
       })
     }
     if (save && !this.restoring) {
@@ -166,7 +201,7 @@ export class BrowserService {
       const id = randomUUID()
       const timer = setTimeout(() => this.respondPermission(id, false, false), 60000)
       this.permissionQueue.push({ request: { id, origin, permission, tabId: owner.tab.id }, callback, timer })
-      this.overlayOpen = true; this.layout(); this.publish()
+      this.showOverlay('permission', null, {}); this.publish()
     })
     ses.setPermissionCheckHandler((contents, permission, origin) => {
       const owner = [...this.views.values()].find(v => v.view.webContents === contents)
@@ -176,19 +211,59 @@ export class BrowserService {
     return ses
   }
 
-  private createTab(input = 'nsty://newtab', isPrivate = false, space = this.state.activeSpace): BrowserTab {
-    log.info('create native tab', { private: isPrivate })
+  private createTab(input = 'nsty://newtab', isPrivate = false, space = this.state.activeSpace, options: { activate?: boolean } = {}): BrowserTab {
+    const activate = options.activate !== false
+    log.info('create native tab', { private: isPrivate, activate })
     const url = normalizeAddress(input, this.state.preferences.searchEngine)
     const id = randomUUID()
     const view = new WebContentsView({ webPreferences: { session: this.getSession(isPrivate), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } })
     const tab: BrowserTab = { id, url, space, private: isPrivate, title: 'New tab', loading: false, canGoBack: false, canGoForward: false, muted: false, zoom: 1, error: null, blocked: 0, favicon: null, audible: false, find: null }
     const wc = view.webContents
     this.views.set(id, { tab, view })
-    wc.setWindowOpenHandler(({ url: destination }) => {
-      if (/^https?:\/\//i.test(destination)) { this.createTab(destination, isPrivate, space); this.publish(true) }
+    wc.setWindowOpenHandler(({ url: destination, disposition }) => {
+      log.info('page requested a new window', { disposition })
+      if (isExternalProtocol(destination)) void shell.openExternal(destination)
+      else if (isWebUrl(destination)) { this.createTab(destination, isPrivate, space, { activate: disposition !== 'background-tab' }); this.publish(true) }
       return { action: 'deny' }
     })
-    wc.on('will-navigate', (event, destination) => { if (!/^https?:\/\//i.test(destination)) event.preventDefault() })
+    wc.on('will-navigate', (event, destination) => {
+      if (isWebUrl(destination)) return
+      event.preventDefault()
+      // mailto:/tel:/sms: belong to the operating system; every other non-web scheme stays blocked.
+      if (isExternalProtocol(destination)) { log.info('open a link in the system handler'); void shell.openExternal(destination) }
+    })
+    wc.on('context-menu', (_event, params) => {
+      log.info('open page context menu', { mediaType: params.mediaType, editable: params.isEditable, link: Boolean(params.linkURL) })
+      this.showOverlay('context', { x: this.contentOrigin.x + params.x, y: this.contentOrigin.y + params.y, width: 0, height: 0 }, {
+        x: params.x, y: params.y, linkURL: params.linkURL, srcURL: params.srcURL, mediaType: params.mediaType,
+        selectionText: params.selectionText.slice(0, 200), isEditable: params.isEditable,
+        canGoBack: tab.canGoBack, canGoForward: tab.canGoForward,
+        canCopy: params.editFlags.canCopy, canPaste: params.editFlags.canPaste, canCut: params.editFlags.canCut, canSelectAll: params.editFlags.canSelectAll,
+      })
+      this.publish()
+    })
+    wc.on('enter-html-full-screen', () => {
+      log.info('page entered fullscreen')
+      this.fullscreenTabId = tab.id
+      this.window.setFullScreen(true)
+      if (this.state.overlay) this.hideOverlay(true)
+      this.layout(); this.publish()
+    })
+    wc.on('leave-html-full-screen', () => {
+      log.info('page left fullscreen')
+      this.fullscreenTabId = null
+      this.window.setFullScreen(false)
+      this.layout(); this.publish()
+    })
+    wc.on('login', (event, _details, authInfo, callback) => {
+      event.preventDefault()
+      log.info('site asked for credentials', { host: authInfo.host, proxy: authInfo.isProxy })
+      if (this.authQueue.length >= MAX_AUTH_PROMPTS) { log.warn('too many pending authentication prompts; cancelling this one'); callback(); return }
+      const id = randomUUID()
+      this.authQueue.push({ id, callback, tabId: tab.id, host: authInfo.host, realm: authInfo.realm ?? '', isProxy: authInfo.isProxy })
+      if (this.authQueue.length === 1) this.showAuthPrompt()
+      this.publish()
+    })
     wc.on('did-start-loading', () => { tab.loading = true; tab.error = null; this.publish() })
     wc.on('did-stop-loading', () => { tab.loading = false; this.updateNavigation(tab, wc); this.publish() })
     const navigated = (_event: unknown, destination: string) => {
@@ -205,21 +280,19 @@ export class BrowserService {
     wc.on('found-in-page', (_event, result) => { tab.find = { active: result.activeMatchOrdinal, total: result.matches }; this.publish() })
     wc.on('page-title-updated', (_event, title) => { tab.title = title; if (!tab.private) for (const h of this.state.history) if (h.url === tab.url) h.title = title; this.publish(!tab.private) })
     wc.on('did-fail-load', (_event, code, description, _url, mainFrame) => {
-      if (mainFrame && code !== -3) { tab.loading = false; tab.error = description; this.layout(); this.publish() }
+      if (!mainFrame || code === -3) return
+      tab.loading = false
+      tab.error = /^ERR_(CERT|SSL)/.test(description)
+        ? `The connection is not secure: this site’s certificate could not be verified (${description}).`
+        : description
+      this.layout(); this.publish()
     })
     wc.on('render-process-gone', () => { tab.error = 'This tab stopped responding. Reload to continue.'; tab.loading = false; this.layout(); this.publish() })
     wc.on('dom-ready', () => { void this.injectProtection(tab, wc) })
     wc.on('before-input-event', (event, input) => {
-      if (input.type !== 'keyDown' || !(input.control || input.meta)) return
-      const key = input.key.toLowerCase()
-      if (['l', 't', 'w', 'f', 'h', 'j', 'd', 'p'].includes(key)) {
-        event.preventDefault()
-        if (key === 't') void this.dispatch({ type: input.shift ? 'tab:reopen' : 'tab:new' })
-        else if (key === 'w') void this.dispatch({ type: 'tab:close', id })
-        else this.window.webContents.send('browser:shortcut', key)
-      }
+      if (input.type === 'keyDown' && this.handleShortcut({ key: input.key, ctrl: input.control, shift: input.shift, alt: input.alt, meta: input.meta })) event.preventDefault()
     })
-    this.state.activeTabId = id; this.state.activeSpace = space
+    if (activate) { this.state.activeTabId = id; this.state.activeSpace = space }
     if (url !== 'nsty://newtab') this.load(tab, view, url)
     this.layout(); this.publish(true)
     return tab
@@ -247,8 +320,11 @@ export class BrowserService {
     log.info('close native tab')
     const managed = this.views.get(id)
     if (!managed) return
+    const wasActive = this.state.activeTabId === id
     if (!managed.tab.private) this.closedTabs = [{ url: managed.tab.url, space: managed.tab.space }, ...this.closedTabs].slice(0, 20)
     for (const pending of [...this.permissionQueue]) if (pending.request.tabId === id) this.respondPermission(pending.request.id, false, false)
+    for (const pending of [...this.authQueue]) if (pending.tabId === id) this.resolveAuth(pending.id)
+    if (this.fullscreenTabId === id) { this.fullscreenTabId = null; this.window.setFullScreen(false) }
     this.window.contentView.removeChildView(managed.view); managed.view.webContents.close(); this.views.delete(id)
     if (this.state.activeTabId === id) this.state.activeTabId = [...this.views.values()].filter(v => v.tab.space === this.state.activeSpace).at(-1)?.tab.id ?? null
     if (managed.tab.private && ![...this.views.values()].some(v => v.tab.private)) {
@@ -258,39 +334,139 @@ export class BrowserService {
       this.privatePartition = `private-${randomUUID()}`
     }
     if (!this.active()) this.createTab()
+    // Surfaces that describe one page die with it: the tab they belong to, or
+    // the active tab for the popovers that have no tabId of their own.
+    if (this.state.overlay && (this.state.overlay.payload.tabId === id || wasActive && TAB_SCOPED_SURFACES.has(this.state.overlay.surface))) this.state.overlay = null
     this.layout(); this.publish(true)
   }
 
-  /** Open/close a DOM overlay. On open, capture the page first so the dialog can blur it. */
-  private async setOverlay(open: boolean): Promise<void> {
-    // The last request always wins: a close that arrives while an open is still
-    // capturing must not be swallowed, and a stale capture must not re-open.
-    const seq = ++this.overlaySeq
-    if (open) {
-      const wc = this.active()?.view.webContents
-      let preview: string | null = null
-      if (wc && this.active()?.tab.url !== 'nsty://newtab' && typeof wc.capturePage === 'function') {
-        try { const image = await wc.capturePage(); preview = `data:image/jpeg;base64,${image.resize({ width: 1280 }).toJPEG(60).toString('base64')}` }
-        catch { log.warn('page preview capture failed') }
-      }
-      if (seq !== this.overlaySeq) { log.debug('overlay request superseded'); return }
-      if (!this.window.isDestroyed()) this.window.webContents.send('browser:preview', preview)
-    } else if (!this.window.isDestroyed()) this.window.webContents.send('browser:preview', null)
-    this.overlayOpen = open
+  /**
+   * The single transparent view that hosts every chrome surface. Created on
+   * first use and then kept alive: reloading it on every open would flash.
+   */
+  private ensureOverlayView(): WebContentsView | null {
+    if (this.overlayView || this.disposed) return this.overlayView
+    log.info('create transparent overlay view')
+    const preload = this.options.preloadPath ?? path.join(__dirname, '../preload/index.js')
+    const view = new WebContentsView({ webPreferences: { preload, contextIsolation: true, nodeIntegration: false, sandbox: true, transparent: true } })
+    view.setBackgroundColor('#00000000')
+    this.overlayView = view
+    this.options.onViewCreated?.(view.webContents)
+    void view.webContents.loadURL(`${this.options.shellUrl ?? 'app://bundle/index.html'}#overlay`).catch(() => log.error('overlay shell failed to load'))
+    return view
+  }
+
+  /** Show a chrome surface above the live page; the page view is never detached. */
+  private showOverlay(surface: OverlaySurface, anchor: OverlayAnchor | null, payload: BrowserOverlay['payload'], focus = true): void {
+    log.info('open overlay surface', { surface, anchored: Boolean(anchor) })
+    this.state.overlay = { surface, anchor, payload, origin: { ...this.contentOrigin } }
+    const view = this.ensureOverlayView()
     this.layout()
+    // Suggestions keep the caret in the shell address bar; every other surface
+    // owns the keyboard while it is open.
+    if (focus && view && !view.webContents.isDestroyed()) view.webContents.focus()
+  }
+
+  /** Close the surface and hand the keyboard back to the page, unless a permission is pending. */
+  private hideOverlay(force = false): void {
+    const surface = this.state.overlay?.surface
+    if (!force && (surface === 'permission' && this.permissionQueue.length || surface === 'auth' && this.authQueue.length)) { log.debug('modal surface stays until it is answered', { surface }); return }
+    log.info('close overlay surface')
+    this.state.overlay = null
+    this.layout()
+    const wc = this.active()?.view.webContents
+    if (wc && !wc.isDestroyed()) wc.focus()
+  }
+
+  /** Show the first queued credential prompt; the payload never carries credentials. */
+  private showAuthPrompt(): void {
+    const pending = this.authQueue[0]
+    if (!pending) { this.hideOverlay(true); return }
+    log.info('prompt for site credentials', { host: pending.host, proxy: pending.isProxy })
+    this.showOverlay('auth', null, { id: pending.id, host: pending.host, realm: pending.realm, isProxy: pending.isProxy })
+  }
+
+  /** Answer or cancel a queued challenge. Credentials go straight to Chromium, never to a log. */
+  private resolveAuth(id: string, username?: string, password?: string): void {
+    const index = this.authQueue.findIndex(entry => entry.id === id)
+    const pending = this.authQueue[index]
+    if (!pending) return
+    log.info('resolve credential prompt', { host: pending.host, cancelled: username === undefined })
+    this.authQueue.splice(index, 1)
+    if (username === undefined) pending.callback()
+    else pending.callback(username, password ?? '')
+    if (this.state.overlay?.surface === 'auth') this.showAuthPrompt()
+  }
+
+  /** Tabs of the active space, in creation order: the order the sidebar shows. */
+  private spaceTabs(): ManagedTab[] {
+    return [...this.views.values()].filter(managed => managed.tab.space === this.state.activeSpace)
+  }
+
+  /**
+   * The single implementation of every key combination the browser owns, used
+   * by focused page views (before-input-event) and by the shell alike.
+   * Returns true when the key was handled and must not reach the page.
+   */
+  private handleShortcut(input: { key: string; ctrl: boolean; shift: boolean; alt: boolean; meta: boolean }): boolean {
+    const { key, shift, alt } = input
+    const mod = input.ctrl || input.meta
+    if (!isBrowserShortcut(key, { ctrl: input.ctrl, shift, alt, meta: input.meta })) return false
+    log.info('handle browser shortcut', { key, mod, shift, alt })
+    const name = key.length === 1 ? key.toLowerCase() : key
+    const current = this.active(), wc = current?.view.webContents
+    const zoom = (value: number) => { void this.dispatch({ type: 'zoom', value: Math.min(2, Math.max(0.5, Math.round(value * 100) / 100)) }) }
+    if (alt) { void this.dispatch({ type: name === 'ArrowLeft' ? 'back' : 'forward' }); return true }
+    if (name === 'F11') { this.window.setFullScreen(!this.window.isFullScreen()); return true }
+    if (name === 'F12' || mod && shift && name === 'i') { void this.dispatch({ type: 'devtools' }); return true }
+    if (name === 'F5' || mod && name === 'r') {
+      if (shift) wc?.reloadIgnoringCache(); else void this.dispatch({ type: 'reload' })
+      return true
+    }
+    if (name === 'Escape') { if (!current?.tab.loading) return false; wc?.stop(); return true }
+    if (mod && shift) {
+      if (name === 't') void this.dispatch({ type: 'tab:reopen' })
+      else if (name === 'n') void this.dispatch({ type: 'tab:new', private: true })
+      else void this.dispatch({ type: 'tab:cycle', delta: -1 })
+      return true
+    }
+    if (name === 'PageUp') { void this.dispatch({ type: 'tab:cycle', delta: -1 }); return true }
+    if (name === 'Tab' || name === 'PageDown') { void this.dispatch({ type: 'tab:cycle', delta: 1 }); return true }
+    if (name === 't') { void this.dispatch({ type: 'tab:new' }); return true }
+    if (name === 'w') { if (current) void this.dispatch({ type: 'tab:close', id: current.tab.id }); return true }
+    if (name === 'p') { void this.dispatch({ type: 'print' }); return true }
+    if (name === '=' || name === '+') { zoom((current?.tab.zoom ?? 1) + 0.1); return true }
+    if (name === '-') { zoom((current?.tab.zoom ?? 1) - 0.1); return true }
+    if (name === '0') { zoom(1); return true }
+    if (name >= '1' && name <= '9') {
+      const tabs = this.spaceTabs()
+      void this.dispatch({ type: 'tab:nth', index: name === '9' ? Math.max(0, tabs.length - 1) : Number(name) - 1 })
+      return true
+    }
+    if (name === 'l') { this.window.webContents.send('browser:shortcut', 'l'); return true }
+    const surface: Record<string, OverlaySurface> = { f: 'find', h: 'history', j: 'downloads', d: 'bookmark' }
+    if (surface[name]) { this.showOverlay(surface[name]!, null, {}); this.publish() }
+    return true
   }
 
   layout(): void {
     if (this.disposed || this.window.isDestroyed()) return
     log.debug('update native content bounds')
     const [width = 0, height = 0] = this.window.getContentSize()
+    const { x, y } = this.contentOrigin
+    const rect = { x, y, width: Math.max(100, width - x), height: Math.max(100, height - y) }
     for (const { tab, view } of this.views.values()) {
       this.window.contentView.removeChildView(view)
-      if (tab.id === this.state.activeTabId && tab.url !== 'nsty://newtab' && !tab.error && !this.overlayOpen && !this.permissionQueue.length) {
+      if (tab.id === this.state.activeTabId && tab.url !== 'nsty://newtab' && !tab.error) {
         this.window.contentView.addChildView(view)
-        const { x, y } = this.contentOrigin
-        view.setBounds({ x, y, width: Math.max(100, width - x), height: Math.max(100, height - y) })
+        // A page in HTML5 fullscreen owns the whole window: no toolbar, no sidebar.
+        view.setBounds(tab.id === this.fullscreenTabId ? { x: 0, y: 0, width, height } : rect)
       }
+    }
+    // Re-adding puts the overlay last in the child list, i.e. above the page.
+    if (this.overlayView) {
+      this.window.contentView.removeChildView(this.overlayView)
+      if (this.state.overlay) { this.window.contentView.addChildView(this.overlayView); this.overlayView.setBounds(rect) }
     }
   }
 
@@ -357,6 +533,7 @@ export class BrowserService {
       this.state.permissions.push({ origin: pending.request.origin, permission: pending.request.permission, allowed: allow })
     }
     pending.callback(Boolean(tab) && allow)
+    if (!this.permissionQueue.length && this.state.overlay?.surface === 'permission') this.hideOverlay(true)
     this.publish(remember)
   }
 
@@ -426,7 +603,9 @@ export class BrowserService {
     log.info('dispatch browser command', { type: action.type })
     try {
       switch (action.type) {
-        case 'tab:new': this.createTab(action.url, action.private); break
+        case 'tab:new': this.createTab(action.url, action.private, this.state.activeSpace, { activate: !action.background }); break
+        case 'tab:cycle': { const tabs = this.spaceTabs(); if (tabs.length < 2) break; const index = tabs.findIndex(managed => managed.tab.id === this.state.activeTabId); const next = tabs[(Math.max(0, index) + action.delta + tabs.length) % tabs.length]; if (next) this.state.activeTabId = next.tab.id; break }
+        case 'tab:nth': { const target = this.spaceTabs()[Math.floor(action.index)]; if (target) this.state.activeTabId = target.tab.id; break }
         case 'tab:select': if (this.views.has(action.id)) { this.state.activeTabId = action.id; this.state.activeSpace = this.views.get(action.id)!.tab.space }; break
         case 'tab:close': this.closeTab(action.id); break
         case 'tab:duplicate': { const tab = this.views.get(action.id)?.tab; if (tab) this.createTab(tab.url, tab.private, tab.space); break }
@@ -440,8 +619,32 @@ export class BrowserService {
         case 'forward': if (wc?.navigationHistory.canGoForward()) wc.navigationHistory.goForward(); break
         case 'reload': if (current) this.load(current.tab, current.view, current.tab.url); break
         case 'stop': wc?.stop(); break
-        case 'overlay': await this.setOverlay(action.open); break
-        case 'layout': this.contentOrigin = { x: Math.round(action.x), y: Math.round(action.y) }; break
+        case 'overlay:open': this.showOverlay(action.surface, action.anchor ?? null, action.payload ?? {}); break
+        case 'overlay:close': this.hideOverlay(); break
+        case 'suggest': {
+          const rows = buildSuggestions(action.query, this.state.preferences.searchEngine, this.state.bookmarks, this.searchHistory(action.query, 6))
+          this.showOverlay('suggestions', action.anchor, { query: action.query, rows, highlight: 0 }, false)
+          break
+        }
+        case 'suggest:highlight': {
+          const overlay = this.state.overlay
+          if (overlay?.surface !== 'suggestions') break
+          const rows = overlay.payload.rows ?? []
+          overlay.payload.highlight = Math.min(Math.max(0, Math.floor(action.index)), Math.max(0, rows.length - 1))
+          break
+        }
+        case 'suggest:accept': {
+          const overlay = this.state.overlay
+          if (overlay?.surface !== 'suggestions') break
+          const row = (overlay.payload.rows ?? [])[overlay.payload.highlight ?? 0]
+          if (!row?.url) break
+          const url = normalizeAddress(row.url, this.state.preferences.searchEngine)
+          if (current) this.load(current.tab, current.view, url); else this.createTab(url)
+          this.hideOverlay(true)
+          break
+        }
+        // The overlay positions popovers against this origin: keep an open surface in step.
+        case 'layout': this.contentOrigin = { x: Math.round(action.x), y: Math.round(action.y) }; if (this.state.overlay) this.state.overlay.origin = { ...this.contentOrigin }; break
         case 'preferences': this.state.preferences = { ...this.state.preferences, ...action.patch }; this.applyTheme(); if (action.patch.shield !== undefined || action.patch.youtube !== undefined) for (const { tab, view } of this.views.values()) if (tab.url !== 'nsty://newtab') view.webContents.reload(); break
         case 'zoom': if (current) { current.tab.zoom = action.value; wc?.setZoomFactor(action.value) }; break
         case 'find': if (action.text) wc?.findInPage(action.text, { forward: action.forward ?? true }); else { wc?.stopFindInPage('clearSelection'); if (current) current.tab.find = null }; break
@@ -462,15 +665,42 @@ export class BrowserService {
         case 'shield:site': this.state.shieldExceptions = this.state.shieldExceptions.filter(h => h !== action.host); if (!action.enabled) this.state.shieldExceptions.push(action.host); for (const { tab, view } of this.views.values()) if (tab.url !== 'nsty://newtab' && new URL(tab.url).hostname === action.host) view.webContents.reload(); break
         case 'permission:respond': this.respondPermission(action.id, action.allow, action.remember); break
         case 'permission:remove': this.state.permissions = this.state.permissions.filter(p => p.origin !== action.origin || p.permission !== action.permission); break
+        case 'auth:respond': this.resolveAuth(action.id, action.username, action.password); break
+        case 'shortcut': this.handleShortcut({ key: action.key, ctrl: action.ctrl, shift: action.shift, alt: action.alt, meta: action.meta }); break
+        case 'context': {
+          if (!wc || !current) break
+          const url = action.url
+          if (action.command === 'inspect') {
+            if (!wc.isDevToolsOpened()) wc.openDevTools({ mode: 'detach' })
+            wc.inspectElement(Math.round(action.x ?? 0), Math.round(action.y ?? 0))
+          }
+          else if (action.command === 'copy') wc.copy()
+          else if (action.command === 'cut') wc.cut()
+          else if (action.command === 'paste') wc.paste()
+          else if (action.command === 'select-all') wc.selectAll()
+          // Only real web addresses are copied, downloaded or opened: a page can
+          // put javascript:/data:/file: into a link or an image source.
+          else if (!isWebUrl(url)) log.warn('context menu command ignored for a non-web address', { command: action.command })
+          else if (action.command === 'copy-link' || action.command === 'copy-image') clipboard.writeText(url)
+          else if (action.command === 'save-image') wc.downloadURL(url)
+          else if (action.command === 'open-link') this.createTab(url, current.tab.private, current.tab.space, { activate: false })
+          else if (action.command === 'open-link-private') this.createTab(url, true, current.tab.space, { activate: true })
+          this.hideOverlay(true)
+          break
+        }
       }
-      this.layout(); this.publish(action.type !== 'overlay' && action.type !== 'find')
+      this.layout(); this.publish(!TRANSIENT_ACTIONS.has(action.type))
       return { ok: true, snapshot: this.snapshot() }
     } catch (error) { log.warn('browser command failed', { type: action.type }); return { ok: false, error: error instanceof Error ? error.message : 'The operation could not be completed' } }
   }
 
   registerIpc(): void {
     log.info('register browser IPC with exact shell identity')
-    const trusted = (event: Electron.IpcMainInvokeEvent) => event.sender === this.window.webContents && event.senderFrame === this.window.webContents.mainFrame && isShellUrl(event.senderFrame?.url ?? '', !app.isPackaged)
+    const trusted = (event: Electron.IpcMainInvokeEvent) => {
+      const fromShell = event.sender === this.window.webContents && event.senderFrame === this.window.webContents.mainFrame
+      const fromOverlay = Boolean(this.overlayView) && event.sender === this.overlayView?.webContents
+      return (fromShell || fromOverlay) && isShellUrl(event.senderFrame?.url ?? '', !app.isPackaged)
+    }
     ipcMain.handle('browser:getSnapshot', event => { if (!trusted(event)) throw new Error('Untrusted browser caller'); return this.snapshot() })
     ipcMain.handle('browser:action', (event, action: unknown) => { if (!trusted(event)) throw new Error('Untrusted browser caller'); return this.dispatch(action) })
     ipcMain.handle('browser:history', (event, query: unknown, limit: unknown) => { if (!trusted(event)) throw new Error('Untrusted browser caller'); return this.searchHistory(typeof query === 'string' ? query : '', typeof limit === 'number' ? limit : 50) })
@@ -485,6 +715,11 @@ export class BrowserService {
     this.permissionQueue.length = 0
     for (const { view } of this.views.values()) if (!view.webContents.isDestroyed()) view.webContents.close()
     this.views.clear()
+    if (this.overlayView) {
+      if (!this.window.isDestroyed()) this.window.contentView.removeChildView(this.overlayView)
+      if (!this.overlayView.webContents.isDestroyed()) this.overlayView.webContents.close()
+      this.overlayView = null
+    }
     ipcMain.removeHandler('browser:getSnapshot'); ipcMain.removeHandler('browser:action'); ipcMain.removeHandler('browser:history')
   }
 }

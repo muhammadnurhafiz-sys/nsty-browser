@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeAddress, validateBrowserAction, isShellUrl, persistableTabs, isSpaceName } from './browser-policy'
+import { buildSuggestions, normalizeAddress, validateBrowserAction, isShellUrl, persistableTabs, isSpaceName, searchUrl, isExternalProtocol, isBrowserShortcut } from './browser-policy'
 
 describe('browser boundary policies', () => {
   it('validates layout reports and the sidebar preference', () => {
@@ -30,6 +30,47 @@ describe('browser boundary policies', () => {
     expect(isShellUrl('http://localhost:5173.attacker/')).toBe(false)
     expect(isShellUrl('http://localhost:5173/', true)).toBe(true)
     expect(isShellUrl('http://localhost:5173/', false)).toBe(false)
+    expect(isShellUrl('app://bundle/index.html#overlay')).toBe(true)
+    expect(isShellUrl('http://localhost:5173/#overlay', true)).toBe(true)
+  })
+  it('builds omnibox suggestions with the go-to row first for URL-like input', () => {
+    const bookmarks = [{ title: 'Google Drive', url: 'https://drive.google.com/' }]
+    const history = [{ title: 'Google news', url: 'https://news.google.com/' }]
+    const rows = buildSuggestions('google.com', 'google', bookmarks, history)
+    expect(rows[0]).toEqual({ kind: 'url', title: 'Go to google.com', url: 'https://google.com/' })
+    expect(rows[1]!.kind).toBe('search')
+    expect(rows[1]!.title).toBe('Search Google for \u201cgoogle.com\u201d')
+    expect(rows.map(r => r.kind)).toEqual(['url', 'search', 'bookmark', 'history'])
+  })
+  it('puts the search row first for plain text and names the engine', () => {
+    const rows = buildSuggestions('hello world', 'duckduckgo', [], [])
+    expect(rows[0]!.kind).toBe('search')
+    expect(rows[0]!.title).toBe('Search DuckDuckGo for \u201chello world\u201d')
+    expect(rows[0]!.url).toBe(searchUrl('hello world', 'duckduckgo'))
+    expect(buildSuggestions('  ', 'google', [], [])).toEqual([{ kind: 'search', title: 'Type a website or search', url: '' }])
+  })
+  it('dedupes suggestions by url and caps the list at nine rows', () => {
+    const bookmarks = Array.from({ length: 5 }, (_, i) => ({ title: `Site ${i}`, url: `https://site-${i}.test/` }))
+    const history = [bookmarks[0]!, ...Array.from({ length: 8 }, (_, i) => ({ title: `Visited ${i}`, url: `https://visited-${i}.test/` }))]
+    const rows = buildSuggestions('site', 'google', bookmarks, history)
+    expect(rows).toHaveLength(9)
+    expect(new Set(rows.map(r => r.url)).size).toBe(9)
+    expect(rows.filter(r => r.kind === 'bookmark')).toHaveLength(3)
+  })
+  it('validates the overlay surfaces and payload shapes', () => {
+    expect(validateBrowserAction({ type: 'overlay:open', surface: 'menu' })).toBe(true)
+    expect(validateBrowserAction({ type: 'overlay:open', surface: 'menu', anchor: { x: 1, y: 2, width: 3, height: 4 } })).toBe(true)
+    expect(validateBrowserAction({ type: 'overlay:open', surface: 'nope' })).toBe(false)
+    expect(validateBrowserAction({ type: 'overlay:open', surface: 'tabs', payload: { tabId: 'a' } })).toBe(true)
+    expect(validateBrowserAction({ type: 'overlay:open', surface: 'tabs', payload: { nested: { a: 1 } } })).toBe(false)
+    expect(validateBrowserAction({ type: 'overlay:open', surface: 'menu', anchor: { x: -1, y: 0, width: 1, height: 1 } })).toBe(false)
+    expect(validateBrowserAction({ type: 'overlay:close' })).toBe(true)
+    expect(validateBrowserAction({ type: 'suggest', query: 'a', anchor: { x: 0, y: 0, width: 10, height: 10 } })).toBe(true)
+    expect(validateBrowserAction({ type: 'suggest', query: 'a' })).toBe(false)
+    expect(validateBrowserAction({ type: 'suggest:highlight', index: 2 })).toBe(true)
+    expect(validateBrowserAction({ type: 'suggest:highlight', index: Number.NaN })).toBe(false)
+    expect(validateBrowserAction({ type: 'suggest:accept' })).toBe(true)
+    expect(validateBrowserAction({ type: 'overlay', open: true })).toBe(false)
   })
   it('rejects malformed commands before native actions', () => {
     expect(validateBrowserAction({ type: 'zoom', value: 1.25 })).toBe(true)
@@ -39,6 +80,56 @@ describe('browser boundary policies', () => {
     expect(validateBrowserAction({ type: 'preferences', patch: { encryptedApiKey: 'x' } })).toBe(false)
     expect(validateBrowserAction({ type: 'permission:respond', id: 'id', allow: true })).toBe(false)
     expect(validateBrowserAction({ type: 'download:open', id: '../../secret' })).toBe(false)
+  })
+  it('validates context-menu, shortcut and auth commands', () => {
+    expect(validateBrowserAction({ type: 'context', command: 'inspect', x: 10, y: 20 })).toBe(true)
+    expect(validateBrowserAction({ type: 'context', command: 'copy-link', url: 'https://a.test/' })).toBe(true)
+    expect(validateBrowserAction({ type: 'context', command: 'destroy' })).toBe(false)
+    expect(validateBrowserAction({ type: 'context', command: 'inspect', x: -1, y: 0 })).toBe(false)
+    expect(validateBrowserAction({ type: 'context', command: 'inspect', x: 10001, y: 0 })).toBe(false)
+    expect(validateBrowserAction({ type: 'context', command: 'copy-link', url: 'x'.repeat(8193) })).toBe(false)
+    expect(validateBrowserAction({ type: 'shortcut', key: 'Tab', ctrl: true, shift: false, alt: false, meta: false })).toBe(true)
+    expect(validateBrowserAction({ type: 'shortcut', key: 'Tab', ctrl: true, shift: false, alt: false })).toBe(false)
+    expect(validateBrowserAction({ type: 'shortcut', key: 'k'.repeat(21), ctrl: true, shift: false, alt: false, meta: false })).toBe(false)
+    expect(validateBrowserAction({ type: 'auth:respond', id: 'abc' })).toBe(true)
+    expect(validateBrowserAction({ type: 'auth:respond', id: 'abc', username: 'u', password: 'p' })).toBe(true)
+    expect(validateBrowserAction({ type: 'auth:respond', id: 'abc', password: 'p'.repeat(1025) })).toBe(false)
+    expect(validateBrowserAction({ type: 'tab:new', background: true })).toBe(true)
+    expect(validateBrowserAction({ type: 'tab:new', background: 'yes' })).toBe(false)
+    expect(validateBrowserAction({ type: 'tab:cycle', delta: -1 })).toBe(true)
+    expect(validateBrowserAction({ type: 'tab:cycle', delta: 2 })).toBe(false)
+    expect(validateBrowserAction({ type: 'tab:nth', index: 3 })).toBe(true)
+    expect(validateBrowserAction({ type: 'tab:nth', index: -1 })).toBe(false)
+  })
+  it('opens only mail, phone and message links in the operating system', () => {
+    expect(isExternalProtocol('mailto:someone@example.com')).toBe(true)
+    expect(isExternalProtocol('tel:+15551234')).toBe(true)
+    expect(isExternalProtocol('sms:+15551234')).toBe(true)
+    expect(isExternalProtocol('https://a.test/')).toBe(false)
+    expect(isExternalProtocol('javascript:alert(1)')).toBe(false)
+    expect(isExternalProtocol('file:///etc/passwd')).toBe(false)
+    expect(isExternalProtocol('not a url')).toBe(false)
+  })
+  it('shares one list of browser-owned key combinations', () => {
+    const none = { ctrl: false, shift: false, alt: false, meta: false }
+    expect(isBrowserShortcut('Tab', { ...none, ctrl: true })).toBe(true)
+    expect(isBrowserShortcut('Tab', { ...none, ctrl: true, shift: true })).toBe(true)
+    expect(isBrowserShortcut('Tab', none)).toBe(false)
+    expect(isBrowserShortcut('l', { ...none, meta: true })).toBe(true)
+    expect(isBrowserShortcut('L', { ...none, meta: true })).toBe(true)
+    expect(isBrowserShortcut('a', { ...none, ctrl: true })).toBe(false)
+    expect(isBrowserShortcut('ArrowLeft', { ...none, alt: true })).toBe(true)
+    expect(isBrowserShortcut('ArrowLeft', none)).toBe(false)
+    expect(isBrowserShortcut('F5', none)).toBe(true)
+    expect(isBrowserShortcut('F11', none)).toBe(true)
+    expect(isBrowserShortcut('F12', none)).toBe(true)
+    expect(isBrowserShortcut('F7', none)).toBe(false)
+    expect(isBrowserShortcut('Escape', none)).toBe(true)
+    expect(isBrowserShortcut('i', { ...none, ctrl: true, shift: true })).toBe(true)
+    expect(isBrowserShortcut('n', { ...none, ctrl: true, shift: true })).toBe(true)
+    expect(isBrowserShortcut('n', { ...none, ctrl: true })).toBe(false)
+    expect(isBrowserShortcut('=', { ...none, ctrl: true })).toBe(true)
+    expect(isBrowserShortcut('9', { ...none, ctrl: true })).toBe(true)
   })
   it('never persists private tabs', () => {
     expect(persistableTabs([{ url: 'https://public.test', space: 'Work', private: false }, { url: 'https://private.test', space: 'Work', private: true }])).toEqual([{ url: 'https://public.test', space: 'Work' }])
